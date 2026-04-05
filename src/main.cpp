@@ -2,8 +2,14 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <fstream>
+#include <sstream>
+
 
 using namespace std;
+
+#include "lexer/tokens.hpp"
+#include "lexer/lexer.hpp"
 
 #pragma region Structs
 struct CommandLineValuePair {
@@ -17,6 +23,7 @@ wostream& operator<<(wostream& os, const CommandLineValuePair& pair) {
 }
 
 struct CommandLineArgs {
+    wstring programName; // The first argument (the program name)
     vector<wstring> freeArgs;  // Without any prior dashes (not flags) -> wasd
     vector<wstring> flags;     // With double dashes or / (flags) -> --v, --verbose, --help, /v, /verbose, /help, /?, -?
     vector<CommandLineValuePair> keyValuePairs; // For inline key-value pairs; first is a singular dash, then the value (-filename=name.txt)
@@ -42,7 +49,12 @@ vector<wstring> GetCommandLineArgs(int& count) {
 CommandLineArgs ParseCommandLineArgs(vector<wstring> args) {
     CommandLineArgs result;
     
-    for (const auto& arg : args) {
+    if (!args.empty()) {
+        result.programName = args[0];
+    }
+
+    for (size_t i = 1; i < args.size(); ++i) {
+        const auto& arg = args[i];
         if (arg.rfind(L"--", 0) == 0 || arg.rfind(L"/", 0) == 0) {
             result.flags.push_back(arg);
         } else if (arg.rfind(L"-", 0) == 0) {
@@ -121,12 +133,83 @@ int main(int argc, char* argv[]) {
     vector<wstring> *flags = &parsedArgs.flags;
     vector<CommandLineValuePair> *keyValuePairs = &parsedArgs.keyValuePairs;
 
-    DisplayCommandLineArgs(parsedArgs);
+    //DisplayCommandLineArgs(parsedArgs);
 
-    if (vectorContains(*flags, {L"--help", L"/help", L"/?"})) {
+    if (vectorContains(*flags, vector<wstring>{L"--help", L"/help", L"/?"})) {
         DisplayHelp();
         return 0;
     }
+    
+    bool verbose = vectorContains(*flags, vector<wstring>{L"-v", L"--verbose", L"/verbose"});
 
+    if (verbose) wcout << L"Verbose mode enabled." << endl;
+
+    #pragma region Input Filename Extraction
+    wstring inputfilename = L"";
+    bool inputfilenameProvided = false;
+    for (const auto& pair : *keyValuePairs) {
+        if (pair.name == L"filename" || pair.name == L"fn") {
+            inputfilename = pair.value;
+            inputfilenameProvided = true;
+            if (verbose) wcout << L"Got inputfilename from key-value pair: " << inputfilename << endl;
+            break;
+        }
+    }
+
+    if (!inputfilenameProvided) {
+        if (freeArgs->size() > 0) {
+            inputfilename = (*freeArgs)[0];
+            inputfilenameProvided = true;
+            freeArgs->erase(freeArgs->begin());  // Remove the first element from the vector
+            if (verbose) wcout << L"Got inputfilename from free arguments: " << inputfilename << endl;
+        } else {
+            wcout << L"Error: No inputfilename provided." << endl;
+            return 1;
+        }
+    }
+
+    wcout << L"Input filename: " << inputfilename << endl;
+    #pragma endregion
+    #pragma region Output Filename Extraction
+    wstring outputfilename = L"a";
+    bool outputfilenameProvided = false;
+    for (const auto& pair : *keyValuePairs) {
+        if (pair.name == L"output" || pair.name == L"o" || pair.name == L"outfile") {
+            outputfilename = pair.value;
+            outputfilenameProvided = true;
+            if (verbose) wcout << L"Got outputfilename from key-value pair: " << outputfilename << endl;
+            break;
+        }
+    }
+    if (!outputfilenameProvided) {
+        if (freeArgs->size() > 0) {
+            outputfilename = (*freeArgs)[0];
+            outputfilenameProvided = true;
+            freeArgs->erase(freeArgs->begin());  // Remove the first element from the vector
+            if (verbose) wcout << L"Got outputfilename from free arguments: " << outputfilename << endl;
+        } else {
+            if (verbose) wcout << L"No outputfilename provided, but it's optional so continuing without it." << endl;
+        }
+    }
+    wcout << L"Output filename: " << outputfilename << endl;
+    #pragma endregion
+    
+    #pragma region File Reading
+    string narrowInputFilename(inputfilename.begin(), inputfilename.end());
+    wifstream inputFile(narrowInputFilename.c_str());
+    if (!inputFile.is_open()) {
+        wcout << L"Error: Unable to open input file." << endl;
+        return 1;
+    }
+    wstring fileContent((istreambuf_iterator<wchar_t>(inputFile)), istreambuf_iterator<wchar_t>());
+    inputFile.close();
+    if (verbose) wcout << L"Read input file content successfully." << endl;
+    #pragma endregion
+
+
+    vector<lexer::Token> tokens = lexer::Tokenize(fileContent);
+    for (const auto& token : tokens) {
+        token.Debug();
+    }
     return 0;
 }
