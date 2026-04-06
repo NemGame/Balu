@@ -1,0 +1,11 @@
+#pragma once
+
+#ifdef IN
+#undef IN
+#endif
+#ifdef OUT
+#undef OUT
+#endif
+
+#include "tokens.hpp"
+#include "lexer.hpp"

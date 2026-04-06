@@ -5,17 +5,10 @@
 #include <fstream>
 #include <sstream>
 
-#ifdef IN
-#undef IN
-#endif
-#ifdef OUT
-#undef OUT
-#endif
 
 using namespace std;
 
-#include "lexer/tokens.hpp"
-#include "lexer/lexer.hpp"
+#include "lexer/init.hpp"
 
 #pragma region Structs
 struct CommandLineValuePair {
