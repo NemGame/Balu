@@ -51,6 +51,8 @@ namespace lexer {
         PERCENT,         // %
 
         // Reserved keywords
+        LET,            // let
+        CONST,          // const
         MUT,            // mut
         CLASS,          // class
         NEW,            // new
@@ -78,11 +80,14 @@ namespace lexer {
         AUTO_TYPE,      // auto
         ANY_TYPE,        // any
         VOID_TYPE,       // void
+        NULL_TYPE,       // null
     };
 
     wstring TokenKindString(TokenKind kind);
 
     map<wstring, TokenKind> reserved_lu = {
+        {L"let", LET},
+        {L"const", CONST},
         {L"mut", MUT},
         {L"class", CLASS},
         {L"new", NEW},
@@ -108,6 +113,7 @@ namespace lexer {
         {L"auto", AUTO_TYPE},
         {L"any", ANY_TYPE},
         {L"void", VOID_TYPE},
+        {L"null", NULL_TYPE}
     };
 
     struct Token {
@@ -177,6 +183,8 @@ namespace lexer {
             case PERCENT: return L"PERCENT";
 
             // Reserved keywords
+            case LET: return L"LET";
+            case CONST: return L"CONST";
             case MUT: return L"MUT";
             case CLASS: return L"CLASS";
             case NEW: return L"NEW";
@@ -204,6 +212,7 @@ namespace lexer {
             case AUTO_TYPE: return L"AUTO_TYPE";
             case ANY_TYPE: return L"ANY_TYPE";
             case VOID_TYPE: return L"VOID_TYPE";
+            case NULL_TYPE: return L"NULL_TYPE";
             default: return L"UNKNOWN";
         }
     }

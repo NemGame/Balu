@@ -53,10 +53,10 @@ namespace parser {
                 return new ast::NumberExpr(value);
             }
             case lexer::STRING: {
-                return new ast::StringExpr(parser->currentToken().value);
+                return new ast::StringExpr(parser->advance().value);
             }
             case lexer::IDENTIFIER: {
-                return new ast::SymbolExpr(parser->currentToken().value);
+                return new ast::SymbolExpr(parser->advance().value);
             }
             default: {
                 if (_verbose) wcout << "Cannot create primary expression from token: " << lexer::TokenKindString(parser->currentTokenKind()) << endl;

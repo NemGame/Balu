@@ -18,6 +18,7 @@ namespace parser {
     // Forward declarations of parsing functions defined in expr.hpp
     ast::Expr* parse_primary_expr(Parser* parser);
     ast::Expr* parse_binary_expr(Parser* parser, ast::Expr* left, binding_power bp);
+    ast::Stmt* parse_var_decl_stmt(Parser* parser);
 
     using stmt_handler = ast::Stmt* (*)(Parser* p);
     using nud_handler = ast::Expr* (*)(Parser* p);
@@ -72,5 +73,10 @@ namespace parser {
         nud(lexer::NUMBER, primary, parse_primary_expr);
         nud(lexer::STRING, primary, parse_primary_expr);
         nud(lexer::IDENTIFIER, primary, parse_primary_expr);
+
+        // Statements
+        stmt(lexer::LET, parse_var_decl_stmt);
+        stmt(lexer::CONST, parse_var_decl_stmt);
+        stmt(lexer::MUT, parse_var_decl_stmt);
     }
 }

@@ -1,0 +1,19 @@
+//auto num = 45.5;
+
+//any num2 = 45.5;
+
+let num3 = 45.5;
+
+const num4 = 12 * foo;
+
+const fuck = num > num2;
+
+mut number num5 = 33;
+
+mut bool isGreater = num > num2;
+
+// Another type of declaration
+// let num2: any = 45.5;
+// const num2: number = 45.5;
+
+//number num4 = 45.5;
