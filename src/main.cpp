@@ -23,11 +23,38 @@ wostream& operator<<(wostream& os, const CommandLineValuePair& pair) {
 
 struct CommandLineArgs {
     wstring programName; // The first argument (the program name)
+    wstring programPath; // The full path to the program (can be derived from programName if needed)
     vector<wstring> freeArgs;  // Without any prior dashes (not flags) -> wasd
     vector<wstring> flags;     // With double dashes or / (flags) -> --v, --verbose, --help, /v, /verbose, /help, /?, -?
     vector<CommandLineValuePair> keyValuePairs; // For inline key-value pairs; first is a singular dash, then the value (-filename=name.txt)
 };
 
+#pragma endregion
+
+#pragma region Utility Functions
+bool vectorContains(const vector<wstring>& vec, const wstring& value) {
+    for (const auto& item : vec) {
+        if (item == value) {
+            return true;
+        }
+    }
+    return false;
+}
+bool vectorContains(const vector<wstring>& vec, const vector<wstring>& values) {
+    for (const auto& value : values) {
+        if (vectorContains(vec, value)) {
+            return true;
+        }
+    }
+    return false;
+}
+const wstring lastOfPath(const wstring& path) {
+    size_t lastSlashPos = path.find_last_of(L"\\");
+    if (lastSlashPos != wstring::npos) {
+        return path.substr(lastSlashPos + 1);
+    }
+    return path;
+}
 #pragma endregion
 
 #pragma region Command Line Parsing
@@ -49,7 +76,8 @@ CommandLineArgs ParseCommandLineArgs(vector<wstring> args) {
     CommandLineArgs result;
     
     if (!args.empty()) {
-        result.programName = args[0];
+        result.programName = lastOfPath(args[0]);
+        result.programPath = args[0];
     }
 
     for (size_t i = 1; i < args.size(); ++i) {
@@ -92,33 +120,16 @@ void DisplayCommandLineArgs(const CommandLineArgs& args) {
 
 #pragma endregion
 
-#pragma region Utility Functions
-bool vectorContains(const vector<wstring>& vec, const wstring& value) {
-    for (const auto& item : vec) {
-        if (item == value) {
-            return true;
-        }
-    }
-    return false;
-}
-bool vectorContains(const vector<wstring>& vec, const vector<wstring>& values) {
-    for (const auto& value : values) {
-        if (vectorContains(vec, value)) {
-            return true;
-        }
-    }
-    return false;
-}
-#pragma endregion
-
 #pragma region User Interaction
 
-void DisplayHelp() {
-    wcout << L"Usage: main.exe [options] [arguments]" << endl;
+void DisplayHelp(const wstring& programName) {
+    wcout << L"Usage: " << programName << L" [options] [arguments]" << endl;
     wcout << L"Options:" << endl;
-    wcout << L"  --help, /help, /?   Display this help message" << endl;
-    wcout << L"  --verbose, /verbose Enable verbose output" << endl;
-    wcout << L"  -key=value          Specify a key-value pair (e.g., -filename=name.txt)" << endl;
+    wcout << L"  --help, -h, -?, /help, /h, /?\t\tDisplay this help message" << endl;
+    wcout << L"  -s, --show\t\tDisplay the command line arguments" << endl;
+    wcout << L"  -v, --verbose, /verbose\t\tEnable verbose output" << endl;
+    wcout << L"  -filename=value, -fn=value\t\tSpecify the input filename (e.g., -filename=name.txt)" << endl;
+    wcout << L"  -output=value, -o=value, -outfile=value\t\tSpecify the output filename (e.g., -output=out.txt)" << endl;
 }
 
 #pragma endregion
@@ -134,8 +145,10 @@ int main(int argc, char* argv[]) {
 
     //DisplayCommandLineArgs(parsedArgs);
 
-    if (vectorContains(*flags, vector<wstring>{L"--help", L"/help", L"/?"})) {
-        DisplayHelp();
+    if (vectorContains(*flags, vector<wstring>{L"--show", L"/show", L"-s", L"/s"})) DisplayCommandLineArgs(parsedArgs);
+
+    if (vectorContains(*flags, vector<wstring>{L"--help", L"-h", L"-?", L"/help", L"/h", L"/?"})) {
+        DisplayHelp(parsedArgs.programName);
         return 0;
     }
     
@@ -204,7 +217,6 @@ int main(int argc, char* argv[]) {
     inputFile.close();
     if (verbose) wcout << L"Read input file content successfully." << endl;
     #pragma endregion
-
 
     vector<lexer::Token> tokens = lexer::Tokenize(fileContent);
     for (const auto& token : tokens) {
