@@ -1,15 +1,4 @@
-#include <Windows.h>
-#include <string>
-#include <vector>
-#include <iostream>
-#include <fstream>
-#include <sstream>
-
-
-using namespace std;
-
 #include "init.hpp"
-#include "lexer/init.hpp"
 
 #pragma region Structs
 struct CommandLineValuePair {
