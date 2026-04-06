@@ -5,3 +5,5 @@
 "hello" + 23
 // "hello23"
 poopoo
+
+/* very long comment */ 12 + 3

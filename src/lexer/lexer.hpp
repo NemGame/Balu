@@ -10,7 +10,7 @@ namespace lexer {
     struct lexer;
 
     // type regexHandler func (lex* lexer, regex *regexp.Regexp) in GO -> C++
-    #define regexHandler function<void(lexer* l, const wregex& regexp)>
+    #define regexHandler function<void(lexer* l, const wregex& regexp)> // Regex handler type
     struct RegexPattern {
         wregex pattern;
         regexHandler handler;
@@ -110,6 +110,7 @@ namespace lexer {
                 {wregex(L"^[0-9]+(\\.[0-9]+)?"), numberHandler},
                 {wregex(L"^\"[^\"]*\""), stringHandler},
                 {wregex(L"^//.*"), skipHandler},
+                {wregex(L"^/\\*.*\\*/"), skipHandler},
                 {wregex(L"^\\s+"), skipHandler},
                 {wregex(L"^\\["), defaultHandler(OPEN_BRACKET, L"[")},
                 {wregex(L"^\\]"), defaultHandler(CLOSE_BRACKET, L"]")},
@@ -148,5 +149,4 @@ namespace lexer {
             }
         };
     }
-
 }
