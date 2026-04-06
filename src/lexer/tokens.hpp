@@ -1,9 +1,5 @@
 #pragma once
 
-#ifdef IN
-#undef IN
-#endif
-
 namespace lexer {    
     enum TokenKind {
         EOF_TOKEN = 0,
@@ -66,7 +62,10 @@ namespace lexer {
         FOR,            // for
         EXPORT,         // export
         TYPEOF,         // typeof
-        IN              // in
+        NAMEOF,         // nameof
+        IN,             // in
+        OUT,            // out
+        EVAL,           // eval
     };
 
     wstring TokenKindString(TokenKind kind);
@@ -151,7 +150,10 @@ namespace lexer {
             case FOR: return L"FOR";
             case EXPORT: return L"EXPORT";
             case TYPEOF: return L"TYPEOF";
+            case NAMEOF: return L"NAMEOF";
             case IN: return L"IN";
+            case OUT: return L"OUT";
+            case EVAL: return L"EVAL";
             default: return L"UNKNOWN";
         }
     }

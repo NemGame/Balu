@@ -5,6 +5,12 @@
 #include <fstream>
 #include <sstream>
 
+#ifdef IN
+#undef IN
+#endif
+#ifdef OUT
+#undef OUT
+#endif
 
 using namespace std;
 
