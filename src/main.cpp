@@ -8,6 +8,7 @@
 
 using namespace std;
 
+#include "init.hpp"
 #include "lexer/init.hpp"
 
 #pragma region Structs
@@ -72,7 +73,7 @@ vector<wstring> GetCommandLineArgs(int& count) {
     return args;
 }
 
-CommandLineArgs ParseCommandLineArgs(vector<wstring> args) {
+CommandLineArgs ParseCommandLineArgs(const vector<wstring>& args) {
     CommandLineArgs result;
     
     if (!args.empty()) {
@@ -136,7 +137,7 @@ void DisplayHelp(const wstring& programName) {
 
 int main(int argc, char* argv[]) {
     int count = 0;
-    vector<wstring> args = GetCommandLineArgs(count);
+    const vector<wstring> args = GetCommandLineArgs(count);
     CommandLineArgs parsedArgs = ParseCommandLineArgs(args);
 
     vector<wstring> *freeArgs = &parsedArgs.freeArgs;
@@ -152,9 +153,10 @@ int main(int argc, char* argv[]) {
         return 0;
     }
     
-    bool verbose = vectorContains(*flags, vector<wstring>{L"-v", L"--verbose", L"/verbose"});
+    _verbose = vectorContains(*flags, vector<wstring>{L"-v", L"--verbose", L"/verbose"});
+    _showWarnings = !vectorContains(*flags, vector<wstring>{L"--no-warnings", L"/no-warnings", L"-nw", L"/nw"});
 
-    if (verbose) wcout << L"Verbose mode enabled." << endl;
+    if (_verbose) wcout << L"Verbose mode enabled." << endl;
 
     #pragma region Input Filename Extraction
     wstring inputfilename = L"";
@@ -163,7 +165,7 @@ int main(int argc, char* argv[]) {
         if (pair.name == L"filename" || pair.name == L"fn") {
             inputfilename = pair.value;
             inputfilenameProvided = true;
-            if (verbose) wcout << L"Got inputfilename from key-value pair: " << inputfilename << endl;
+            if (_verbose) wcout << L"Got inputfilename from key-value pair: " << inputfilename << endl;
             break;
         }
     }
@@ -173,7 +175,7 @@ int main(int argc, char* argv[]) {
             inputfilename = (*freeArgs)[0];
             inputfilenameProvided = true;
             freeArgs->erase(freeArgs->begin());  // Remove the first element from the vector
-            if (verbose) wcout << L"Got inputfilename from free arguments: " << inputfilename << endl;
+            if (_verbose) wcout << L"Got inputfilename from free arguments: " << inputfilename << endl;
         } else {
             wcout << L"Error: No inputfilename provided." << endl;
             return 1;
@@ -189,7 +191,7 @@ int main(int argc, char* argv[]) {
         if (pair.name == L"output" || pair.name == L"o" || pair.name == L"outfile") {
             outputfilename = pair.value;
             outputfilenameProvided = true;
-            if (verbose) wcout << L"Got outputfilename from key-value pair: " << outputfilename << endl;
+            if (_verbose) wcout << L"Got outputfilename from key-value pair: " << outputfilename << endl;
             break;
         }
     }
@@ -198,9 +200,9 @@ int main(int argc, char* argv[]) {
             outputfilename = (*freeArgs)[0];
             outputfilenameProvided = true;
             freeArgs->erase(freeArgs->begin());  // Remove the first element from the vector
-            if (verbose) wcout << L"Got outputfilename from free arguments: " << outputfilename << endl;
+            if (_verbose) wcout << L"Got outputfilename from free arguments: " << outputfilename << endl;
         } else {
-            if (verbose) wcout << L"No outputfilename provided, but it's optional so continuing without it." << endl;
+            if (_verbose) wcout << L"No outputfilename provided, but it's optional so continuing without it." << endl;
         }
     }
     wcout << L"Output filename: " << outputfilename << endl;
@@ -215,7 +217,7 @@ int main(int argc, char* argv[]) {
     }
     wstring fileContent((istreambuf_iterator<wchar_t>(inputFile)), istreambuf_iterator<wchar_t>());
     inputFile.close();
-    if (verbose) wcout << L"Read input file content successfully." << endl;
+    if (_verbose) wcout << L"Read input file content successfully." << endl;
     #pragma endregion
 
     vector<lexer::Token> tokens = lexer::Tokenize(fileContent);

@@ -58,7 +58,7 @@ namespace lexer {
             }
             if (!matched) {
                 // Handle unmatched case, e.g., advance by one character or throw an error
-                wcout << L"Unmatched character: " << lex.at() << L" at position " << lex.pos << endl;
+                if (_showWarnings) wcout << L"Unmatched character: " << lex.at() << L" at position " << lex.pos << endl;
                 lex.advanceN(1);
             }
         }
@@ -100,7 +100,7 @@ namespace lexer {
         l->advanceN(value.length());
         l->push(NewToken(STRING, value));
     };
-    
+
     lexer createLexer(const wstring& source) {
         return lexer {
             0,
