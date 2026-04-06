@@ -10,10 +10,10 @@ namespace lexer {
     struct lexer;
 
     // type regexHandler func (lex* lexer, regex *regexp.Regexp) in GO -> C++
-    #define regexHandler void(*)(lexer* l, const wregex& regexp)
+    #define regexHandler function<void(lexer* l, const wregex& regexp)>
     struct RegexPattern {
         wregex pattern;
-        function<void(lexer* l, const wregex& regexp)> handler;
+        regexHandler handler;
     };
 
     struct lexer {
@@ -37,23 +37,6 @@ namespace lexer {
         bool at_eof() {
             return pos >= source.length();
         }
-    };
-
-    function<void(lexer* l, const wregex& regexp)> numberHandler = [](lexer* l, const wregex& regexp) {
-        wsmatch match;
-        const wstring remaining = l->remainder();
-        regex_search(remaining, match, regexp);
-        wstring value = match.str(0);
-        l->advanceN(value.length());
-        l->push(NewToken(NUMBER, value));
-    };
-
-    function<void(lexer* l, const wregex& regexp)> skipHandler = [](lexer* l, const wregex& regexp) {
-        wsmatch match;
-        const wstring remaining = l->remainder();
-        regex_search(remaining, match, regexp);
-        wstring value = match.str(0);
-        l->advanceN(value.length());
     };
 
     lexer createLexer(const wstring& source);
@@ -84,13 +67,40 @@ namespace lexer {
         return lex.tokens;
     }
 
-    function<void(lexer* l, const wregex& regexp)> defaultHandler(TokenKind kind, const wstring& value = L"") {
+    regexHandler defaultHandler(TokenKind kind, const wstring& value = L"") {
         return [kind, value](lexer* l, const wregex& regexp) {
             l->advanceN(value.length());
             l->push(NewToken(kind, value));
         };
     }
 
+    
+    regexHandler numberHandler = [](lexer* l, const wregex& regexp) {
+        wsmatch match;
+        const wstring remaining = l->remainder();
+        regex_search(remaining, match, regexp);
+        wstring value = match.str(0);
+        l->advanceN(value.length());
+        l->push(NewToken(NUMBER, value));
+    };
+
+    regexHandler skipHandler = [](lexer* l, const wregex& regexp) {
+        wsmatch match;
+        const wstring remaining = l->remainder();
+        regex_search(remaining, match, regexp);
+        wstring value = match.str(0);
+        l->advanceN(value.length());
+    };
+
+    regexHandler stringHandler = [](lexer* l, const wregex& regexp) {
+        wsmatch match;
+        const wstring remaining = l->remainder();
+        regex_search(remaining, match, regexp);
+        wstring value = match.str(0);
+        l->advanceN(value.length());
+        l->push(NewToken(STRING, value));
+    };
+    
     lexer createLexer(const wstring& source) {
         return lexer {
             0,
@@ -98,6 +108,8 @@ namespace lexer {
             vector<Token>(0),
             {
                 {wregex(L"^[0-9]+(\\.[0-9]+)?"), numberHandler},
+                {wregex(L"^\"[^\"]*\""), stringHandler},
+                {wregex(L"^//.*"), skipHandler},
                 {wregex(L"^\\s+"), skipHandler},
                 {wregex(L"^\\["), defaultHandler(OPEN_BRACKET, L"[")},
                 {wregex(L"^\\]"), defaultHandler(CLOSE_BRACKET, L"]")},
