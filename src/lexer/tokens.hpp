@@ -1,5 +1,7 @@
 #pragma once
 
+#include <map>
+
 namespace lexer {    
     enum TokenKind {
         EOF_TOKEN = 0,
@@ -66,9 +68,47 @@ namespace lexer {
         IN,             // in
         OUT,            // out
         EVAL,           // eval
+        RETURN,         // return
+
+        // Types
+        STRING_TYPE,    // string
+        CHAR_TYPE,      // char
+        NUMBER_TYPE,    // number
+        BOOL_TYPE,      // bool
+        AUTO_TYPE,      // auto
+        ANY_TYPE,        // any
+        VOID_TYPE,       // void
     };
 
     wstring TokenKindString(TokenKind kind);
+
+    map<wstring, TokenKind> reserved_lu = {
+        {L"mut", MUT},
+        {L"class", CLASS},
+        {L"new", NEW},
+        {L"import", IMPORT},
+        {L"from", FROM},
+        {L"fn", FN},
+        {L"if", IF},
+        {L"else", ELSE},
+        {L"foreach", FOREACH},
+        {L"while", WHILE},
+        {L"for", FOR},
+        {L"export", EXPORT},
+        {L"typeof", TYPEOF},
+        {L"nameof", NAMEOF},
+        {L"in", IN},
+        {L"out", OUT},
+        {L"eval", EVAL},
+
+        {L"string", STRING_TYPE},
+        {L"char", CHAR_TYPE},
+        {L"number", NUMBER_TYPE},
+        {L"bool", BOOL_TYPE},
+        {L"auto", AUTO_TYPE},
+        {L"any", ANY_TYPE},
+        {L"void", VOID_TYPE},
+    };
 
     struct Token {
         TokenKind kind;
@@ -154,6 +194,16 @@ namespace lexer {
             case IN: return L"IN";
             case OUT: return L"OUT";
             case EVAL: return L"EVAL";
+            case RETURN: return L"RETURN";
+
+            // Types
+            case STRING_TYPE: return L"STRING_TYPE";
+            case CHAR_TYPE: return L"CHAR_TYPE";
+            case NUMBER_TYPE: return L"NUMBER_TYPE";
+            case BOOL_TYPE: return L"BOOL_TYPE";
+            case AUTO_TYPE: return L"AUTO_TYPE";
+            case ANY_TYPE: return L"ANY_TYPE";
+            case VOID_TYPE: return L"VOID_TYPE";
             default: return L"UNKNOWN";
         }
     }

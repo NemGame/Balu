@@ -4,6 +4,14 @@
 3//huh
 "hello" + 23
 // "hello23"
-poopoo
-
 /* very long comment */ 12 + 3
+
+class wasd {
+    string yooo() {
+        return "yoooo";
+    }
+}
+
+mut number num = 23;
+
+string constant_by_default0001 = "hello";

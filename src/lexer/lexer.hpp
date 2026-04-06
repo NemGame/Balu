@@ -84,6 +84,21 @@ namespace lexer {
         l->push(NewToken(NUMBER, value));
     };
 
+    regexHandler symbolHandler = [](lexer* l, const wregex& regexp) {
+        wsmatch match;
+        const wstring remaining = l->remainder();
+        regex_search(remaining, match, regexp);
+        wstring value = match.str(0);
+        
+
+        if (reserved_lu.find(value) != reserved_lu.end()) l->push(NewToken(reserved_lu[value], value));
+        else l->push(NewToken(IDENTIFIER, value));
+
+
+        
+        l->advanceN(value.length());
+    };
+
     regexHandler skipHandler = [](lexer* l, const wregex& regexp) {
         wsmatch match;
         const wstring remaining = l->remainder();
@@ -96,8 +111,8 @@ namespace lexer {
         wsmatch match;
         const wstring remaining = l->remainder();
         regex_search(remaining, match, regexp);
-        wstring value = match.str(0);
-        l->advanceN(value.length());
+        wstring value = match.str(0).substr(1, match.str(0).length() - 2); // Remove the surrounding quotes
+        l->advanceN(value.length() + 2); // Advance past the string including the quotes
         l->push(NewToken(STRING, value));
     };
 
@@ -107,11 +122,13 @@ namespace lexer {
             source,
             vector<Token>(0),
             {
+                {wregex(L"^[a-zA-Z_][a-zA-Z0-9_]*"), symbolHandler},
                 {wregex(L"^[0-9]+(\\.[0-9]+)?"), numberHandler},
                 {wregex(L"^\"[^\"]*\""), stringHandler},
                 {wregex(L"^//.*"), skipHandler},
                 {wregex(L"^/\\*.*\\*/"), skipHandler},
                 {wregex(L"^\\s+"), skipHandler},
+
                 {wregex(L"^\\["), defaultHandler(OPEN_BRACKET, L"[")},
                 {wregex(L"^\\]"), defaultHandler(CLOSE_BRACKET, L"]")},
                 {wregex(L"^\\{"), defaultHandler(OPEN_CURLY, L"{")},
