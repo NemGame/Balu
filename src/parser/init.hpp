@@ -3,6 +3,8 @@
 namespace parser {
     struct ParserError : public Error {
         ParserError(const wstring& message, int line, int column) : Error(message, line, column) {}
+        ParserError(const wstring& message) : Error(message) {}
+        ParserError() : Error() {}
     };
     struct Parser {
         vector<ParserError> errors;
@@ -51,4 +53,5 @@ namespace parser {
 #include "lookup.hpp"
 #include "expr.hpp"
 #include "stmt.hpp"
+#include "types.hpp"
 #include "parser.hpp"

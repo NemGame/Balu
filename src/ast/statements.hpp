@@ -28,9 +28,9 @@ namespace ast {
         wstring VariableName;
         bool isConstant;
         Expr* AssignedValue;
-        // Type ExplicitType
+        Type* ExplicitType;
         void stmt() override {}
-        VarDeclStmt(const wstring& n, bool c, Expr* init) : VariableName(n), isConstant(c), AssignedValue(init) {}
+        VarDeclStmt(const wstring& n, bool c, Expr* init, Type* type) : VariableName(n), isConstant(c), AssignedValue(init), ExplicitType(type) {}
         void Dump(int indent = 0) const override {
             wcout << wstring(indent * 2, L' ') << L"VarDeclStmt: " << VariableName << (isConstant ? L" (const)" : L"") << endl;
             if (AssignedValue) {

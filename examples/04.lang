@@ -1,3 +1,4 @@
+/*
 let foo = -45.5;
 let bar = foo * 10 + (45 / 10 - -5);
 
@@ -8,6 +9,17 @@ const isGreater = foo > 10;
 
 /* multi
 line
-comment */
+//comment *./
 
 let x = 2;
+*/
+
+let wasd: []number = 2;
+
+/*
+let x: number = 2;
+mut number x = 2;
+
+const x: number = 2;
+number x = 2;
+*/

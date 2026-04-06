@@ -18,4 +18,10 @@ namespace ast {
         virtual void expr() = 0;
         virtual void Dump(int indent = 0) const = 0;
     };
+
+    interface Type {
+    public:
+        virtual void type() = 0;
+        virtual void Dump(int indent = 0) const = 0;
+    };
 }

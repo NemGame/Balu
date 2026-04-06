@@ -91,5 +91,15 @@ namespace parser {
         stmt(lexer::LET, parse_var_decl_stmt);
         stmt(lexer::CONST, parse_var_decl_stmt);
         stmt(lexer::MUT, parse_var_decl_stmt);
+        
+        // Types
+        stmt(lexer::NUMBER_TYPE, parse_var_decl_stmt);
+        stmt(lexer::STRING_TYPE, parse_var_decl_stmt);
+        stmt(lexer::BOOL_TYPE, parse_var_decl_stmt);
+        stmt(lexer::CHAR_TYPE, parse_var_decl_stmt);
+        stmt(lexer::AUTO_TYPE, parse_var_decl_stmt);
+        stmt(lexer::ANY_TYPE, parse_var_decl_stmt);
+        stmt(lexer::VOID_TYPE, parse_var_decl_stmt);
+        stmt(lexer::NULL_TYPE, parse_var_decl_stmt);
     }
 }

@@ -6,6 +6,7 @@ namespace parser {
     // Returns a new parser instance with the given tokens (free manually)
     Parser* createParser(const vector<lexer::Token>& tokens) {
         createTokenLookups();
+        createTokenTypeLookups();
         return new Parser{ {}, tokens, 0 };
     }
 
