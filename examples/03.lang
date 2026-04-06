@@ -12,6 +12,9 @@ mut number num5 = 33;
 
 mut bool isGreater = num > num2;
 
+mut num6 = 63;
+any num7 = 69;
+
 // Another type of declaration
 // let num2: any = 45.5;
 // const num2: number = 45.5;

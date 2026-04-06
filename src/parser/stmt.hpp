@@ -14,6 +14,7 @@ namespace parser {
         return new ast::ExpressionStmt( expr );
     }
     ast::Stmt* parse_var_decl_stmt(Parser* p) {
+        // Declared using the let or const keyword, otherwise it's either a mut, or a typename declaration
         bool letConst = p->currentTokenKind() == lexer::LET || p->currentTokenKind() == lexer::CONST;
 
         bool isConstant;
