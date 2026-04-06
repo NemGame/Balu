@@ -15,7 +15,7 @@ namespace lexer {
         CLOSE_CURLY,   // }
         OPEN_PAREN,    // (
         CLOSE_PAREN,   // )
-
+        
         ASSIGNMENT,    // =
         EQUALS,        // ==
         NOT,           // !

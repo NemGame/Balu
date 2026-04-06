@@ -39,7 +39,7 @@ namespace parser {
 
             led_handler led_fn = led_lu[tokenKind];
 
-            left = led_fn(parser, left, bp);
+            left = led_fn(parser, left, bp_lu[tokenKind]);
         }
 
         return left;
@@ -70,5 +70,24 @@ namespace parser {
         lexer::Token op = parser->advance();
         ast::Expr* right = parse_expr(parser, bp_lu[op.kind]);
         return new ast::BinaryExpr(left, right, op);
+    }
+
+    ast::Expr* parse_prefix_expr(Parser* parser) {
+        lexer::Token op = parser->advance();
+        ast::Expr* right = parse_expr(parser, unary);
+        return new ast::PrefixExpr(right, op);
+    }
+
+    ast::Expr* parse_assignment_expr(Parser* parser, ast::Expr* left, binding_power bp) {
+        lexer::Token op = parser->advance();
+        ast::Expr* right = parse_expr(parser, bp);  // Right-associative
+        return new ast::AssignmentExpr(left, op, right);
+    }
+
+    ast::Expr* parse_grouping_expr(Parser* parser) {
+        parser->expect(lexer::OPEN_PAREN);
+        ast::Expr* expr = parse_expr(parser, default_bp);
+        parser->expect(lexer::CLOSE_PAREN);
+        return expr;
     }
 }

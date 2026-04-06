@@ -50,4 +50,29 @@ namespace ast {
             if (right) right->Dump(indent + 1);
         }
     };
+    struct PrefixExpr : public Expr {
+        lexer::Token Operator;
+        Expr* RightExpr;
+        PrefixExpr(Expr* rightExpr, lexer::Token op) : RightExpr(rightExpr), Operator(op) {}
+        void expr() override {}
+        void Dump(int indent = 0) const override {
+            wcout << wstring(indent * 2, L' ') << L"PrefixExpr (" << lexer::TokenKindString(Operator.kind) << L")" << endl;
+            if (RightExpr) RightExpr->Dump(indent + 1);
+        }
+    };
+    // a = a + 5;
+    // a += 5;
+    // foo.bar += 10;
+    struct AssignmentExpr : public Expr {
+        Expr* Assignee;
+        lexer::Token Operator;
+        Expr* Value;  // Right hand side value
+        AssignmentExpr(Expr* assigne, lexer::Token op, Expr* rhsValue) : Assignee(assigne), Operator(op), Value(rhsValue) {}
+        void expr() override {}
+        void Dump(int indent = 0) const override {
+            wcout << wstring(indent * 2, L' ') << L"AssignmentExpr (" << lexer::TokenKindString(Operator.kind) << L")" << endl;
+            if (Assignee) Assignee->Dump(indent + 1);
+            if (Value) Value->Dump(indent + 1);
+        }
+    };
 }

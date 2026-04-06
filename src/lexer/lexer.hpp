@@ -107,6 +107,27 @@ namespace lexer {
         l->advanceN(value.length());
     };
 
+    regexHandler multilineSkipHandler = [](lexer* l, const wregex& regexp) {
+        wsmatch match;
+        const wstring remaining = l->remainder();
+        regex_search(remaining, match, regexp);
+        wstring value = match.str(0);
+        l->advanceN(value.length());
+
+        // Now skip until we find the closing comment tag
+        wregex endCommentRegex(L"\\*/");
+        while (!l->at_eof()) {
+            wsmatch endMatch;
+            const wstring newRemaining = l->remainder();
+            if (regex_search(newRemaining, endMatch, endCommentRegex)) {
+                l->advanceN(endMatch.position() + 2); // Advance past the closing tag
+                break;
+            } else {
+                l->advanceN(newRemaining.length()); // Skip the rest if no closing tag is found
+            }
+        }
+    };
+
     regexHandler stringHandler = [](lexer* l, const wregex& regexp) {
         wsmatch match;
         const wstring remaining = l->remainder();
@@ -126,7 +147,7 @@ namespace lexer {
                 {wregex(L"^[0-9]+(\\.[0-9]+)?"), numberHandler},
                 {wregex(L"^\"[^\"]*\""), stringHandler},
                 {wregex(L"^//.*"), skipHandler},
-                {wregex(L"^/\\*.*\\*/"), skipHandler},
+                {wregex(L"^/\\*"), multilineSkipHandler},
                 {wregex(L"^\\s+"), skipHandler},
 
                 {wregex(L"^\\["), defaultHandler(OPEN_BRACKET, L"[")},

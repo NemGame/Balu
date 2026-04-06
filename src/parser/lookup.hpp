@@ -15,9 +15,13 @@ namespace parser {
         primary
     };
 
-    // Forward declarations of parsing functions defined in expr.hpp
+    // Forward declarations
+    ast::Expr* parse_expr(Parser* parser, binding_power bp);
     ast::Expr* parse_primary_expr(Parser* parser);
     ast::Expr* parse_binary_expr(Parser* parser, ast::Expr* left, binding_power bp);
+    ast::Expr* parse_prefix_expr(Parser* parser);
+    ast::Expr* parse_assignment_expr(Parser* parser, ast::Expr* left, binding_power bp);
+    ast::Expr* parse_grouping_expr(Parser* parser);
     ast::Stmt* parse_var_decl_stmt(Parser* parser);
 
     using stmt_handler = ast::Stmt* (*)(Parser* p);
@@ -38,8 +42,7 @@ namespace parser {
         bp_lu[kind] = bp;
         led_lu[kind] = led_fn;
     }
-    void nud(lexer::TokenKind kind, binding_power bp, nud_handler nud_fn) {
-        bp_lu[kind] = bp;
+    void nud(lexer::TokenKind kind, nud_handler nud_fn) {
         nud_lu[kind] = nud_fn;
     }
     void stmt(lexer::TokenKind kind, stmt_handler stmt_fn) {
@@ -48,6 +51,14 @@ namespace parser {
     }
 
     void createTokenLookups() {
+        // Assignment
+        led(lexer::ASSIGNMENT, assignment, parse_assignment_expr);
+        led(lexer::PLUS_EQUALS, assignment, parse_assignment_expr);
+        led(lexer::MINUS_EQUALS, assignment, parse_assignment_expr);
+        led(lexer::STAR_EQUALS, assignment, parse_assignment_expr);
+        led(lexer::SLASH_EQUALS, assignment, parse_assignment_expr);
+        led(lexer::PERCENT_EQUALS, assignment, parse_assignment_expr);
+
         // Logical
         led(lexer::AND, logical, parse_binary_expr);
         led(lexer::OR, logical, parse_binary_expr);
@@ -70,9 +81,11 @@ namespace parser {
         led(lexer::PERCENT, multiplicative, parse_binary_expr);
 
         // Literals and Symbols
-        nud(lexer::NUMBER, primary, parse_primary_expr);
-        nud(lexer::STRING, primary, parse_primary_expr);
-        nud(lexer::IDENTIFIER, primary, parse_primary_expr);
+        nud(lexer::NUMBER, parse_primary_expr);
+        nud(lexer::STRING, parse_primary_expr);
+        nud(lexer::IDENTIFIER, parse_primary_expr);
+        nud(lexer::OPEN_PAREN, parse_grouping_expr);
+        nud(lexer::DASH, parse_prefix_expr);
 
         // Statements
         stmt(lexer::LET, parse_var_decl_stmt);
