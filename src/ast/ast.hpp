@@ -10,10 +10,12 @@ namespace ast {
     interface Stmt {
     public:
         virtual void stmt() = 0;
+        virtual void Dump(int indent = 0) const = 0;
     };
 
     interface Expr {
     public:
         virtual void expr() = 0;
+        virtual void Dump(int indent = 0) const = 0;
     };
 }

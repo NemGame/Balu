@@ -1,0 +1,74 @@
+#pragma once
+
+// --------------------
+// Pratt Parser
+// --------------------
+
+namespace parser {
+
+    ast::Expr* parse_expr(Parser* parser, binding_power bp) {
+        // NUD
+        lexer::TokenKind tokenKind = parser->currentTokenKind();
+        bool exists = nud_lu.find(tokenKind) != nud_lu.end();
+
+        if (!exists) {
+            wcout << L"NUD HANDLER EXPECTED FOR TOKEN " << lexer::TokenKindString(tokenKind) << L" BUT NOT FOUND" << endl;
+            if (_panic) {
+                wcout << L"Panicing" << endl;
+                exit(1);
+            }
+            else return nullptr;
+        }
+
+        nud_handler nud_fn = nud_lu[tokenKind];
+
+        ast::Expr* left = nud_fn(parser);
+
+        while (bp_lu[parser->currentTokenKind()] > bp) {
+            lexer::TokenKind tokenKind = parser->currentTokenKind();
+            bool exists = led_lu.find(tokenKind) != led_lu.end();
+
+            if (!exists) {
+                wcout << L"LED HANDLER EXPECTED FOR TOKEN " << lexer::TokenKindString(tokenKind) << L" BUT NOT FOUND" << endl;
+                if (_panic) {
+                    wcout << L"Panicing" << endl;
+                    exit(1);
+                }
+                else return left;
+            }
+
+            led_handler led_fn = led_lu[tokenKind];
+
+            left = led_fn(parser, left, bp);
+        }
+
+        return left;
+    }
+
+    ast::Expr* parse_primary_expr(Parser* parser) {
+        switch (parser->currentTokenKind()) {
+            case lexer::NUMBER: {
+                long double value = stold(parser->currentToken().value);
+                parser->advance();
+                return new ast::NumberExpr(value);
+            }
+            case lexer::STRING: {
+                return new ast::StringExpr(parser->currentToken().value);
+            }
+            case lexer::IDENTIFIER: {
+                return new ast::SymbolExpr(parser->currentToken().value);
+            }
+            default: {
+                if (_verbose) wcout << "Cannot create primary expression from token: " << lexer::TokenKindString(parser->currentTokenKind()) << endl;
+                parser->errors.push_back(ParserError(L"Unexpected token: " + lexer::TokenKindString(parser->currentTokenKind()), 0, 0));
+                return nullptr;
+            }
+        }
+    }
+
+    ast::Expr* parse_binary_expr(Parser* parser, ast::Expr* left, binding_power bp) {
+        lexer::Token op = parser->advance();
+        ast::Expr* right = parse_expr(parser, bp_lu[op.kind]);
+        return new ast::BinaryExpr(left, right, op);
+    }
+}
