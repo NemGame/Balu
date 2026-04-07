@@ -15,6 +15,9 @@ namespace ast {
     struct ArrayType : public Type {
         Type* Underlying;  // T[]
         ArrayType(Type* t) : Underlying(t) {}
+        ~ArrayType() {
+            delete Underlying;
+        }
         void type() override {}
         void Dump(int indent = 0) const override {
             wcout << wstring(indent * 2, L' ') << L"ArrayType:" << endl;
@@ -27,6 +30,9 @@ namespace ast {
     struct PointerType : public Type {
         Type* Underlying;  // *T
         PointerType(Type* t) : Underlying(t) {}
+        ~PointerType() {
+            delete Underlying;
+        }
         void type() override {}
         void Dump(int indent = 0) const override {
             wcout << wstring(indent * 2, L' ') << L"PointerType:" << endl;

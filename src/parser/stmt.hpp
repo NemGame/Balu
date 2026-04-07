@@ -28,7 +28,15 @@ namespace parser {
             isConstant = p->currentTokenKind() != lexer::MUT;  // If it's not 'mut', then it's a constant declaration
             if (!isConstant) p->advance(); // consume 'mut' if it exists
 
-            if (p->currentTokenKind() != lexer::IDENTIFIER) explicitType = parse_type(p, default_bp);
+            // Check if we are looking at a type or just the variable name.
+            // We parse a type if:
+            // 1. It's a known keyword type (NUMBER, STRING, etc.)
+            // 2. It's a prefix modifier (*, [)
+            // 3. It's an identifier followed by a modifier or another identifier (the variable name)
+            lexer::TokenKind nextKind = p->tokens.size() > p->pos + 1 ? p->tokens[p->pos + 1].kind : lexer::EOF_TOKEN;
+            if (p->currentTokenKind() != lexer::IDENTIFIER || 
+                (nextKind == lexer::IDENTIFIER || nextKind == lexer::STAR || nextKind == lexer::OPEN_BRACKET)) 
+                explicitType = parse_type(p, default_bp);
         }
 
         wstring varName = p->expectError(lexer::IDENTIFIER, Error(L"Expected variable name after declaration with " + (letConst ? (isConstant ? wstring(L"'const'") : wstring(L"'let'")) : (isConstant ? wstring(L"typename") : wstring(L"'mut'"))) + L", but got " + lexer::TokenKindString(p->currentTokenKind()) + L".")).value;

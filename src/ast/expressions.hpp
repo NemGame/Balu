@@ -78,6 +78,10 @@ namespace ast {
         Expr* right;
         lexer::Token op;
         BinaryExpr(Expr* l, Expr* r, lexer::Token o) : left(l), right(r), op(o) {}
+        ~BinaryExpr() {
+            delete left;
+            delete right;
+        }
         void expr() override {}
         void Dump(int indent = 0) const override {
             wcout << wstring(indent * 2, L' ') << L"BinaryExpr (" << lexer::TokenKindString(op.kind) << L")" << endl;
@@ -89,6 +93,9 @@ namespace ast {
         lexer::Token Operator;
         Expr* RightExpr;
         PrefixExpr(Expr* rightExpr, lexer::Token op) : RightExpr(rightExpr), Operator(op) {}
+        ~PrefixExpr() {
+            delete RightExpr;
+        }
         void expr() override {}
         void Dump(int indent = 0) const override {
             wcout << wstring(indent * 2, L' ') << L"PrefixExpr (" << lexer::TokenKindString(Operator.kind) << L")" << endl;
@@ -103,6 +110,10 @@ namespace ast {
         lexer::Token Operator;
         Expr* Value;  // Right hand side value
         AssignmentExpr(Expr* assigne, lexer::Token op, Expr* rhsValue) : Assignee(assigne), Operator(op), Value(rhsValue) {}
+        ~AssignmentExpr() {
+            delete Assignee;
+            delete Value;
+        }
         void expr() override {}
         void Dump(int indent = 0) const override {
             wcout << wstring(indent * 2, L' ') << L"AssignmentExpr (" << lexer::TokenKindString(Operator.kind) << L")" << endl;

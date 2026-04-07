@@ -6,6 +6,9 @@ namespace ast {
         vector<Stmt*> statements;
         void stmt() override {}
         BlockStmt(vector<Stmt*> statements) : statements(statements) {}
+        ~BlockStmt() {
+            for (auto s : statements) delete s;
+        }
         void Dump(int indent = 0) const override {
             wcout << wstring(indent * 2, L' ') << L"BlockStmt" << endl;
             for (auto s : statements) {
@@ -17,6 +20,9 @@ namespace ast {
         Expr* expression;
         void stmt() override {}
         ExpressionStmt(Expr* e) : expression(e) {}
+        ~ExpressionStmt() {
+            delete expression;
+        }
         void Dump(int indent = 0) const override {
             wcout << wstring(indent * 2, L' ') << L"ExpressionStmt" << endl;
             if (expression) {
@@ -31,6 +37,10 @@ namespace ast {
         Type* ExplicitType;
         void stmt() override {}
         VarDeclStmt(const wstring& n, bool c, Expr* init, Type* type) : VariableName(n), isConstant(c), AssignedValue(init), ExplicitType(type) {}
+        ~VarDeclStmt() {
+            delete AssignedValue;
+            delete ExplicitType;
+        }
         void Dump(int indent = 0) const override {
             wcout << wstring(indent * 2, L' ') << L"VarDeclStmt: " << VariableName << (isConstant ? L" (const)" : L"") << endl;
             if (ExplicitType) {
