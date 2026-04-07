@@ -92,7 +92,7 @@ namespace parser {
         nud(lexer::NULL_TYPE, parse_primary_expr);
         nud(lexer::IDENTIFIER, parse_primary_expr);
         nud(lexer::OPEN_PAREN, parse_grouping_expr);
-        nud(lexer::DASH, parse_prefix_expr);
+        nud(lexer::DASH, parse_prefix_expr);;
         
         nud(lexer::RULE, parse_primary_expr);
 
@@ -101,6 +101,7 @@ namespace parser {
         stmt(lexer::CONST, parse_var_decl_stmt);
         stmt(lexer::MUT, parse_var_decl_stmt);
         stmt(lexer::OPEN_BRACKET, parse_var_decl_stmt);
+        stmt(lexer::STAR, parse_var_decl_stmt);
         
         // Types
         stmt(lexer::NUMBER, parse_var_decl_stmt);

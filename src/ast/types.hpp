@@ -24,4 +24,16 @@ namespace ast {
             return Underlying->GetName() + L"[]";
         }
     };
+    struct PointerType : public Type {
+        Type* Underlying;  // *T
+        PointerType(Type* t) : Underlying(t) {}
+        void type() override {}
+        void Dump(int indent = 0) const override {
+            wcout << wstring(indent * 2, L' ') << L"PointerType:" << endl;
+            Underlying->Dump(indent + 1);
+        }
+        wstring GetName() const {
+            return L"*" + Underlying->GetName();
+        }
+    };
 }

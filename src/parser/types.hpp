@@ -72,9 +72,19 @@ namespace parser {
         parser->expect(lexer::CLOSE_BRACKET); // consume ']'
         return new ast::ArrayType(left);
     }
+    ast::Type* parse_pointer_type(Parser* parser) {
+        parser->advance();  // consume '*'
+        ast::Type* underlyingType = parse_type(parser, default_bp);
+        return new ast::PointerType(underlyingType);
+    }
+    ast::Type* parse_postfix_pointer_type(Parser* parser, ast::Type* left, binding_power bp) {
+        parser->advance();  // consume '*'
+        return new ast::PointerType(left);
+    }
     void createTokenTypeLookups() {
         type_nud(lexer::IDENTIFIER, parse_symbol_type);
         type_nud(lexer::OPEN_BRACKET, parse_array_type);  // []T
+        type_nud(lexer::STAR, parse_pointer_type);  // *T
 
         type_nud(lexer::STRING, parse_symbol_type);
         type_nud(lexer::BYTE, parse_symbol_type);
@@ -87,5 +97,6 @@ namespace parser {
         type_nud(lexer::NULL_TYPE, parse_symbol_type);
 
         type_led(lexer::OPEN_BRACKET, member, parse_postfix_array_type); // T[]
+        type_led(lexer::STAR, member, parse_postfix_pointer_type); // T*
     }
 }
