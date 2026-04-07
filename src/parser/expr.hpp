@@ -68,6 +68,10 @@ namespace parser {
                 parser->advance();
                 return new ast::BooleanExpr(value);
             }
+            case lexer::NULL_TYPE: {
+                parser->advance();
+                return new ast::NullExpr();
+            }
             case lexer::IDENTIFIER: {
                 return new ast::SymbolExpr(parser->advance().value);
             }

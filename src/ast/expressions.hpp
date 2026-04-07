@@ -42,6 +42,12 @@ namespace ast {
             wcout << wstring(indent * 2, L' ') << L"BooleanExpr: " << (value ? L"true" : L"false") << endl;
         }
     };
+    struct NullExpr : public Expr {
+        void expr() override {}
+        void Dump(int indent = 0) const override {
+            wcout << wstring(indent * 2, L' ') << L"NullExpr: null" << endl;
+        }
+    };
     struct SymbolExpr : public Expr {
         wstring value;
         SymbolExpr(const wstring& v) : value(v) {}
