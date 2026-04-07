@@ -54,20 +54,14 @@ namespace parser {
         if (p->currentTokenKind() != lexer::SEMICOLON) {
             p->expect(lexer::ASSIGNMENT); 
             assignedValue = parse_expr(p, assignment);
-        } else if (explicitType == nullptr) {
-            p->errors.push_back(ParserError(L"Variable declaration must have an initializer or an explicit type"));
-            wcout << L"Variable declaration must have an initializer or an explicit type" << endl;
-            if (_panic) {
-                if (_debug) wcout << L"Panicing" << endl;
-                exit(1);
-            }
         }
-        
+
         p->expect(lexer::SEMICOLON);
         
         if (isConstant && assignedValue == nullptr) {
-            p->errors.push_back(ParserError(L"Constant variable declaration must have an initializer"));
-            wcout << L"Constant variable declaration must have an initializer" << endl;
+            wstring message = L"Constant variable declaration for '" + varName + L"' must have an initializer";
+            p->errors.push_back(ParserError(message));
+            wcout << message << endl;
             if (_panic) {
                 if (_debug) wcout << L"Panicing" << endl;
                 exit(1);
