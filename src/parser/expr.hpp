@@ -63,6 +63,11 @@ namespace parser {
             case lexer::CHAR: {
                 return new ast::CharExpr(parser->advance().value[0]);
             }
+            case lexer::BOOL: {
+                bool value = parser->currentToken().value == L"true";
+                parser->advance();
+                return new ast::BooleanExpr(value);
+            }
             case lexer::IDENTIFIER: {
                 return new ast::SymbolExpr(parser->advance().value);
             }
@@ -70,7 +75,7 @@ namespace parser {
                 return new ast::RuleExpr(parser->advance().value);
             }
             default: {
-                if (_verbose) wcout << "Cannot create primary expression from token: " << lexer::TokenKindString(parser->currentTokenKind()) << endl;
+                if (_verbose || _debug) wcout << "Cannot create primary expression from token: " << lexer::TokenKindString(parser->currentTokenKind()) << endl;
                 parser->errors.push_back(ParserError(L"Unexpected token: " + lexer::TokenKindString(parser->currentTokenKind()), 0, 0));
                 return nullptr;
             }

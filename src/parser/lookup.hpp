@@ -85,6 +85,11 @@ namespace parser {
         nud(lexer::BYTE, parse_primary_expr);
         nud(lexer::STRING, parse_primary_expr);
         nud(lexer::CHAR, parse_primary_expr);
+        nud(lexer::BOOL, parse_primary_expr);
+        nud(lexer::AUTO, parse_primary_expr);
+        nud(lexer::ANY, parse_primary_expr);
+        nud(lexer::VOID, parse_primary_expr);
+        nud(lexer::NULL_TYPE, parse_primary_expr);
         nud(lexer::IDENTIFIER, parse_primary_expr);
         nud(lexer::OPEN_PAREN, parse_grouping_expr);
         nud(lexer::DASH, parse_prefix_expr);

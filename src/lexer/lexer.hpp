@@ -162,6 +162,8 @@ namespace lexer {
             source,
             vector<Token>(0),
             {
+                {wregex(L"^true"), defaultHandler(BOOL, L"true")},
+                {wregex(L"^false"), defaultHandler(BOOL, L"false")},
                 {wregex(L"^[a-zA-Z_][a-zA-Z0-9_]*"), symbolHandler},
                 {wregex(L"^[0-9]+(\\.[0-9]+)?"), numberHandler},
                 {wregex(L"^\"[^\"]*\""), stringHandler},

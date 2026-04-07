@@ -1,3 +1,16 @@
+/* Types
+number - long double
+string - wstring
+char   - wchar_t
+byte   - unsigned char
+bool   - boolean
+any    - can switch between types in runtime
+auto   - automatically finds the type; stays the same type
+void   - nothing
+null   - null
+
+array  - stack
+*/
 
 bool booltest = true;
 mut booltest2: bool = true;
@@ -21,7 +34,17 @@ let atest: [][]any[] = 10;
 
 []any[][] atest2 = 10;
 
-/*
+let anytest = 10;
+let anytest;
+
+const anytest = 10;
+// const anytest;
+
+number x = 2;
+
+let booleantest = true;
+bool booleantest = false;
+
 let jsLetAny = 10;
 let jsLetType: number = 10;
 const jsConstAny = 10;
@@ -34,13 +57,13 @@ mut anyMut = 10;
 
 mut numberMut2: number = 10;
 
-mut number num: number = 10;   // Should raise an error
-mut number num: string = 10;   // Should raise an error
+// mut number num: number = 10;   // Should raise an error
+// mut number num: string = 10;   // Should raise an error
 
 
 number numtest = 10;
 string strtest = "test";
-/*
+
 bool booltest = true;
 char chartest = 't';
 byte bytestest = 10;
@@ -49,18 +72,3 @@ auto autotest = 10;
 void voidtest = 10;
 null nulltest = 10;
 []any arraytest = 10;
-*/
-
-/* Types
-number - long double
-string - wstring
-char   - wchar_t
-byte   - unsigned char
-bool   - boolean
-any    - can switch between types in runtime
-auto   - automatically finds the type; stays the same type
-void   - nothing
-null   - null
-
-array  - stack
-*/
