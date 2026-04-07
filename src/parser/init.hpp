@@ -12,6 +12,7 @@ namespace parser {
         int pos;
 
         lexer::Token currentToken() const {
+            if (pos >= (int)tokens.size()) return lexer::Token{ lexer::EOF_TOKEN, L"EOF" };
             return tokens[pos];
         }
         lexer::TokenKind currentTokenKind() const {
@@ -21,6 +22,10 @@ namespace parser {
             lexer::Token token = currentToken();
             pos++;
             return token;
+        }
+        lexer::Token advanceBack() {
+            pos--;
+            return currentToken();
         }
         bool hasTokens() const {
             return pos < tokens.size() && currentToken().kind != lexer::EOF_TOKEN;

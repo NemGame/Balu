@@ -5,9 +5,18 @@
 namespace lexer {    
     enum TokenKind {
         EOF_TOKEN = 0,
-        NUMBER,
-        STRING,
-        IDENTIFIER,
+        NUMBER,       // long double
+        STRING,       // e.g., "hello", "world", etc.
+        CHAR,         // e.g., 'a', 'b', etc.
+        BOOL,         // e.g., true, false
+        BYTE,         // 0-255
+        ANY,          // Any type
+        AUTO,         // Type inferred from context
+        VOID,         // Void type
+        NULL_TYPE,    // Null type
+
+        IDENTIFIER,    // e.g., variable names, function names, etc.
+        RULE,          // #rule
 
         OPEN_BRACKET,  // [
         CLOSE_BRACKET, // ]
@@ -71,18 +80,6 @@ namespace lexer {
         OUT,            // out
         EVAL,           // eval
         RETURN,         // return
-
-        // Types
-        STRING_TYPE,    // string
-        CHAR_TYPE,      // char
-        NUMBER_TYPE,    // number
-        BOOL_TYPE,      // bool
-        AUTO_TYPE,      // auto
-        ANY_TYPE,        // any
-        VOID_TYPE,       // void
-        NULL_TYPE,       // null
-
-        RULE,            // #rule
     };
 
     wstring TokenKindString(TokenKind kind);
@@ -109,13 +106,14 @@ namespace lexer {
         {L"eval", EVAL},
         {L"return", RETURN},
 
-        {L"string", STRING_TYPE},
-        {L"char", CHAR_TYPE},
-        {L"number", NUMBER_TYPE},
-        {L"bool", BOOL_TYPE},
-        {L"auto", AUTO_TYPE},
-        {L"any", ANY_TYPE},
-        {L"void", VOID_TYPE},
+        {L"string", STRING},
+        {L"char", CHAR},
+        {L"number", NUMBER},
+        {L"byte", BYTE},
+        {L"bool", BOOL},
+        {L"auto", AUTO},
+        {L"any", ANY},
+        {L"void", VOID},
         {L"null", NULL_TYPE},
 
         {L"#rule", RULE},
@@ -125,7 +123,7 @@ namespace lexer {
         TokenKind kind;
         wstring value;
         void Debug() const {
-            if (isOneOfMany(NUMBER, STRING, IDENTIFIER, RULE)) {
+            if (isOneOfMany(NUMBER, STRING, CHAR, BOOL, BYTE, ANY, AUTO, IDENTIFIER, RULE)) {
                 wcout << TokenKindString(kind) << L" (" << value << L")" << endl;
             } else {
                 wcout << TokenKindString(kind) << L" ()" << endl;
@@ -151,7 +149,17 @@ namespace lexer {
             case EOF_TOKEN: return L"EOF";
             case NUMBER: return L"NUMBER";
             case STRING: return L"STRING";
+            case CHAR: return L"CHAR";
+            case BOOL: return L"BOOL";
+            case BYTE: return L"BYTE";
+            case ANY: return L"ANY";
+            case AUTO: return L"AUTO";
+            case VOID: return L"VOID";
+            case NULL_TYPE: return L"NULL_TYPE";
+
             case IDENTIFIER: return L"IDENTIFIER";
+            case RULE: return L"RULE";
+
             case OPEN_BRACKET: return L"OPEN_BRACKET";
             case CLOSE_BRACKET: return L"CLOSE_BRACKET";
             case OPEN_CURLY: return L"OPEN_CURLY";
@@ -208,18 +216,6 @@ namespace lexer {
             case OUT: return L"OUT";
             case EVAL: return L"EVAL";
             case RETURN: return L"RETURN";
-
-            // Types
-            case STRING_TYPE: return L"STRING_TYPE";
-            case CHAR_TYPE: return L"CHAR_TYPE";
-            case NUMBER_TYPE: return L"NUMBER_TYPE";
-            case BOOL_TYPE: return L"BOOL_TYPE";
-            case AUTO_TYPE: return L"AUTO_TYPE";
-            case ANY_TYPE: return L"ANY_TYPE";
-            case VOID_TYPE: return L"VOID_TYPE";
-            case NULL_TYPE: return L"NULL_TYPE";
-
-            case RULE: return L"RULE";
             default: return L"UNKNOWN";
         }
     }

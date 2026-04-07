@@ -67,17 +67,25 @@ namespace parser {
         ast::Type* underlyingType = parse_type(parser, default_bp);
         return new ast::ArrayType(underlyingType);
     }
+    ast::Type* parse_postfix_array_type(Parser* parser, ast::Type* left, binding_power bp) {
+        parser->advance(); // consume '['
+        parser->expect(lexer::CLOSE_BRACKET); // consume ']'
+        return new ast::ArrayType(left);
+    }
     void createTokenTypeLookups() {
         type_nud(lexer::IDENTIFIER, parse_symbol_type);
-        type_nud(lexer::OPEN_BRACKET, parse_array_type);
+        type_nud(lexer::OPEN_BRACKET, parse_array_type);  // []T
 
-        type_nud(lexer::STRING_TYPE, parse_symbol_type);
-        type_nud(lexer::CHAR_TYPE, parse_symbol_type);
-        type_nud(lexer::NUMBER_TYPE, parse_symbol_type);
-        type_nud(lexer::BOOL_TYPE, parse_symbol_type);
-        type_nud(lexer::AUTO_TYPE, parse_symbol_type);
-        type_nud(lexer::ANY_TYPE, parse_symbol_type);
-        type_nud(lexer::VOID_TYPE, parse_symbol_type);
+        type_nud(lexer::STRING, parse_symbol_type);
+        type_nud(lexer::BYTE, parse_symbol_type);
+        type_nud(lexer::CHAR, parse_symbol_type);
+        type_nud(lexer::NUMBER, parse_symbol_type);
+        type_nud(lexer::BOOL, parse_symbol_type);
+        type_nud(lexer::AUTO, parse_symbol_type);
+        type_nud(lexer::ANY, parse_symbol_type);
+        type_nud(lexer::VOID, parse_symbol_type);
         type_nud(lexer::NULL_TYPE, parse_symbol_type);
+
+        type_led(lexer::OPEN_BRACKET, member, parse_postfix_array_type); // T[]
     }
 }

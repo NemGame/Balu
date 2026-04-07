@@ -137,6 +137,15 @@ namespace lexer {
         l->push(NewToken(STRING, value));
     };
 
+    regexHandler characterHandler = [](lexer* l, const wregex& regexp) {
+        wsmatch match;
+        const wstring remaining = l->remainder();
+        regex_search(remaining, match, regexp);
+        wstring value = match.str(0).substr(1, 1); // Extract the character between the single quotes
+        l->advanceN(3); // Advance past the character including the surrounding single quotes
+        l->push(NewToken(CHAR, value));
+    };
+
     regexHandler ruleHandler = [](lexer* l, const wregex& regexp) {
         wsmatch match;
         const wstring remaining = l->remainder();
@@ -156,6 +165,7 @@ namespace lexer {
                 {wregex(L"^[a-zA-Z_][a-zA-Z0-9_]*"), symbolHandler},
                 {wregex(L"^[0-9]+(\\.[0-9]+)?"), numberHandler},
                 {wregex(L"^\"[^\"]*\""), stringHandler},
+                {wregex(L"^\'[^\']\'"), characterHandler},
                 {wregex(L"^//.*"), skipHandler},
                 {wregex(L"^/\\*"), multilineSkipHandler},
                 {wregex(L"^\\s+"), skipHandler},

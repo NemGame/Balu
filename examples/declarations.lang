@@ -1,3 +1,27 @@
+
+bool booltest = true;
+mut booltest2: bool = true;
+char chartest = 't';
+mut chartest: char = 't';
+byte bytestest = 10;
+mut bytestest: byte = 10;
+any anytest = 10;
+mut anytest: any = 10;
+auto autotest = 10;
+mut autotest: auto = 10;
+void voidtest = 10;
+mut voidtest: void = 10;
+null nulltest = 10;
+mut nulltest: null = 10;
+any[] arraytest = 10;
+mut arraytest: any[] = 10;
+
+let atest: []any[][] = 10;
+let atest: [][]any[] = 10;
+
+[]any[][] atest2 = 10;
+
+/*
 let jsLetAny = 10;
 let jsLetType: number = 10;
 const jsConstAny = 10;

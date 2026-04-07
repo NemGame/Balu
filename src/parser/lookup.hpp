@@ -82,26 +82,30 @@ namespace parser {
 
         // Literals and Symbols
         nud(lexer::NUMBER, parse_primary_expr);
+        nud(lexer::BYTE, parse_primary_expr);
         nud(lexer::STRING, parse_primary_expr);
+        nud(lexer::CHAR, parse_primary_expr);
         nud(lexer::IDENTIFIER, parse_primary_expr);
         nud(lexer::OPEN_PAREN, parse_grouping_expr);
         nud(lexer::DASH, parse_prefix_expr);
-
+        
         nud(lexer::RULE, parse_primary_expr);
 
         // Statements
         stmt(lexer::LET, parse_var_decl_stmt);
         stmt(lexer::CONST, parse_var_decl_stmt);
         stmt(lexer::MUT, parse_var_decl_stmt);
+        stmt(lexer::OPEN_BRACKET, parse_var_decl_stmt);
         
         // Types
-        stmt(lexer::NUMBER_TYPE, parse_var_decl_stmt);
-        stmt(lexer::STRING_TYPE, parse_var_decl_stmt);
-        stmt(lexer::BOOL_TYPE, parse_var_decl_stmt);
-        stmt(lexer::CHAR_TYPE, parse_var_decl_stmt);
-        stmt(lexer::AUTO_TYPE, parse_var_decl_stmt);
-        stmt(lexer::ANY_TYPE, parse_var_decl_stmt);
-        stmt(lexer::VOID_TYPE, parse_var_decl_stmt);
+        stmt(lexer::NUMBER, parse_var_decl_stmt);
+        stmt(lexer::BYTE, parse_var_decl_stmt);
+        stmt(lexer::STRING, parse_var_decl_stmt);
+        stmt(lexer::BOOL, parse_var_decl_stmt);
+        stmt(lexer::CHAR, parse_var_decl_stmt);
+        stmt(lexer::AUTO, parse_var_decl_stmt);
+        stmt(lexer::ANY, parse_var_decl_stmt);
+        stmt(lexer::VOID, parse_var_decl_stmt);
         stmt(lexer::NULL_TYPE, parse_var_decl_stmt);
     }
 }

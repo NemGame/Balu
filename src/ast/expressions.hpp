@@ -10,12 +10,28 @@ namespace ast {
             wcout << wstring(indent * 2, L' ') << L"NumberExpr: " << value << endl;
         }
     };
+    struct ByteExpr : public Expr {
+        unsigned char value;
+        ByteExpr(unsigned char v) : value(v) {}
+        void expr() override {}
+        void Dump(int indent = 0) const override {
+            wcout << wstring(indent * 2, L' ') << L"ByteExpr: " << static_cast<int>(value) << endl;
+        }
+    };
     struct StringExpr : public Expr {
         wstring value;
         StringExpr(const wstring& v) : value(v) {}
         void expr() override {}
         void Dump(int indent = 0) const override {
             wcout << wstring(indent * 2, L' ') << L"StringExpr: \"" << value << L"\"" << endl;
+        }
+    };
+    struct CharExpr : public Expr {
+        wchar_t value;
+        CharExpr(wchar_t v) : value(v) {}
+        void expr() override {}
+        void Dump(int indent = 0) const override {
+            wcout << wstring(indent * 2, L' ') << L"CharExpr: '" << value << L"'" << endl;
         }
     };
     struct BooleanExpr : public Expr {
