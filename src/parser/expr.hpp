@@ -44,7 +44,7 @@ namespace parser {
 
         return left;
     }
-    
+
     ast::Expr* parse_primary_expr(Parser* parser) {
         switch (parser->currentTokenKind()) {
             case lexer::NUMBER: {
@@ -61,7 +61,7 @@ namespace parser {
                 return new ast::StringExpr(parser->advance().value);
             }
             case lexer::CHAR: {
-                return new ast::CharExpr(parser->advance().value[0]);  // Represent char as string of length 1
+                return new ast::CharExpr(parser->advance().value[0]);
             }
             case lexer::IDENTIFIER: {
                 return new ast::SymbolExpr(parser->advance().value);
