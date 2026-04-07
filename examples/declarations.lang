@@ -15,6 +15,9 @@ array  - stack
 string morning = "早上好";
 char sup = '早';
 
+bool 猫 = true;
+bool kéz = false;
+
 char wasd = "anyad";
 char wasd = "állat";
 
