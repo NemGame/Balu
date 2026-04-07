@@ -38,9 +38,32 @@ namespace parser {
                 }
                 errors.push_back(ParserError(error.message, 0, 0));
                 if (_panic) {
-                    wcout << L"Panicing" << endl;
+                    if (_debug) wcout << L"Panicing" << endl;
                     exit(1);
                 }
+            }
+            return advance();
+        }
+        template<typename... TokenKinds>
+        lexer::Token expect(TokenKinds... expectedKinds) {
+            lexer::Token token = currentToken();
+            lexer::TokenKind kind = token.kind;
+            for (lexer::TokenKind expectedKind : {expectedKinds...}) {
+                if (kind == expectedKind) {
+                    return advance();
+                }
+            }
+            wstring expectedKindsStr;
+            for (lexer::TokenKind expectedKind : {expectedKinds...}) {
+                expectedKindsStr += lexer::TokenKindString(expectedKind) + L", ";
+            }
+            expectedKindsStr = expectedKindsStr.substr(0, expectedKindsStr.length() - 2); // Remove trailing comma and space
+            wstring message = L"Expected one of [" + expectedKindsStr + L"] but found " + lexer::TokenKindString(kind);
+            wcout << message << endl;
+            errors.push_back(ParserError(message, 0, 0));
+            if (_panic) {
+                if (_debug) wcout << L"Panicing" << endl;
+                exit(1);
             }
             return advance();
         }

@@ -14,7 +14,7 @@ namespace parser {
         if (!exists) {
             wcout << L"NUD HANDLER EXPECTED FOR TOKEN " << lexer::TokenKindString(tokenKind) << L" BUT NOT FOUND" << endl;
             if (_panic) {
-                wcout << L"Panicing" << endl;
+                if (_debug) wcout << L"Panicing" << endl;
                 exit(1);
             }
             else return nullptr;
@@ -31,7 +31,7 @@ namespace parser {
             if (!exists) {
                 wcout << L"LED HANDLER EXPECTED FOR TOKEN " << lexer::TokenKindString(tokenKind) << L" BUT NOT FOUND" << endl;
                 if (_panic) {
-                    wcout << L"Panicing" << endl;
+                    if (_debug) wcout << L"Panicing" << endl;
                     exit(1);
                 }
                 else return left;
@@ -57,6 +57,9 @@ namespace parser {
             }
             case lexer::IDENTIFIER: {
                 return new ast::SymbolExpr(parser->advance().value);
+            }
+            case lexer::RULE: {
+                return new ast::RuleExpr(parser->advance().value);
             }
             default: {
                 if (_verbose) wcout << "Cannot create primary expression from token: " << lexer::TokenKindString(parser->currentTokenKind()) << endl;

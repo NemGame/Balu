@@ -36,6 +36,9 @@ namespace ast {
             if (AssignedValue) {
                 AssignedValue->Dump(indent + 1);
             }
+            if (ExplicitType) {
+                ExplicitType->Dump(indent + 1);
+            }
         }
     };
 }

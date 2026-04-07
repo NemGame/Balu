@@ -23,5 +23,6 @@ namespace ast {
     public:
         virtual void type() = 0;
         virtual void Dump(int indent = 0) const = 0;
+        virtual wstring GetName() const = 0;
     };
 }

@@ -35,6 +35,19 @@ namespace ast {
         }
     };
     using IdentifierExpr = SymbolExpr;
+    struct RuleExpr : public Expr {
+        vector<wstring> value;
+        RuleExpr(const vector<wstring>& v) : value(v) {}
+        RuleExpr(const wstring& v) : value(helper::wstringToVector(v, L' ')) {}
+        void expr() override {}
+        void Dump(int indent = 0) const override {
+            wcout << wstring(indent * 2, L' ') << L"RuleExpr: [";
+            for (const auto& v : value) {
+                wcout << v << L", ";
+            }
+            wcout << L"\b\b]" << endl;
+        }
+    };
     // Complex expressions
 
     // 10 + 5 * 2

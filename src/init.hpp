@@ -15,6 +15,7 @@ using namespace std;
 bool _verbose = false;  // Whether to print verbose output [false]
 bool _showWarnings = true;  // Whether to show warnings [true]
 bool _panic = true;  // Whether to panic on errors (exit immediately) [true]
+bool _debug = false;  // Whether to print debug information [false]
 
 struct Error {
     wstring message;
@@ -28,6 +29,7 @@ struct Error {
     }
 };
 
+#include "helper/init.hpp"
 #include "lexer/init.hpp"
 #include "ast/init.hpp"
 #include "parser/init.hpp"

@@ -28,7 +28,7 @@ namespace parser {
         if (!exists) {
             wcout << L"TYPE_NUD HANDLER EXPECTED FOR TOKEN " << lexer::TokenKindString(tokenKind) << L" BUT NOT FOUND" << endl;
             if (_panic) {
-                wcout << L"Panicing" << endl;
+                if (_debug) wcout << L"Panicing" << endl;
                 exit(1);
             }
             else return nullptr;
@@ -45,7 +45,7 @@ namespace parser {
             if (!exists) {
                 wcout << L"TYPE_LED HANDLER EXPECTED FOR TOKEN " << lexer::TokenKindString(tokenKind) << L" BUT NOT FOUND" << endl;
                 if (_panic) {
-                    wcout << L"Panicing" << endl;
+                    if (_debug) wcout << L"Panicing" << endl;
                     exit(1);
                 }
                 else return left;
@@ -59,7 +59,7 @@ namespace parser {
         return left;
     }
     ast::Type* parse_symbol_type(Parser* parser) {
-        return new ast::SymbolType(parser->expect(lexer::IDENTIFIER).value);
+        return new ast::SymbolType(parser->advance().value);
     }
     ast::Type* parse_array_type(Parser* parser) {
         parser->advance();
@@ -70,5 +70,14 @@ namespace parser {
     void createTokenTypeLookups() {
         type_nud(lexer::IDENTIFIER, parse_symbol_type);
         type_nud(lexer::OPEN_BRACKET, parse_array_type);
+
+        type_nud(lexer::STRING_TYPE, parse_symbol_type);
+        type_nud(lexer::CHAR_TYPE, parse_symbol_type);
+        type_nud(lexer::NUMBER_TYPE, parse_symbol_type);
+        type_nud(lexer::BOOL_TYPE, parse_symbol_type);
+        type_nud(lexer::AUTO_TYPE, parse_symbol_type);
+        type_nud(lexer::ANY_TYPE, parse_symbol_type);
+        type_nud(lexer::VOID_TYPE, parse_symbol_type);
+        type_nud(lexer::NULL_TYPE, parse_symbol_type);
     }
 }

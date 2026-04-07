@@ -14,6 +14,7 @@ line
 let x = 2;
 */
 
+#rule emptyconst wasd;
 let wasd: []number = 2;
 
 /*

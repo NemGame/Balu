@@ -81,6 +81,8 @@ namespace lexer {
         ANY_TYPE,        // any
         VOID_TYPE,       // void
         NULL_TYPE,       // null
+
+        RULE,            // #rule
     };
 
     wstring TokenKindString(TokenKind kind);
@@ -105,6 +107,7 @@ namespace lexer {
         {L"in", IN},
         {L"out", OUT},
         {L"eval", EVAL},
+        {L"return", RETURN},
 
         {L"string", STRING_TYPE},
         {L"char", CHAR_TYPE},
@@ -113,14 +116,16 @@ namespace lexer {
         {L"auto", AUTO_TYPE},
         {L"any", ANY_TYPE},
         {L"void", VOID_TYPE},
-        {L"null", NULL_TYPE}
+        {L"null", NULL_TYPE},
+
+        {L"#rule", RULE},
     };
 
     struct Token {
         TokenKind kind;
         wstring value;
         void Debug() const {
-            if (isOneOfMany(NUMBER, STRING, IDENTIFIER)) {
+            if (isOneOfMany(NUMBER, STRING, IDENTIFIER, RULE)) {
                 wcout << TokenKindString(kind) << L" (" << value << L")" << endl;
             } else {
                 wcout << TokenKindString(kind) << L" ()" << endl;
@@ -213,6 +218,8 @@ namespace lexer {
             case ANY_TYPE: return L"ANY_TYPE";
             case VOID_TYPE: return L"VOID_TYPE";
             case NULL_TYPE: return L"NULL_TYPE";
+
+            case RULE: return L"RULE";
             default: return L"UNKNOWN";
         }
     }

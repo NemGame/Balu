@@ -87,6 +87,8 @@ namespace parser {
         nud(lexer::OPEN_PAREN, parse_grouping_expr);
         nud(lexer::DASH, parse_prefix_expr);
 
+        nud(lexer::RULE, parse_primary_expr);
+
         // Statements
         stmt(lexer::LET, parse_var_decl_stmt);
         stmt(lexer::CONST, parse_var_decl_stmt);

@@ -28,13 +28,27 @@ namespace parser {
             isConstant = p->currentTokenKind() != lexer::MUT;  // If it's not 'mut', then it's a constant declaration
             if (!isConstant) p->advance(); // consume 'mut' if it exists
 
-            explicitType = parse_type(p, default_bp);
+            if (p->currentTokenKind() != lexer::IDENTIFIER) explicitType = parse_type(p, default_bp);
         }
 
-        wstring varName = p->expectError(lexer::IDENTIFIER, Error(L"Expected variable name after 'let' or 'const'")).value;
-        if (letConst && p->currentTokenKind() == lexer::COLON) {
+        wstring varName = p->expectError(lexer::IDENTIFIER, Error(L"Expected variable name after declaration with " + (letConst ? (isConstant ? wstring(L"'const'") : wstring(L"'let'")) : (isConstant ? wstring(L"typename") : wstring(L"'mut'"))) + L", but got " + lexer::TokenKindString(p->currentTokenKind()) + L".")).value;
+        if (p->currentTokenKind() == lexer::COLON) {
             p->advance();  // consume ':'
-            explicitType = parse_type(p, default_bp);
+            if (explicitType != nullptr) {
+                ast::Type* newExplicitType = parse_type(p, default_bp);
+                wstring message = L"Variable declaration for '" + varName + L"' can only contain one type, but multiple were found (" + explicitType->GetName() + L" and " + newExplicitType->GetName() + L")";
+                p->errors.push_back(ParserError(message));
+                wcout << message << endl;
+                if (_panic) {
+                    if (_debug) wcout << L"Panicing" << endl;
+                    exit(1);
+                }
+            } else explicitType = parse_type(p, default_bp);
+        }
+
+        // Default to type: any
+        if (explicitType == nullptr) {
+            explicitType = new ast::SymbolType(L"any");
         }
 
         if (p->currentTokenKind() != lexer::SEMICOLON) {
@@ -44,7 +58,7 @@ namespace parser {
             p->errors.push_back(ParserError(L"Variable declaration must have an initializer or an explicit type"));
             wcout << L"Variable declaration must have an initializer or an explicit type" << endl;
             if (_panic) {
-                wcout << L"Panicing" << endl;
+                if (_debug) wcout << L"Panicing" << endl;
                 exit(1);
             }
         }
@@ -55,7 +69,7 @@ namespace parser {
             p->errors.push_back(ParserError(L"Constant variable declaration must have an initializer"));
             wcout << L"Constant variable declaration must have an initializer" << endl;
             if (_panic) {
-                wcout << L"Panicing" << endl;
+                if (_debug) wcout << L"Panicing" << endl;
                 exit(1);
             }
         }

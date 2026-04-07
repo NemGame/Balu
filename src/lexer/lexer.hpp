@@ -137,6 +137,16 @@ namespace lexer {
         l->push(NewToken(STRING, value));
     };
 
+    regexHandler ruleHandler = [](lexer* l, const wregex& regexp) {
+        wsmatch match;
+        const wstring remaining = l->remainder();
+        regex_search(remaining, match, regexp);
+        wstring value = match.str(0);
+        if (_verbose) wcout << L"Found rule: " << value << endl;
+        l->advanceN(value.length());
+        l->push(NewToken(RULE, value.substr(6))); // Remove the "#rule " prefix
+    };
+
     lexer createLexer(const wstring& source) {
         return lexer {
             0,
@@ -149,6 +159,7 @@ namespace lexer {
                 {wregex(L"^//.*"), skipHandler},
                 {wregex(L"^/\\*"), multilineSkipHandler},
                 {wregex(L"^\\s+"), skipHandler},
+                {wregex(L"^#rule[^;\n]*"), ruleHandler},
 
                 {wregex(L"^\\["), defaultHandler(OPEN_BRACKET, L"[")},
                 {wregex(L"^\\]"), defaultHandler(CLOSE_BRACKET, L"]")},

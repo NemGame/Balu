@@ -8,6 +8,9 @@ namespace ast {
         void Dump(int indent = 0) const override {
             wcout << wstring(indent * 2, L' ') << L"SymbolType: " << name << endl;
         }
+        wstring GetName() const {
+            return name;
+        }
     };
     struct ArrayType : public Type {
         Type* Underlying;  // T[]
@@ -16,6 +19,9 @@ namespace ast {
         void Dump(int indent = 0) const override {
             wcout << wstring(indent * 2, L' ') << L"ArrayType:" << endl;
             Underlying->Dump(indent + 1);
+        }
+        wstring GetName() const {
+            return Underlying->GetName() + L"[]";
         }
     };
 }
