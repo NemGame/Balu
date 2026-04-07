@@ -105,6 +105,9 @@ void DisplayHelp(const wstring& programName) {
 #pragma endregion
 
 int main(int argc, char* argv[]) {
+    _setmode(_fileno(stdout), _O_U16TEXT);
+    _setmode(_fileno(stdin), _O_U16TEXT);
+
     int count = 0;
     const vector<wstring> args = GetCommandLineArgs(count);
     CommandLineArgs parsedArgs = ParseCommandLineArgs(args);
@@ -188,13 +191,33 @@ int main(int argc, char* argv[]) {
     
     #pragma region File Reading
     string narrowInputFilename(inputfilename.begin(), inputfilename.end());
-    wifstream inputFile(narrowInputFilename.c_str());
+    ifstream inputFile(narrowInputFilename, ios::binary);
     if (!inputFile.is_open()) {
         wcout << L"Error: Unable to open input file." << endl;
         return 1;
     }
-    wstring fileContent((istreambuf_iterator<wchar_t>(inputFile)), istreambuf_iterator<wchar_t>());
+
+    stringstream buffer;
+    buffer << inputFile.rdbuf();
+    string content = buffer.str();
     inputFile.close();
+
+    // Check for and remove UTF-8 BOM (0xEF, 0xBB, 0xBF)
+    if (content.size() >= 3 && 
+        (unsigned char)content[0] == 0xEF && 
+        (unsigned char)content[1] == 0xBB && 
+        (unsigned char)content[2] == 0xBF) {
+        content.erase(0, 3);
+    }
+
+    // Convert UTF-8 bytes to wstring
+    wstring fileContent;
+    if (!content.empty()) {
+        int size_needed = MultiByteToWideChar(CP_UTF8, 0, content.c_str(), (int)content.size(), NULL, 0);
+        fileContent.resize(size_needed);
+        MultiByteToWideChar(CP_UTF8, 0, content.c_str(), (int)content.size(), &fileContent[0], size_needed);
+    }
+
     if (_verbose) wcout << L"Read input file content successfully." << endl;
     #pragma endregion
 

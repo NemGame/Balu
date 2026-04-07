@@ -66,6 +66,7 @@ namespace parser {
                 if (_debug) wcout << L"Panicing" << endl;
                 exit(1);
             }
+            explicitType = new ast::SymbolType(L"any");
         }
 
         return new ast::VarDeclStmt{

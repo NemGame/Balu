@@ -21,6 +21,7 @@ namespace lexer {
         wstring source;
         vector<Token> tokens;
         vector<RegexPattern> patterns;
+        vector<Error> errors;
 
         void advanceN(int n) {
             pos += n;
@@ -141,8 +142,18 @@ namespace lexer {
         wsmatch match;
         const wstring remaining = l->remainder();
         regex_search(remaining, match, regexp);
-        wstring value = match.str(0).substr(1, 1); // Extract the character between the single quotes
-        l->advanceN(3); // Advance past the character including the surrounding single quotes
+        wstring value = match.str(0).substr(1, match.str(0).length() - 2); // Extract the character(s) between the single quotes
+        if (value.length() != 1) {
+            wstring message = L"Invalid character literal: " + match.str(0) + L". Character literals must contain exactly one character.";
+            wcout << message << endl;
+            l->errors.push_back(Error(message));
+            if (_panic) {
+                if (_debug) wcout << L"Panicing" << endl;
+                exit(1);
+            }
+            l->advanceN(match.str(0).length()); // Advance past the invalid character literal
+            value = value.substr(0, 1); // Default to the first character if multiple are found
+        } else l->advanceN(3); // Advance past the character including the surrounding single quotes
         l->push(NewToken(CHAR, value));
     };
 
@@ -164,10 +175,10 @@ namespace lexer {
             {
                 {wregex(L"^true"), defaultHandler(BOOL, L"true")},
                 {wregex(L"^false"), defaultHandler(BOOL, L"false")},
-                {wregex(L"^[a-zA-Z_][a-zA-Z0-9_]*"), symbolHandler},
+                {wregex(L"^[a-zA-Z_\\u0080-\\uFFFF][a-zA-Z0-9_\\u0080-\\uFFFF]*"), symbolHandler},
                 {wregex(L"^[0-9]+(\\.[0-9]+)?"), numberHandler},
                 {wregex(L"^\"[^\"]*\""), stringHandler},
-                {wregex(L"^\'[^\']\'"), characterHandler},
+                {wregex(L"^\'[^\']*\'"), characterHandler},
                 {wregex(L"^//.*"), skipHandler},
                 {wregex(L"^/\\*"), multilineSkipHandler},
                 {wregex(L"^\\s+"), skipHandler},

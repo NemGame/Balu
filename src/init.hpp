@@ -1,6 +1,8 @@
 #pragma once
 
 #include <Windows.h>
+#include <io.h>
+#include <fcntl.h>
 #include <string>
 #include <vector>
 #include <iostream>
@@ -28,6 +30,10 @@ struct Error {
         return message.empty() && line == -1 && column == -1;
     }
 };
+
+#ifndef _O_U16TEXT
+#define _O_U16TEXT 0x20000
+#endif
 
 #include "helper/init.hpp"
 #include "lexer/init.hpp"

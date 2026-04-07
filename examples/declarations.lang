@@ -1,4 +1,4 @@
-/* Types
+﻿/* Types
 number - long double
 string - wstring
 char   - wchar_t
@@ -11,6 +11,12 @@ null   - null
 
 array  - stack
 */
+
+string morning = "早上好";
+char sup = '早';
+
+char wasd = "anyad";
+char wasd = "állat";
 
 bool booltest = true;
 mut booltest2: bool = true;
