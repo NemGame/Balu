@@ -1,5 +1,10 @@
-any x = null;
+auto x = null;
 null x = null;
 null x = 2;
 number x = null;
 null[] x = wasd;
+
+null typename = null;
+let typename: null = null;
+mut null typename = null;
+mut typename: null = null;
