@@ -1,0 +1,13 @@
+const novalueconst;
+const anyconst: any = 10;
+const novalueanyconst: any = 10;
+
+
+number novalueconst2;
+
+& // Unmatched character
+
+char multipleCharacters = 'abc';
+
+
+wasd unkowntype = 10;

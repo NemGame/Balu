@@ -74,7 +74,7 @@ namespace lexer {
             }
             if (!matched) {
                 // Handle unmatched case, e.g., advance by one character or throw an error
-                if (_showWarnings) wcout << L"Unmatched character: " << lex.at() << L" at " << lex.position() << endl;
+                if (_showWarnings) wcout << L"Warning: Unmatched character: " << lex.at() << L" at " << lex.position() << endl;
                 lex.advanceN(1);
             }
         }
@@ -145,6 +145,15 @@ namespace lexer {
         }
     };
 
+    regexHandler semicolonHandler = [](lexer* l, const wregex& regexp) {
+        wsmatch match;
+        const wstring remaining = l->remainder();
+        regex_search(remaining, match, regexp);
+        wstring value = match.str(0);
+        l->push(NewToken(SEMICOLON, L";", l->line, l->column));
+        l->advanceN(value.length() + 1); // Advance past the semicolon including the semicolon
+    };
+
     regexHandler stringHandler = [](lexer* l, const wregex& regexp) {
         wsmatch match;
         const wstring remaining = l->remainder();
@@ -199,6 +208,7 @@ namespace lexer {
                 {wregex(L"^\'[^\']*\'"), characterHandler},
                 {wregex(L"^//.*"), skipHandler},
                 {wregex(L"^/\\*"), multilineSkipHandler},
+                {wregex(L"^;+"), semicolonHandler},
                 {wregex(L"^\\s+"), skipHandler},
                 {wregex(L"^#rule[^;\n]*"), ruleHandler},
 
@@ -220,7 +230,6 @@ namespace lexer {
                 {wregex(L"^&&"), defaultHandler(AND, L"&&")},
                 {wregex(L"^\\.\\."), defaultHandler(DOT_DOT, L"..")},
                 {wregex(L"^\\."), defaultHandler(DOT, L".")},
-                {wregex(L"^;"), defaultHandler(SEMICOLON, L";")},
                 {wregex(L"^:"), defaultHandler(COLON, L":")},
                 {wregex(L"^\\?"), defaultHandler(QUESTION, L"?")},
                 {wregex(L"^,"), defaultHandler(COMMA, L",")},
