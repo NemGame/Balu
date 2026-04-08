@@ -21,13 +21,20 @@ bool kéz = false;
 char wasd = "anyad";
 char wasd = "állat";
 
+
+let anytest = 10;      // If type is not specified, 'any' is inferred
+let anytest;           // May be inicialized without a value
+
+const autotest = 10;   // If type is not specified, 'auto' is inferred
+// const autotest;     // May not be inicialized without a value
+
 bool booltest = true;
 mut booltest2: bool = true;
 char chartest = 't';
 mut chartest: char = 't';
 byte bytestest = 10;
 mut bytestest: byte = 10;
-any anytest = 10;
+// any anytest = 10;  // Should raise an error, as constants may not have the any type
 mut anytest: any = 10;
 auto autotest = 10;
 mut autotest: auto = 10;
@@ -42,12 +49,6 @@ let atest: []any[][] = 10;
 let atest: [][]any[] = 10;
 
 []any[][] atest2 = 10;
-
-let anytest = 10;
-let anytest;
-
-const anytest = 10;
-// const anytest;
 
 number x = 2;
 
@@ -76,7 +77,7 @@ string strtest = "test";
 bool booltest = true;
 char chartest = 't';
 byte bytestest = 10;
-any anytest = 10;
+// any anytest = 10;   // Should raise an error, as constants may not have the any type
 auto autotest = 10;
 void voidtest = 10;
 null nulltest = 10;

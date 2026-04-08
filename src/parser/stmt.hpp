@@ -54,9 +54,10 @@ namespace parser {
             } else explicitType = parse_type(p, default_bp);
         }
 
-        // Default to type: any
+        // Default to type: auto (const) | any (let/mut)
         if (explicitType == nullptr) {
-            explicitType = new ast::SymbolType(L"any");
+            if (isConstant) explicitType = new ast::SymbolType(L"auto");
+            else explicitType = new ast::SymbolType(L"any");
         }
 
         if (p->currentTokenKind() != lexer::SEMICOLON) {
@@ -66,15 +67,27 @@ namespace parser {
 
         p->expect(lexer::SEMICOLON);
         
-        if (isConstant && assignedValue == nullptr) {
-            wstring message = L"Constant variable declaration for '" + varName + L"' must have an initializer";
-            p->errors.push_back(ParserError(message));
-            wcout << message << endl;
-            if (_panic) {
-                if (_debug) wcout << L"Panicing" << endl;
-                exit(1);
+        if (isConstant) {
+            if (explicitType->GetName() == L"any") {
+                wstring message = L"Constant variable declaration for '" + varName + L"' cannot have type 'any' as it cannot be reassigned, did you mean 'auto'?";
+                p->errors.push_back(ParserError(message));
+                wcout << message << endl;
+                if (_panic) {
+                    if (_debug) wcout << L"Panicing" << endl;
+                    exit(1);
+                }
+                explicitType = new ast::SymbolType(L"auto");
             }
-            explicitType = new ast::SymbolType(L"any");
+            if (assignedValue == nullptr) {
+                wstring message = L"Constant variable declaration for '" + varName + L"' must have an initializer";
+                p->errors.push_back(ParserError(message));
+                wcout << message << endl;
+                if (_panic) {
+                    if (_debug) wcout << L"Panicing" << endl;
+                    exit(1);
+                }
+                assignedValue = new ast::NullExpr();
+            }
         }
 
         return new ast::VarDeclStmt{
