@@ -1,7 +1,10 @@
+alias wasd: any;
+
 const novalueconst;
 const anyconst: any = 10;
 const novalueanyconst: any = 10;
 
+let number letNumber = 10;
 
 number novalueconst2;
 

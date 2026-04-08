@@ -1,0 +1,18 @@
+// Declaration
+struct Rect {
+    width: number;
+    height: number;
+    randomProperty;
+    static prop2: any = 3;
+}
+
+/*
+
+// Instantiation
+const r1 = Rect{
+    width: 10,
+    height: 20,
+}
+
+const numbers  = []number{1, 2, 3, 4};
+const numbers2 = number[]{1, 2, 3, 4};

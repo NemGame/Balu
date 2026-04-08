@@ -8,6 +8,8 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <unordered_map>
+#include <map>
 
 using namespace std;
 
@@ -32,13 +34,6 @@ struct Error {
 #ifndef _O_U16TEXT
 #define _O_U16TEXT 0x20000
 #endif
-
-template<typename T>
-wstring to_wstring(T value) {
-    wstringstream ss;
-    ss << value;
-    return ss.str();
-}
 
 #include "helper/init.hpp"
 #include "lexer/init.hpp"

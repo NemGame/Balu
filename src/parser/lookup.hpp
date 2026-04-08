@@ -23,6 +23,8 @@ namespace parser {
     ast::Expr* parse_assignment_expr(Parser* parser, ast::Expr* left, binding_power bp);
     ast::Expr* parse_grouping_expr(Parser* parser);
     ast::Stmt* parse_var_decl_stmt(Parser* parser);
+    ast::Stmt* parse_struct_decl_stmt(Parser* parser);
+    
 
     using stmt_handler = ast::Stmt* (*)(Parser* p);
     using nud_handler = ast::Expr* (*)(Parser* p);
@@ -96,13 +98,14 @@ namespace parser {
         nud(lexer::DASH, parse_prefix_expr);
 
         nud(lexer::RULE, parse_primary_expr);
-        
+
         // Statements
         stmt(lexer::LET, parse_var_decl_stmt);
         stmt(lexer::CONST, parse_var_decl_stmt);
         stmt(lexer::MUT, parse_var_decl_stmt);
         stmt(lexer::ALIAS, parse_var_decl_stmt);
         stmt(lexer::OPEN_BRACKET, parse_var_decl_stmt);
+        stmt(lexer::STRUCT, parse_struct_decl_stmt);
         
         // Types
         stmt(lexer::NUMBER, parse_var_decl_stmt);

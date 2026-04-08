@@ -44,21 +44,32 @@ namespace parser {
 
         wstring varName = p->expectError(lexer::IDENTIFIER, Error(L"Expected variable name after declaration with " + (letConst ? (isConstant ? wstring(L"'const'") : wstring(L"'let'")) : (isConstant ? wstring(L"typename") : wstring(L"'mut'"))) + L", but got " + lexer::TokenKindString(p->currentTokenKind()) + L" at " + p->position())).value;
         if (p->currentTokenKind() == lexer::COLON) {
-            p->advance();  // consume ':'
-            if (explicitType != nullptr) {
-                ast::Type* newExplicitType = parse_type(p, default_bp);
-                wstring message = L"Variable declaration for '" + varName + L"' at " + p->position() + L" can only contain one type, but multiple were found (" + explicitType->GetName() + L" and " + newExplicitType->GetName() + L")";
+                p->advance();  // consume ':'
+            if (alias) {
+                wstring message = L"Alias declaration for '" + varName + L"' at " + p->position() + L" cannot have an explicit type";
                 p->errors.push_back(ParserError(message));
                 wcout << message << endl;
                 if (_panic) {
                     if (_debug) wcout << L"Panicing" << endl;
                     exit(1);
                 }
-            } else explicitType = parse_type(p, default_bp);
+                parse_type(p, default_bp);
+            } else {
+                if (explicitType != nullptr) {
+                    ast::Type* newExplicitType = parse_type(p, default_bp);
+                    wstring message = L"Variable declaration for '" + varName + L"' at " + p->position() + L" can only contain one type, but multiple were found (" + explicitType->GetName() + L" and " + newExplicitType->GetName() + L")";
+                    p->errors.push_back(ParserError(message));
+                    wcout << message << endl;
+                    if (_panic) {
+                        if (_debug) wcout << L"Panicing" << endl;
+                        exit(1);
+                    }
+                } else explicitType = parse_type(p, default_bp);
+            }
         }
 
         // Default to type: auto (const) | any (let/mut)
-        if (explicitType == nullptr) {
+        if (explicitType == nullptr && !alias) {
             if (isConstant) explicitType = new ast::SymbolType(L"auto");
             else explicitType = new ast::SymbolType(L"any");
         }
@@ -92,16 +103,16 @@ namespace parser {
                 assignedValue = new ast::NullExpr();
             }
         }
-
         if (alias) {
-            if (assignedValue != nullptr) {
-                wstring message = L"Alias declaration for '" + varName + L"' at " + p->position() + L" cannot have an initializer";
+            if (assignedValue == nullptr) {
+                wstring message = L"Alias declaration for '" + varName + L"' at " + p->position() + L" must have an initializer";
                 p->errors.push_back(ParserError(message));
                 wcout << message << endl;
                 if (_panic) {
                     if (_debug) wcout << L"Panicing" << endl;
                     exit(1);
                 }
+                assignedValue = new ast::NullExpr();
             }
             explicitType = new ast::AliasType(assignedValue);
         }
@@ -113,4 +124,79 @@ namespace parser {
             explicitType
         };
     }
+    ast::Stmt* parse_struct_decl_stmt(Parser* p) {
+        p->expect(lexer::STRUCT);  // consume 'struct'
+
+        unordered_map<wstring, ast::StructProperty*> properties;
+        unordered_map<wstring, ast::StructMethod*> methods;
+
+        wstring structName = p->expectError(lexer::IDENTIFIER, 
+            Error(L"Expected struct name after 'struct' keyword, but got " + lexer::TokenKindString(p->currentTokenKind()) + L" at " + p->position())
+        ).value;
+        
+        p->expect(lexer::OPEN_CURLY);
+
+        while (p->hasTokens() && p->currentTokenKind() != lexer::CLOSE_CURLY) {
+            bool isStatic = false;
+            if (p->currentTokenKind() == lexer::STATIC) {
+                isStatic = true;
+                p->advance();  // consume 'static'
+            }
+
+            // Property
+            if (p->currentTokenKind() == lexer::IDENTIFIER) {
+                wstring propertyName = p->advance().value;
+
+                if (properties.find(propertyName) != properties.end()) {
+                    wstring message = L"Duplicate struct property '" + propertyName + L"' found in struct '" + structName + L"' declaration at " + p->position();
+                    p->errors.push_back(ParserError(message));
+                    wcout << message << endl;
+                    if (_panic) {
+                        if (_debug) wcout << L"Panicing" << endl;
+                        exit(1);
+                    }
+                    p->advanceUntil(lexer::SEMICOLON);  // Skip until the end of the property declaration
+                    continue;
+                }
+
+                ast::Type* ExpectedType = nullptr;
+                if (p->currentTokenKind() == lexer::COLON) {
+                    p->advance();  // consume ':'
+                    ExpectedType = parse_type(p, default_bp);
+                } else ExpectedType = new ast::SymbolType(L"any");  // Default to 'any' type for struct properties if no type is specified
+
+                ast::Expr* AssignedValue = nullptr;
+                if (p->currentTokenKind() == lexer::ASSIGNMENT) {
+                    p->advance();  // consume '='
+                    AssignedValue = parse_expr(p, assignment);
+                } else AssignedValue = new ast::NullExpr();
+
+                properties[propertyName] = new ast::StructProperty(
+                    propertyName,
+                    ExpectedType,
+                    AssignedValue,
+                    isStatic
+                );
+                p->expect(lexer::SEMICOLON);
+                continue;
+            }
+
+            if (_panic) {
+                wstring message = L"Struct methods not yet implemented";
+                p->errors.push_back(ParserError(message, p->line, p->column));
+                if (_debug) wcout << L"Panicing" << endl;
+                exit(1);
+            }
+            p->advanceUntil(lexer::CLOSE_CURLY);  // Skip until the end of the method declaration (or the next property if methods are not implemented yet)
+        }
+
+        p->expect(lexer::CLOSE_CURLY);
+        if (p->currentTokenKind() == lexer::SEMICOLON) p->advance();  // Optional semicolon after struct declaration
+
+        return new ast::StructDeclStmt(
+            structName,
+            reverseUnorderedMap(properties),  // Properties
+            reverseUnorderedMap(methods)   // Methods
+        );
+    };
 }

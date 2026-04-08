@@ -40,7 +40,7 @@ CommandLineArgs ParseCommandLineArgs(const vector<wstring>& args) {
     CommandLineArgs result;
     
     if (!args.empty()) {
-        result.programName = helper::lastOfPath(args[0]);
+        result.programName = lastOfPath(args[0]);
         result.programPath = args[0];
     }
 
@@ -118,19 +118,19 @@ int main(int argc, char* argv[]) {
 
     //DisplayCommandLineArgs(parsedArgs);
 
-    if (helper::vectorContains(*flags, vector<wstring>{L"--show", L"/show", L"-s", L"/s"})) DisplayCommandLineArgs(parsedArgs);
+    if (vectorContains(*flags, vector<wstring>{L"--show", L"/show", L"-s", L"/s"})) DisplayCommandLineArgs(parsedArgs);
 
-    if (helper::vectorContains(*flags, vector<wstring>{L"--help", L"-h", L"-?", L"/help", L"/h", L"/?"})) {
+    if (vectorContains(*flags, vector<wstring>{L"--help", L"-h", L"-?", L"/help", L"/h", L"/?"})) {
         DisplayHelp(parsedArgs.programName);
         return 0;
     }
 
-    _verbose = helper::vectorContains(*flags, vector<wstring>{L"-v", L"--verbose", L"/verbose"});
-    _showWarnings = !helper::vectorContains(*flags, vector<wstring>{L"--no-warnings", L"/no-warnings", L"-nw", L"/nw"});
-    _panic = !helper::vectorContains(*flags, vector<wstring>{L"--no-panic", L"/no-panic", L"-np", L"/np"});
-    _debug = helper::vectorContains(*flags, vector<wstring>{L"--debug", L"/debug", L"-d", L"/d"});
+    _verbose = vectorContains(*flags, vector<wstring>{L"-v", L"--verbose", L"/verbose"});
+    _showWarnings = !vectorContains(*flags, vector<wstring>{L"--no-warnings", L"/no-warnings", L"-nw", L"/nw"});
+    _panic = !vectorContains(*flags, vector<wstring>{L"--no-panic", L"/no-panic", L"-np", L"/np"});
+    _debug = vectorContains(*flags, vector<wstring>{L"--debug", L"/debug", L"-d", L"/d"});
 
-    if (helper::vectorContains(*flags, vector<wstring>{L"--log-globals"})) {
+    if (vectorContains(*flags, vector<wstring>{L"--log-globals"})) {
         wcout << L"Global Variables:" << endl;
         wcout << L"_verbose: " << (_verbose ? L"true" : L"false") << endl;
         wcout << L"_showWarnings: " << (_showWarnings ? L"true" : L"false") << endl;
@@ -223,7 +223,7 @@ int main(int argc, char* argv[]) {
 
     vector<lexer::Token> tokens = lexer::Tokenize(fileContent);
 
-    if (helper::vectorContains(*flags, vector<wstring>{L"--show-tokens", L"/show-tokens", L"-st", L"/st"})) {
+    if (vectorContains(*flags, vector<wstring>{L"--show-tokens", L"/show-tokens", L"-st", L"/st"})) {
         wcout << L"Tokens:" << endl;
         for (const auto& token : tokens) {
             token.Debug();
@@ -232,10 +232,10 @@ int main(int argc, char* argv[]) {
 
     ast::BlockStmt ast = parser::Parse(tokens);
     
-    if (helper::vectorContains(*flags, vector<wstring>{L"--show-ast", L"/show-ast", L"-ast", L"/ast"})) {
+    if (vectorContains(*flags, vector<wstring>{L"--show-ast", L"/show-ast", L"-ast", L"/ast"})) {
         wcout << L"\nAST Structure:" << endl;
         ast.Dump();
     }
-
+    
     return 0;
 }

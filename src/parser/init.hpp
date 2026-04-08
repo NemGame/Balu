@@ -38,6 +38,15 @@ namespace parser {
             column = current.column;
             return current;
         }
+        template<typename... TokenKinds>
+        lexer::Token advanceUntil(TokenKinds... kinds) {
+            lexer::Token token = currentToken();
+            while (!token.isOneOfMany(kinds...) && token.kind != lexer::EOF_TOKEN) {
+                advance();
+                token = currentToken();
+            }
+            return token;
+        }
         bool hasTokens() const {
             return pos < tokens.size() && currentToken().kind != lexer::EOF_TOKEN;
         }

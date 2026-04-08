@@ -1,7 +1,5 @@
 #pragma once
 
-#include <map>
-
 namespace lexer {    
     enum TokenKind {
         EOF_TOKEN = 0,
@@ -59,28 +57,39 @@ namespace lexer {
         STAR,            // *
         PERCENT,         // %
 
-        // Reserved keywords
+        /// Reserved keywords
+        // Variable declaration and modifiers
         LET,            // let
         CONST,          // const
         MUT,            // mut
         CLASS,          // class
+        STRUCT,         // struct
+        ALIAS,          // alias
         NEW,            // new
+        FN,             // fn
+        STATIC,         // static
+        GET,            // get
+        SET,            // set
+
+        // Modules and imports
         IMPORT,         // import
         FROM,           // from
-        FN,             // fn
+        EXPORT,         // export
+
+        // Control flow
         IF,             // if
         ELSE,           // else
         FOREACH,        // foreach
         WHILE,          // while
         FOR,            // for
-        EXPORT,         // export
+        RETURN,         // return
+
+        // Reflection and evaluation
         TYPEOF,         // typeof
         NAMEOF,         // nameof
         IN,             // in
         OUT,            // out
         EVAL,           // eval
-        RETURN,         // return
-        ALIAS,          // alias
     };
 
     wstring TokenKindString(TokenKind kind);
@@ -90,24 +99,31 @@ namespace lexer {
         {L"const", CONST},
         {L"mut", MUT},
         {L"class", CLASS},
+        {L"struct", STRUCT},
+        {L"alias", ALIAS},
         {L"new", NEW},
+        {L"fn", FN},
+        {L"static", STATIC},
+        {L"get", GET},
+        {L"set", SET},
+
         {L"import", IMPORT},
         {L"from", FROM},
-        {L"fn", FN},
+        {L"export", EXPORT},
+
         {L"if", IF},
         {L"else", ELSE},
         {L"foreach", FOREACH},
         {L"while", WHILE},
         {L"for", FOR},
-        {L"export", EXPORT},
+        
         {L"typeof", TYPEOF},
         {L"nameof", NAMEOF},
         {L"in", IN},
         {L"out", OUT},
         {L"eval", EVAL},
         {L"return", RETURN},
-        {L"alias", ALIAS},
-
+        
         {L"string", STRING},
         {L"char", CHAR},
         {L"number", NUMBER},
@@ -205,23 +221,30 @@ namespace lexer {
             case CONST: return L"CONST";
             case MUT: return L"MUT";
             case CLASS: return L"CLASS";
+            case ALIAS: return L"ALIAS";
+            case STRUCT: return L"STRUCT";
+            case STATIC: return L"STATIC";
+            case GET: return L"GET";
+            case SET: return L"SET";
             case NEW: return L"NEW";
+            case FN: return L"FN";
+
             case IMPORT: return L"IMPORT";
             case FROM: return L"FROM";
-            case FN: return L"FN";
+            case EXPORT: return L"EXPORT";
+
             case IF: return L"IF";
             case ELSE: return L"ELSE";
             case FOREACH: return L"FOREACH";
             case WHILE: return L"WHILE";
             case FOR: return L"FOR";
-            case EXPORT: return L"EXPORT";
+            case RETURN: return L"RETURN";
+
             case TYPEOF: return L"TYPEOF";
             case NAMEOF: return L"NAMEOF";
             case IN: return L"IN";
             case OUT: return L"OUT";
             case EVAL: return L"EVAL";
-            case RETURN: return L"RETURN";
-            case ALIAS: return L"ALIAS";
             default: return L"UNKNOWN";
         }
     }

@@ -81,7 +81,7 @@ namespace ast {
     struct RuleExpr : public Expr {
         vector<wstring> value;
         RuleExpr(const vector<wstring>& v) : value(v) {}
-        RuleExpr(const wstring& v) : value(helper::wstringToVector(v, L' ')) {}
+        RuleExpr(const wstring& v) : value(wstringToVector(v, L' ')) {}
         void expr() override {}
         void Dump(int indent = 0) const override {
             wcout << GetName(indent) << endl;
