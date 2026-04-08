@@ -6,7 +6,7 @@ namespace ast {
         long double value;
         NumberExpr(long double v) : value(v) {}
         void expr() override {}
-        void Dump(int indent = 0, wostream& wcout_ = wcout) const override {
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
             wcout_ << GetName(indent) << endl;
         }
         wstring GetName(int indent = 0) const override {
@@ -17,7 +17,7 @@ namespace ast {
         unsigned char value;
         ByteExpr(unsigned char v) : value(v) {}
         void expr() override {}
-        void Dump(int indent = 0, wostream& wcout_ = wcout) const override {
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
             wcout_ << GetName(indent) << endl;
         }
         wstring GetName(int indent = 0) const override {
@@ -28,7 +28,7 @@ namespace ast {
         wstring value;
         StringExpr(const wstring& v) : value(v) {}
         void expr() override {}
-        void Dump(int indent = 0, wostream& wcout_ = wcout) const override {
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
             wcout_ << GetName(indent) << endl;
         }
         wstring GetName(int indent = 0) const override {
@@ -39,7 +39,7 @@ namespace ast {
         wchar_t value;
         CharExpr(wchar_t v) : value(v) {}
         void expr() override {}
-        void Dump(int indent = 0, wostream& wcout_ = wcout) const override {
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
             wcout_ << wstring(indent * 2, L' ') << L"CharExpr: '" << value << L"'" << endl;
         }
         wstring GetName(int indent = 0) const override {
@@ -50,7 +50,7 @@ namespace ast {
         bool value;
         BooleanExpr(bool v) : value(v) {}
         void expr() override {}
-        void Dump(int indent = 0, wostream& wcout_ = wcout) const override {
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
             wcout_ << GetName(indent) << endl;
         }
         wstring GetName(int indent = 0) const override {
@@ -59,7 +59,7 @@ namespace ast {
     };
     struct NullExpr : public Expr {
         void expr() override {}
-        void Dump(int indent = 0, wostream& wcout_ = wcout) const override {
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
             wcout_ << GetName(indent) << endl;
         }
         wstring GetName(int indent = 0) const override {
@@ -70,7 +70,7 @@ namespace ast {
         wstring value;
         SymbolExpr(const wstring& v) : value(v) {}
         void expr() override {}
-        void Dump(int indent = 0, wostream& wcout_ = wcout) const override {
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
             wcout_ << GetName(indent) << endl;
         }
         wstring GetName(int indent = 0) const {
@@ -83,7 +83,7 @@ namespace ast {
         RuleExpr(const vector<wstring>& v) : value(v) {}
         RuleExpr(const wstring& v) : value(wstringToVector(v, L' ')) {}
         void expr() override {}
-        void Dump(int indent = 0, wostream& wcout_ = wcout) const override {
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
             wcout_ << GetName(indent) << endl;
         }
         wstring GetName(int indent = 0) const {
@@ -111,7 +111,7 @@ namespace ast {
             delete right;
         }
         void expr() override {}
-        void Dump(int indent = 0, wostream& wcout_ = wcout) const override {
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
             wcout_ << GetName(indent) << endl;
         }
         wstring GetName(int indent = 0) const override {
@@ -129,7 +129,7 @@ namespace ast {
             delete RightExpr;
         }
         void expr() override {}
-        void Dump(int indent = 0, wostream& wcout_ = wcout) const override {
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
             wcout_ << GetName(indent) << endl;
         }
         wstring GetName(int indent = 0) const override {
@@ -151,7 +151,7 @@ namespace ast {
             delete Value;
         }
         void expr() override {}
-        void Dump(int indent = 0, wostream& wcout_ = wcout) const override {
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
             wcout_ << GetName(indent) << endl;
         }
         wstring GetName(int indent = 0) const override {
@@ -171,7 +171,7 @@ namespace ast {
             }
         }
         void expr() override {}
-        void Dump(int indent = 0, wostream& wcout_ = wcout) const override {
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
             wcout_ << GetName(indent) << endl;
         }
         wstring GetName(int indent = 0) const override {
@@ -194,7 +194,7 @@ namespace ast {
             }
         }
         void expr() override {}
-        void Dump(int indent = 0, wostream& wcout_ = wcout) const override {
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
             wcout_ << GetName(indent) << endl;
         }
         wstring GetName(int indent = 0) const override {

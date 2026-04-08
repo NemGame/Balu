@@ -22,7 +22,7 @@ namespace ast {
         ~BlockStmt() {
             for (auto s : statements) delete s;
         }
-        void Dump(int indent = 0, wostream& wcout_ = wcout) const override {
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
             wcout_ << wstring(indent * 2, L' ') << L"BlockStmt" << endl;
             for (auto s : statements) {
                 if (s) s->Dump(indent + 1, wcout_);
@@ -38,7 +38,7 @@ namespace ast {
         ~ExpressionStmt() {
             delete expression;
         }
-        void Dump(int indent = 0, wostream& wcout_ = wcout) const override {
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
             wcout_ << wstring(indent * 2, L' ') << L"ExpressionStmt" << endl;
             if (expression) {
                 expression->Dump(indent + 1, wcout_);
@@ -56,7 +56,7 @@ namespace ast {
             delete AssignedValue;
             delete ExplicitType;
         }
-        void Dump(int indent = 0, wostream& wcout_ = wcout) const override {
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
             wcout_ << wstring(indent * 2, L' ') << L"VarDeclStmt: " << VariableName << (isConstant ? L" (const)" : L"") << endl;
             if (ExplicitType) {
                 ExplicitType->Dump(indent + 1, wcout_);
@@ -76,7 +76,7 @@ namespace ast {
             delete Type;
             delete AssignedValue;
         }
-        void Dump(int indent = 0, wostream& wcout_ = wcout) const {
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const {
             wcout_ << wstring(indent * 2, L' ') << L"StructProperty: " << Property << (isStatic ? L" (static)" : L"") << endl;
             if (Type) {
                 Type->Dump(indent + 1, wcout_);
@@ -89,7 +89,7 @@ namespace ast {
     struct StructMethod {  // TODO: implement (add fn type)
         bool isStatic;
         wstring MethodName;
-        void Dump(int indent = 0, wostream& wcout_ = wcout) const {
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const {
             wcout_ << wstring(indent * 2, L' ') << L"StructMethod: " << MethodName << (isStatic ? L" (static)" : L"") << endl;
         }
     };
@@ -103,7 +103,7 @@ namespace ast {
             for (auto& m : Methods) delete m.second;
         }
         void stmt() override {}
-        void Dump(int indent = 0, wostream& wcout_ = wcout) const override {
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
             wcout_ << wstring(indent * 2, L' ') << L"StructDeclStmt: " << StructName << endl;
             for (const auto& p : Properties) {
                 p.second->Dump(indent + 1, wcout_);

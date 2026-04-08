@@ -20,6 +20,8 @@ bool _showWarnings = true;  // Whether to show warnings [true]
 bool _panic = true;  // Whether to panic on errors (exit immediately) [true]
 bool _debug = false;  // Whether to print debug information [false]
 
+wostream& _wcout = wcout;
+
 struct Error {
     wstring message;
     unsigned long long line, column;

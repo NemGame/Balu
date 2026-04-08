@@ -145,7 +145,7 @@ namespace lexer {
         wstring value;
         unsigned long long line;
         unsigned long long column;
-        void Debug(wostream& wcout_ = wcout, bool endWithNewLine = true) const { // Change ostream to wostream, cout to wcout
+        void Debug(wostream& wcout_ = _wcout, bool endWithNewLine = true) const { // Change ostream to wostream, cout to wcout
             wcout_ << L"[" << line << L":" << column << L"] ";
             if (isOneOfMany(NUMBER, STRING, CHAR, BOOL, BYTE, ANY, AUTO, IDENTIFIER, RULE)) {
                 wcout_ << TokenKindString(kind) << L" (" << value << L")";

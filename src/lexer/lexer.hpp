@@ -74,7 +74,7 @@ namespace lexer {
             }
             if (!matched) {
                 // Handle unmatched case, e.g., advance by one character or throw an error
-                if (_showWarnings) wcout << L"Warning: Unmatched character: " << lex.at() << L" at " << lex.position() << endl;
+                if (_showWarnings) _wcout << L"Warning: Unmatched character: " << lex.at() << L" at " << lex.position() << endl;
                 lex.advanceN(1);
             }
         }
@@ -172,10 +172,10 @@ namespace lexer {
         unsigned long long col = l->column;
         if (value.length() != 1) {
             wstring message = L"Invalid character literal at " + l->position() + L": " + match.str(0) + L". Character literals must contain exactly one character.";
-            wcout << (_debug ? L"[Lexer] " : L"") << message << endl;
+            _wcout << (_debug ? L"[Lexer] " : L"") << message << endl;
             l->errors.push_back(Error(message, line, col));
             if (_panic) {
-                if (_debug) wcout << L"[Lexer] Panicing" << endl;
+                if (_debug) _wcout << L"[Lexer] Panicing" << endl;
                 exit(1);
             }
             l->advanceN(match.str(0).length()); // Advance past the invalid character literal
@@ -189,7 +189,7 @@ namespace lexer {
         const wstring remaining = l->remainder();
         regex_search(remaining, match, regexp);
         wstring value = match.str(0);
-        if (_verbose) wcout << L"Found rule: " << value << endl;
+        if (_verbose) _wcout << L"Found rule: " << value << endl;
         l->push(NewToken(RULE, value.substr(6), l->line, l->column)); // Remove the "#rule " prefix
         l->advanceN(value.length());
     };
