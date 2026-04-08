@@ -151,7 +151,7 @@ namespace lexer {
         regex_search(remaining, match, regexp);
         wstring value = match.str(0);
         l->push(NewToken(SEMICOLON, L";", l->line, l->column));
-        l->advanceN(value.length() + 1); // Advance past the semicolon including the semicolon
+        l->advanceN(value.length()); // Advance past the semicolon
     };
 
     regexHandler stringHandler = [](lexer* l, const wregex& regexp) {
@@ -172,10 +172,10 @@ namespace lexer {
         unsigned long long col = l->column;
         if (value.length() != 1) {
             wstring message = L"Invalid character literal at " + l->position() + L": " + match.str(0) + L". Character literals must contain exactly one character.";
-            wcout << message << endl;
+            wcout << (_debug ? L"[Lexer] " : L"") << message << endl;
             l->errors.push_back(Error(message, line, col));
             if (_panic) {
-                if (_debug) wcout << L"Panicing" << endl;
+                if (_debug) wcout << L"[Lexer] Panicing" << endl;
                 exit(1);
             }
             l->advanceN(match.str(0).length()); // Advance past the invalid character literal

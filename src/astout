@@ -1,0 +1,166 @@
+BlockStmt
+  StructDeclStmt: CustomType
+    StructProperty: x
+      SymbolType: number
+      NullExpr: null
+  VarDeclStmt: variableName (const)
+    SymbolType: CustomType
+    StructInstantiationExpr: CustomType
+      Property: x
+        Value:
+          NumberExpr: 3
+      Property: y
+        Value:
+          NumberExpr: 4
+  VarDeclStmt: morning (const)
+    SymbolType: string
+    StringExpr: "早上好"
+  VarDeclStmt: sup (const)
+    SymbolType: char
+    CharExpr: '早'
+  VarDeclStmt: 猫 (const)
+    SymbolType: bool
+    BooleanExpr: true
+  VarDeclStmt: kéz (const)
+    SymbolType: bool
+    BooleanExpr: false
+  VarDeclStmt: wasd (const)
+    SymbolType: char
+    StringExpr: "anyad"
+  VarDeclStmt: wasd (const)
+    SymbolType: char
+    StringExpr: "állat"
+  VarDeclStmt: anytest
+    SymbolType: any
+    NumberExpr: 10
+  VarDeclStmt: anytest
+    SymbolType: any
+  VarDeclStmt: autotest (const)
+    SymbolType: auto
+    NumberExpr: 10
+  VarDeclStmt: booltest (const)
+    SymbolType: bool
+    BooleanExpr: true
+  VarDeclStmt: booltest2
+    SymbolType: bool
+    BooleanExpr: true
+  VarDeclStmt: chartest (const)
+    SymbolType: char
+    CharExpr: 't'
+  VarDeclStmt: chartest
+    SymbolType: char
+    CharExpr: 't'
+  VarDeclStmt: bytestest (const)
+    SymbolType: byte
+    NumberExpr: 10
+  VarDeclStmt: bytestest
+    SymbolType: byte
+    NumberExpr: 10
+  VarDeclStmt: anytest
+    SymbolType: any
+    NumberExpr: 10
+  VarDeclStmt: autotest (const)
+    SymbolType: auto
+    NumberExpr: 10
+  VarDeclStmt: autotest
+    SymbolType: auto
+    NumberExpr: 10
+  VarDeclStmt: voidtest (const)
+    SymbolType: void
+    NumberExpr: 10
+  VarDeclStmt: voidtest
+    SymbolType: void
+    NumberExpr: 10
+  VarDeclStmt: nulltest (const)
+    SymbolType: null
+    NumberExpr: 10
+  VarDeclStmt: nulltest
+    SymbolType: null
+    NumberExpr: 10
+  VarDeclStmt: arraytest (const)
+    ArrayType:
+      SymbolType: any
+    NumberExpr: 10
+  VarDeclStmt: arraytest
+    ArrayType:
+      SymbolType: any
+    NumberExpr: 10
+  VarDeclStmt: atest
+    ArrayType:
+      ArrayType:
+        ArrayType:
+          SymbolType: any
+    NumberExpr: 10
+  VarDeclStmt: atest
+    ArrayType:
+      ArrayType:
+        ArrayType:
+          SymbolType: any
+    NumberExpr: 10
+  VarDeclStmt: atest2 (const)
+    ArrayType:
+      ArrayType:
+        ArrayType:
+          SymbolType: any
+    NumberExpr: 10
+  VarDeclStmt: x (const)
+    SymbolType: number
+    NumberExpr: 2
+  VarDeclStmt: booleantest
+    SymbolType: any
+    BooleanExpr: true
+  VarDeclStmt: booleantest (const)
+    SymbolType: bool
+    BooleanExpr: false
+  VarDeclStmt: jsLetAny
+    SymbolType: any
+    NumberExpr: 10
+  VarDeclStmt: jsLetType
+    SymbolType: number
+    NumberExpr: 10
+  VarDeclStmt: jsConstAny (const)
+    SymbolType: auto
+    NumberExpr: 10
+  VarDeclStmt: jsConstType (const)
+    SymbolType: number
+    NumberExpr: 10
+  VarDeclStmt: numberConst (const)
+    SymbolType: number
+    NumberExpr: 10
+  VarDeclStmt: numberMut
+    SymbolType: number
+    NumberExpr: 10
+  VarDeclStmt: anyMut
+    SymbolType: any
+    NumberExpr: 10
+  VarDeclStmt: numberMut2
+    SymbolType: number
+    NumberExpr: 10
+  VarDeclStmt: numtest (const)
+    SymbolType: number
+    NumberExpr: 10
+  VarDeclStmt: strtest (const)
+    SymbolType: string
+    StringExpr: "test"
+  VarDeclStmt: booltest (const)
+    SymbolType: bool
+    BooleanExpr: true
+  VarDeclStmt: chartest (const)
+    SymbolType: char
+    CharExpr: 't'
+  VarDeclStmt: bytestest (const)
+    SymbolType: byte
+    NumberExpr: 10
+  VarDeclStmt: autotest (const)
+    SymbolType: auto
+    NumberExpr: 10
+  VarDeclStmt: voidtest (const)
+    SymbolType: void
+    NumberExpr: 10
+  VarDeclStmt: nulltest (const)
+    SymbolType: null
+    NumberExpr: 10
+  VarDeclStmt: arraytest (const)
+    ArrayType:
+      SymbolType: any
+    NumberExpr: 10

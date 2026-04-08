@@ -91,6 +91,9 @@ namespace lexer {
         OUT,            // out
         EVAL,           // eval
     };
+    vector<TokenKind> TokenTypes = {
+        NUMBER, STRING, CHAR, BOOL, BYTE, ANY, AUTO, VOID, NULL_TYPE
+    };
 
     wstring TokenKindString(TokenKind kind);
 
@@ -142,13 +145,14 @@ namespace lexer {
         wstring value;
         unsigned long long line;
         unsigned long long column;
-        void Debug() const {
-            wcout << L"[" << line << L":" << column << L"] ";
+        void Debug(wostream& wcout_ = wcout, bool endWithNewLine = true) const { // Change ostream to wostream, cout to wcout
+            wcout_ << L"[" << line << L":" << column << L"] ";
             if (isOneOfMany(NUMBER, STRING, CHAR, BOOL, BYTE, ANY, AUTO, IDENTIFIER, RULE)) {
-                wcout << TokenKindString(kind) << L" (" << value << L")" << endl;
+                wcout_ << TokenKindString(kind) << L" (" << value << L")";
             } else {
-                wcout << TokenKindString(kind) << L" ()" << endl;
+                wcout_ << TokenKindString(kind) << L" ()";
             }
+            if (endWithNewLine) wcout_ << endl;
         }
         template<typename... TokenKinds>
         bool isOneOfMany(TokenKinds... tokenKinds) const {

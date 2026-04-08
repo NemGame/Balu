@@ -98,6 +98,7 @@ void DisplayHelp(const wstring& programName) {
     wcout << L"  --no-panic, /no-panic, -np, /np\t  Forbid panicing on errors" << endl;
     wcout << L"  --debug, /debug, -d, /d\t\t  Enable debug output" << endl;
     wcout << L"  --log-globals\t\t\t\t  Log global variables" << endl;
+    wcout << L"  --show, /show, -s, /s\t\t\t  Show the command line arguments (after parsing them)" << endl;
     wcout << L"  -filename=value, -fn=value\t\t  Specify the input filename (e.g., -filename=name.txt)" << endl;
     wcout << L"  -output=value, -o=value, -outfile=value Specify the output filename (e.g., -output=out.txt)" << endl;
 }
@@ -125,10 +126,14 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
-    _verbose = vectorContains(*flags, vector<wstring>{L"-v", L"--verbose", L"/verbose"});
-    _showWarnings = !vectorContains(*flags, vector<wstring>{L"--no-warnings", L"/no-warnings", L"-nw", L"/nw"});
-    _panic = !vectorContains(*flags, vector<wstring>{L"--no-panic", L"/no-panic", L"-np", L"/np"});
-    _debug = vectorContains(*flags, vector<wstring>{L"--debug", L"/debug", L"-d", L"/d"});
+    const bool _feedbackMode = vectorContains(*flags, L"--feedback-mode") ? 1 : 0;
+
+    if (_feedbackMode) wcout << wstring(20, L'=') << L"[Feedback Mode Enabled]" << wstring(20, L'=') << endl;
+
+    _verbose = _feedbackMode ? true : vectorContains(*flags, vector<wstring>{L"-v", L"--verbose", L"/verbose"});
+    _showWarnings =  _feedbackMode ? true : !vectorContains(*flags, vector<wstring>{L"--no-warnings", L"/no-warnings", L"-nw", L"/nw"});
+    _panic =  _feedbackMode ? false : !vectorContains(*flags, vector<wstring>{L"--no-panic", L"/no-panic", L"-np", L"/np"});
+    _debug = _feedbackMode ? true : vectorContains(*flags, vector<wstring>{L"--debug", L"/debug", L"-d", L"/d"});
 
     if (vectorContains(*flags, vector<wstring>{L"--log-globals"})) {
         wcout << L"Global Variables:" << endl;
@@ -139,18 +144,33 @@ int main(int argc, char* argv[]) {
 
     if (_verbose) wcout << L"Verbose mode enabled." << endl;
 
-    #pragma region Input Filename Extraction
+    #pragma region Initialize provided key-value pairs
     wstring inputfilename = L"";
     bool inputfilenameProvided = false;
+    wstring outputfilename = L"a";
+    bool outputfilenameProvided = false;
+    wstring ASToutfilename = _feedbackMode ? L"astout" : L"";
+    wstring SToutfilename = _feedbackMode ? L"stout" : L"";
     for (const auto& pair : *keyValuePairs) {
         if (pair.name == L"filename" || pair.name == L"fn") {
             inputfilename = pair.value;
             inputfilenameProvided = true;
             if (_verbose) wcout << L"Got inputfilename from key-value pair: " << inputfilename << endl;
-            break;
+        } else if (pair.name == L"output" || pair.name == L"o" || pair.name == L"outfile") {
+            outputfilename = pair.value;
+            outputfilenameProvided = true;
+            if (_verbose) wcout << L"Got outputfilename from key-value pair: " << outputfilename << endl;
+        } else if (pair.name == L"ast") {
+            ASToutfilename = pair.value;
+            if (_verbose) wcout << L"Got AST output filename from key-value pair: " << ASToutfilename << endl;
+        } else if (pair.name == L"st") {
+            SToutfilename = pair.value;
+            if (_verbose) wcout << L"Got ST output filename from key-value pair: " << SToutfilename << endl;
         }
     }
+    #pragma endregion
 
+    #pragma region Input Filename Extraction
     if (!inputfilenameProvided) {
         if (freeArgs->size() > 0) {
             inputfilename = (*freeArgs)[0];
@@ -166,16 +186,6 @@ int main(int argc, char* argv[]) {
     wcout << L"Input filename: " << inputfilename << endl;
     #pragma endregion
     #pragma region Output Filename Extraction
-    wstring outputfilename = L"a";
-    bool outputfilenameProvided = false;
-    for (const auto& pair : *keyValuePairs) {
-        if (pair.name == L"output" || pair.name == L"o" || pair.name == L"outfile") {
-            outputfilename = pair.value;
-            outputfilenameProvided = true;
-            if (_verbose) wcout << L"Got outputfilename from key-value pair: " << outputfilename << endl;
-            break;
-        }
-    }
     if (!outputfilenameProvided) {
         if (freeArgs->size() > 0) {
             outputfilename = (*freeArgs)[0];
@@ -223,19 +233,63 @@ int main(int argc, char* argv[]) {
 
     vector<lexer::Token> tokens = lexer::Tokenize(fileContent);
 
+    if (!SToutfilename.empty()) {
+        string narrowSToutFilename(SToutfilename.begin(), SToutfilename.end());
+        ofstream stOutFile(narrowSToutFilename.c_str());
+        if (stOutFile.is_open()) {
+            for (int i = 0; i < tokens.size() - 1; i++) {
+                const auto& token = tokens[i];
+                wstringstream ss;
+                token.Debug(ss);
+                stOutFile << wstringToUTF8(ss.str());
+                wcout << L"[ST] Wrote token " << i + 1 << L"/" << tokens.size() << L" to symbol table output file (" + lexer::TokenKindString(token.kind) + L")     \r";
+            }
+            wcout << L"[ST] Wrote token " << tokens.size() << L"/" << tokens.size() << L" to symbol table output file.";
+            wcout << L"\n[ST] Writing last token to symbol table output file..." << endl;
+            const auto& lastToken = tokens.back();
+            wstringstream ss;
+            lastToken.Debug(ss, false);
+            stOutFile << wstringToUTF8(ss.str());
+            stOutFile.close();
+            wcout << L"[ST] Successfully wrote tokens to " << SToutfilename << endl;
+        } else {
+            wcout << L"[ST] Error: Unable to open symbol table output file." << endl;
+        }
+    }
+
     if (vectorContains(*flags, vector<wstring>{L"--show-tokens", L"/show-tokens", L"-st", L"/st"})) {
         wcout << L"Tokens:" << endl;
         for (const auto& token : tokens) {
             token.Debug();
         }
     }
-
-    ast::BlockStmt ast = parser::Parse(tokens);
     
+    ast::BlockStmt ast = ast::BlockStmt::Null();
+    try {
+        ast = parser::Parse(tokens);
+    } catch (const exception& e) {
+        wcout << L"[AST] Error during parsing: " << e.what() << endl;
+        return 1;
+    }
+
+    if (!ASToutfilename.empty()) {
+        string narrowASToutFilename(ASToutfilename.begin(), ASToutfilename.end());
+        ofstream astOutFile(narrowASToutFilename.c_str());
+        if (astOutFile.is_open()) {
+            wcout << L"[AST] Writing AST to file..." << endl;
+            wstringstream ss;
+            ast.Dump(0, ss);
+            astOutFile << wstringToUTF8(ss.str());
+            astOutFile.close();
+            wcout << L"[AST] Successfully wrote AST to " << ASToutfilename << endl;
+        } else {
+            wcout << L"[AST] Error: Unable to open AST output file." << endl;
+        }
+    }
+
     if (vectorContains(*flags, vector<wstring>{L"--show-ast", L"/show-ast", L"-ast", L"/ast"})) {
         wcout << L"\nAST Structure:" << endl;
         ast.Dump();
     }
-    
     return 0;
 }

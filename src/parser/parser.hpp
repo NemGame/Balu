@@ -21,7 +21,10 @@ namespace parser {
 
         while (p->hasTokens())
         {
-            Body.push_back(parse_stmt(p.get()));
+            ast::Stmt* stmt = parse_stmt(p.get());
+            if (stmt) { // Only add valid statements
+                Body.push_back(stmt);
+            }
         }
         
 

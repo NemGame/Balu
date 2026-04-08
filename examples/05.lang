@@ -6,13 +6,20 @@ struct Rect {
     static prop2: any = 3;
 }
 
-/*
+struct Circle {
+    radius: number;
+    text: string;
+}
 
 // Instantiation
 const r1 = Rect{
     width: 10,
     height: 20,
-}
+    randomProperty: Circle {
+        radius: 30;
+        text: "Fuck off"
+    };;,,,,,;
+};
 
 const numbers  = []number{1, 2, 3, 4};
 const numbers2 = number[]{1, 2, 3, 4};

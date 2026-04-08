@@ -24,8 +24,9 @@ namespace parser {
     ast::Expr* parse_grouping_expr(Parser* parser);
     ast::Stmt* parse_var_decl_stmt(Parser* parser);
     ast::Stmt* parse_struct_decl_stmt(Parser* parser);
+    ast::Expr* parse_struct_instantiation_expr(Parser* parser, ast::Expr* left, binding_power bp);
+    ast::Expr* parse_array_instantiation_expr(Parser* parser);
     
-
     using stmt_handler = ast::Stmt* (*)(Parser* p);
     using nud_handler = ast::Expr* (*)(Parser* p);
     using led_handler = ast::Expr* (*)(Parser* p, ast::Expr* left, binding_power bp);
@@ -82,6 +83,10 @@ namespace parser {
         led(lexer::SLASH, multiplicative, parse_binary_expr);
         led(lexer::PERCENT, multiplicative, parse_binary_expr);
 
+        // Call/Member/Array expressions
+        led(lexer::OPEN_CURLY, call, parse_struct_instantiation_expr);
+        nud(lexer::OPEN_BRACKET, parse_array_instantiation_expr);
+
         // Literals and Symbols
         nud(lexer::NUMBER, parse_primary_expr);
         nud(lexer::BYTE, parse_primary_expr);
@@ -117,5 +122,6 @@ namespace parser {
         stmt(lexer::ANY, parse_var_decl_stmt);
         stmt(lexer::VOID, parse_var_decl_stmt);
         stmt(lexer::NULL_TYPE, parse_var_decl_stmt);
+        stmt(lexer::IDENTIFIER, parse_var_decl_stmt);
     }
 }

@@ -12,6 +12,15 @@ null   - null
 array  - stack
 */
 
+struct CustomType {
+    x:number;
+};;;
+
+CustomType variableName = CustomType{
+    x:3,
+    y:4
+};
+
 string morning = "早上好";
 char sup = '早';
 

@@ -3,18 +3,28 @@
 namespace parser {
     ast::Type* parse_type(Parser* parser, binding_power bp);
     ast::Stmt* parse_stmt(Parser* p) {
+        if (_verbose) wcout << L"Parsing statement at " << p->position() << endl;
         bool exists = stmt_lu[p->currentTokenKind()] != nullptr;
         if (exists) {
             return stmt_lu[p->currentTokenKind()](p);
         }
 
-        ast::Expr* expr = parse_expr(p, default_bp);
+        ast::Expr* expr = parse_expr(p, default_bp); // This could return nullptr if an error occurred and _panic is false
+        if (expr == nullptr) {
+            // If expression parsing failed, we should not proceed to create an ExpressionStmt.
+            // The error would have been reported by parse_expr.
+            // We should try to recover by advancing past the current token, or until a semicolon.
+            p->advanceUntil(lexer::SEMICOLON); // Skip to the end of the problematic statement
+            p->expect(lexer::SEMICOLON); // Consume the semicolon
+            return nullptr; // Return nullptr to indicate failure to parse a valid statement
+        }
 
         p->expect(lexer::SEMICOLON);
 
         return new ast::ExpressionStmt( expr );
     }
     ast::Stmt* parse_var_decl_stmt(Parser* p) {
+        if (_verbose) wcout << L"Parsing variable declaration statement at " << p->position() << endl;
         // Declared using the let or const keyword, otherwise it's either a mut, or a typename declaration
         bool letConst = p->currentTokenKind() == lexer::LET || p->currentTokenKind() == lexer::CONST;
         bool alias = p->currentTokenKind() == lexer::ALIAS;
@@ -48,9 +58,9 @@ namespace parser {
             if (alias) {
                 wstring message = L"Alias declaration for '" + varName + L"' at " + p->position() + L" cannot have an explicit type";
                 p->errors.push_back(ParserError(message));
-                wcout << message << endl;
+                wcout << (_debug ? L"[Parser] " : L"") << message << endl;
                 if (_panic) {
-                    if (_debug) wcout << L"Panicing" << endl;
+                    if (_debug) wcout << L"[Parser] Panicing" << endl;
                     exit(1);
                 }
                 parse_type(p, default_bp);
@@ -59,9 +69,9 @@ namespace parser {
                     ast::Type* newExplicitType = parse_type(p, default_bp);
                     wstring message = L"Variable declaration for '" + varName + L"' at " + p->position() + L" can only contain one type, but multiple were found (" + explicitType->GetName() + L" and " + newExplicitType->GetName() + L")";
                     p->errors.push_back(ParserError(message));
-                    wcout << message << endl;
+                    wcout << (_debug ? L"[Parser] " : L"") << message << endl;
                     if (_panic) {
-                        if (_debug) wcout << L"Panicing" << endl;
+                        if (_debug) wcout << L"[Parser] Panicing" << endl;
                         exit(1);
                     }
                 } else explicitType = parse_type(p, default_bp);
@@ -85,9 +95,9 @@ namespace parser {
             if (explicitType->GetName() == L"any") {
                 wstring message = L"Constant variable declaration for '" + varName + L"' at " + p->position() + L" cannot have type 'any' as it cannot be reassigned, did you mean 'auto'?";
                 p->errors.push_back(ParserError(message));
-                wcout << message << endl;
+                wcout << (_debug ? L"[Parser] " : L"") << message << endl;
                 if (_panic) {
-                    if (_debug) wcout << L"Panicing" << endl;
+                    if (_debug) wcout << L"[Parser] Panicing" << endl;
                     exit(1);
                 }
                 explicitType = new ast::SymbolType(L"auto");
@@ -95,9 +105,9 @@ namespace parser {
             if (assignedValue == nullptr) {
                 wstring message = L"Constant variable declaration for '" + varName + L"' at " + p->position() + L" must have an initializer";
                 p->errors.push_back(ParserError(message));
-                wcout << message << endl;
+                wcout << (_debug ? L"[Parser] " : L"") << message << endl;
                 if (_panic) {
-                    if (_debug) wcout << L"Panicing" << endl;
+                    if (_debug) wcout << L"[Parser] Panicing" << endl;
                     exit(1);
                 }
                 assignedValue = new ast::NullExpr();
@@ -107,9 +117,9 @@ namespace parser {
             if (assignedValue == nullptr) {
                 wstring message = L"Alias declaration for '" + varName + L"' at " + p->position() + L" must have an initializer";
                 p->errors.push_back(ParserError(message));
-                wcout << message << endl;
+                wcout << (_debug ? L"[Parser] " : L"") << message << endl;
                 if (_panic) {
-                    if (_debug) wcout << L"Panicing" << endl;
+                    if (_debug) wcout << L"[Parser] Panicing" << endl;
                     exit(1);
                 }
                 assignedValue = new ast::NullExpr();
@@ -125,6 +135,7 @@ namespace parser {
         };
     }
     ast::Stmt* parse_struct_decl_stmt(Parser* p) {
+        if (_verbose) wcout << L"Parsing struct declaration statement at " << p->position() << endl;
         p->expect(lexer::STRUCT);  // consume 'struct'
 
         unordered_map<wstring, ast::StructProperty*> properties;
@@ -133,7 +144,7 @@ namespace parser {
         wstring structName = p->expectError(lexer::IDENTIFIER, 
             Error(L"Expected struct name after 'struct' keyword, but got " + lexer::TokenKindString(p->currentTokenKind()) + L" at " + p->position())
         ).value;
-        
+
         p->expect(lexer::OPEN_CURLY);
 
         while (p->hasTokens() && p->currentTokenKind() != lexer::CLOSE_CURLY) {
@@ -150,9 +161,9 @@ namespace parser {
                 if (properties.find(propertyName) != properties.end()) {
                     wstring message = L"Duplicate struct property '" + propertyName + L"' found in struct '" + structName + L"' declaration at " + p->position();
                     p->errors.push_back(ParserError(message));
-                    wcout << message << endl;
+                    wcout << (_debug ? L"[Parser] " : L"") << message << endl;
                     if (_panic) {
-                        if (_debug) wcout << L"Panicing" << endl;
+                        if (_debug) wcout << L"[Parser] Panicing" << endl;
                         exit(1);
                     }
                     p->advanceUntil(lexer::SEMICOLON);  // Skip until the end of the property declaration
@@ -184,7 +195,7 @@ namespace parser {
             if (_panic) {
                 wstring message = L"Struct methods not yet implemented";
                 p->errors.push_back(ParserError(message, p->line, p->column));
-                if (_debug) wcout << L"Panicing" << endl;
+                if (_debug) wcout << L"[Parser] Panicing" << endl;
                 exit(1);
             }
             p->advanceUntil(lexer::CLOSE_CURLY);  // Skip until the end of the method declaration (or the next property if methods are not implemented yet)
