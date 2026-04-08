@@ -7,7 +7,11 @@ namespace parser {
     Parser* createParser(const vector<lexer::Token>& tokens) {
         createTokenLookups();
         createTokenTypeLookups();
-        return new Parser{ {}, tokens, 0 };
+        Parser* p = new Parser{ {}, tokens, 0 };
+        lexer::Token current = p->currentToken();
+        p->line = current.line;
+        p->column = current.column;
+        return p;
     }
 
     ast::BlockStmt Parse(const vector<lexer::Token>& tokens) {

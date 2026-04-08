@@ -1,5 +1,0 @@
-number num = 10;
-number* numberpointer = num;
-
-number*[]** x = null;
-*[]** number x = null;

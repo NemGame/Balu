@@ -27,19 +27,19 @@ namespace ast {
             return Underlying->GetName() + L"[]";
         }
     };
-    struct PointerType : public Type {
-        Type* Underlying;  // *T
-        PointerType(Type* t) : Underlying(t) {}
-        ~PointerType() {
+    struct AliasType : public Type {
+        Expr* Underlying;  // = T
+        AliasType(Expr* t) : Underlying(t) {}
+        ~AliasType() {
             delete Underlying;
         }
         void type() override {}
         void Dump(int indent = 0) const override {
-            wcout << wstring(indent * 2, L' ') << L"PointerType:" << endl;
+            wcout << wstring(indent * 2, L' ') << L"AliasType:" << endl;
             Underlying->Dump(indent + 1);
         }
         wstring GetName() const {
-            return L"*" + Underlying->GetName();
+            return L"AliasType:" + Underlying->GetName() + L"}";
         }
     };
 }

@@ -1,8 +1,12 @@
 #pragma once
 
+#include <string>
+#include <sstream>
+#include <iostream>
+
 namespace parser {
     struct ParserError : public Error {
-        ParserError(const wstring& message, int line, int column) : Error(message, line, column) {}
+        ParserError(const wstring& message, unsigned long long line, unsigned long long column) : Error(message, line, column) {}
         ParserError(const wstring& message) : Error(message) {}
         ParserError() : Error() {}
     };
@@ -10,6 +14,7 @@ namespace parser {
         vector<ParserError> errors;
         vector<lexer::Token> tokens;
         int pos;
+        unsigned long long line, column;
 
         lexer::Token currentToken() const {
             if (pos >= (int)tokens.size()) return lexer::Token{ lexer::EOF_TOKEN, L"EOF" };
@@ -21,11 +26,17 @@ namespace parser {
         lexer::Token advance() {
             lexer::Token token = currentToken();
             pos++;
+            lexer::Token next = currentToken();
+            line = next.line;
+            column = next.column;
             return token;
         }
         lexer::Token advanceBack() {
             pos--;
-            return currentToken();
+            lexer::Token current = currentToken();
+            line = current.line;
+            column = current.column;
+            return current;
         }
         bool hasTokens() const {
             return pos < tokens.size() && currentToken().kind != lexer::EOF_TOKEN;
@@ -35,13 +46,13 @@ namespace parser {
             lexer::TokenKind kind = token.kind;
             if (kind != expectedKind) {
                 if (error.isNull()) {
-                    wstring message = L"Expected token " + lexer::TokenKindString(expectedKind) + L" but found " + lexer::TokenKindString(kind);
+                    wstring message = L"Expected token at " + position() + L" to be " + lexer::TokenKindString(expectedKind) + L" but found " + lexer::TokenKindString(kind);
                     error = Error(message);
                     wcout << message << endl;
                 } else {
                     wcout << error.message << endl;
                 }
-                errors.push_back(ParserError(error.message, 0, 0));
+                errors.push_back(ParserError(error.message, token.line, token.column));
                 if (_panic) {
                     if (_debug) wcout << L"Panicing" << endl;
                     exit(1);
@@ -63,9 +74,9 @@ namespace parser {
                 expectedKindsStr += lexer::TokenKindString(expectedKind) + L", ";
             }
             expectedKindsStr = expectedKindsStr.substr(0, expectedKindsStr.length() - 2); // Remove trailing comma and space
-            wstring message = L"Expected one of [" + expectedKindsStr + L"] but found " + lexer::TokenKindString(kind);
+            wstring message = L"Expected one of [" + expectedKindsStr + L"] but found " + lexer::TokenKindString(kind) + L" at " + position();
             wcout << message << endl;
-            errors.push_back(ParserError(message, 0, 0));
+            errors.push_back(ParserError(message, token.line, token.column));
             if (_panic) {
                 if (_debug) wcout << L"Panicing" << endl;
                 exit(1);
@@ -74,6 +85,11 @@ namespace parser {
         }
         lexer::Token expect(lexer::TokenKind expectedKind) {
             return expectError(expectedKind, Error());
+        }
+        wstring position() const {
+            wstringstream ss;
+            ss << L'[' << line << L':' << column << L']';
+            return ss.str();
         }
     };
 }

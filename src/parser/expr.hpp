@@ -79,8 +79,10 @@ namespace parser {
                 return new ast::RuleExpr(parser->advance().value);
             }
             default: {
+                lexer::Token token = parser->currentToken();
                 if (_verbose || _debug) wcout << "Cannot create primary expression from token: " << lexer::TokenKindString(parser->currentTokenKind()) << endl;
-                parser->errors.push_back(ParserError(L"Unexpected token: " + lexer::TokenKindString(parser->currentTokenKind()), 0, 0));
+                wstring message = L"Unexpected token at " + parser->position() + L": " + lexer::TokenKindString(token.kind);
+                parser->errors.push_back(ParserError(message, token.line, token.column));
                 return nullptr;
             }
         }

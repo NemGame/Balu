@@ -80,6 +80,7 @@ namespace lexer {
         OUT,            // out
         EVAL,           // eval
         RETURN,         // return
+        ALIAS,          // alias
     };
 
     wstring TokenKindString(TokenKind kind);
@@ -105,6 +106,7 @@ namespace lexer {
         {L"out", OUT},
         {L"eval", EVAL},
         {L"return", RETURN},
+        {L"alias", ALIAS},
 
         {L"string", STRING},
         {L"char", CHAR},
@@ -122,7 +124,10 @@ namespace lexer {
     struct Token {
         TokenKind kind;
         wstring value;
+        unsigned long long line;
+        unsigned long long column;
         void Debug() const {
+            wcout << L"[" << line << L":" << column << L"] ";
             if (isOneOfMany(NUMBER, STRING, CHAR, BOOL, BYTE, ANY, AUTO, IDENTIFIER, RULE)) {
                 wcout << TokenKindString(kind) << L" (" << value << L")" << endl;
             } else {
@@ -140,8 +145,8 @@ namespace lexer {
         }
     };
 
-    Token NewToken(TokenKind kind, const wstring& value = L"") {
-        return Token{kind, value};
+    Token NewToken(TokenKind kind, const wstring& value = L"", unsigned long long line = 0, unsigned long long column = 0) {
+        return Token{kind, value, line, column};
     }
 
     wstring TokenKindString(TokenKind kind) {
@@ -216,6 +221,7 @@ namespace lexer {
             case OUT: return L"OUT";
             case EVAL: return L"EVAL";
             case RETURN: return L"RETURN";
+            case ALIAS: return L"ALIAS";
             default: return L"UNKNOWN";
         }
     }

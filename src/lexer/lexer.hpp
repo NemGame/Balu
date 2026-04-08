@@ -22,9 +22,21 @@ namespace lexer {
         vector<Token> tokens;
         vector<RegexPattern> patterns;
         vector<Error> errors;
+        unsigned long long line;
+        unsigned long long column;
 
         void advanceN(int n) {
-            pos += n;
+            for (int i = 0; i < n; i++) {
+                if (pos < source.length()) {
+                    if (source[pos] == L'\n') {
+                        line++;
+                        column = 1;
+                    } else {
+                        column++;
+                    }
+                    pos++;
+                }
+            }
         }
         void push(Token token) {
             tokens.push_back(token);
@@ -37,6 +49,9 @@ namespace lexer {
         }
         bool at_eof() {
             return pos >= source.length();
+        }
+        wstring position() const {
+            return L'[' + to_wstring(line) + L':' + to_wstring(column) + L']';
         }
     };
 
@@ -59,19 +74,19 @@ namespace lexer {
             }
             if (!matched) {
                 // Handle unmatched case, e.g., advance by one character or throw an error
-                if (_showWarnings) wcout << L"Unmatched character: " << lex.at() << L" at position " << lex.pos << endl;
+                if (_showWarnings) wcout << L"Unmatched character: " << lex.at() << L" at " << lex.position() << endl;
                 lex.advanceN(1);
             }
         }
 
-        lex.push(NewToken(EOF_TOKEN, L"EOF"));
+        lex.push(NewToken(EOF_TOKEN, L"EOF", lex.line, lex.column));
         return lex.tokens;
     }
 
     regexHandler defaultHandler(TokenKind kind, const wstring& value = L"") {
         return [kind, value](lexer* l, const wregex& regexp) {
+            l->push(NewToken(kind, value, l->line, l->column));
             l->advanceN(value.length());
-            l->push(NewToken(kind, value));
         };
     }
 
@@ -81,8 +96,8 @@ namespace lexer {
         const wstring remaining = l->remainder();
         regex_search(remaining, match, regexp);
         wstring value = match.str(0);
+        l->push(NewToken(NUMBER, value, l->line, l->column));
         l->advanceN(value.length());
-        l->push(NewToken(NUMBER, value));
     };
 
     regexHandler symbolHandler = [](lexer* l, const wregex& regexp) {
@@ -90,12 +105,13 @@ namespace lexer {
         const wstring remaining = l->remainder();
         regex_search(remaining, match, regexp);
         wstring value = match.str(0);
+        unsigned long long line = l->line;
+        unsigned long long col = l->column;
         
-
-        if (reserved_lu.find(value) != reserved_lu.end()) l->push(NewToken(reserved_lu[value], value));
-        else l->push(NewToken(IDENTIFIER, value));
-
-
+        if (reserved_lu.find(value) != reserved_lu.end()) 
+            l->push(NewToken(reserved_lu[value], value, line, col));
+        else 
+            l->push(NewToken(IDENTIFIER, value, line, col));
         
         l->advanceN(value.length());
     };
@@ -134,8 +150,8 @@ namespace lexer {
         const wstring remaining = l->remainder();
         regex_search(remaining, match, regexp);
         wstring value = match.str(0).substr(1, match.str(0).length() - 2); // Remove the surrounding quotes
+        l->push(NewToken(STRING, value, l->line, l->column));
         l->advanceN(value.length() + 2); // Advance past the string including the quotes
-        l->push(NewToken(STRING, value));
     };
 
     regexHandler characterHandler = [](lexer* l, const wregex& regexp) {
@@ -143,10 +159,12 @@ namespace lexer {
         const wstring remaining = l->remainder();
         regex_search(remaining, match, regexp);
         wstring value = match.str(0).substr(1, match.str(0).length() - 2); // Extract the character(s) between the single quotes
+        unsigned long long line = l->line;
+        unsigned long long col = l->column;
         if (value.length() != 1) {
-            wstring message = L"Invalid character literal: " + match.str(0) + L". Character literals must contain exactly one character.";
+            wstring message = L"Invalid character literal at " + l->position() + L": " + match.str(0) + L". Character literals must contain exactly one character.";
             wcout << message << endl;
-            l->errors.push_back(Error(message));
+            l->errors.push_back(Error(message, line, col));
             if (_panic) {
                 if (_debug) wcout << L"Panicing" << endl;
                 exit(1);
@@ -154,7 +172,7 @@ namespace lexer {
             l->advanceN(match.str(0).length()); // Advance past the invalid character literal
             value = value.substr(0, 1); // Default to the first character if multiple are found
         } else l->advanceN(3); // Advance past the character including the surrounding single quotes
-        l->push(NewToken(CHAR, value));
+        l->push(NewToken(CHAR, value, line, col));
     };
 
     regexHandler ruleHandler = [](lexer* l, const wregex& regexp) {
@@ -163,8 +181,8 @@ namespace lexer {
         regex_search(remaining, match, regexp);
         wstring value = match.str(0);
         if (_verbose) wcout << L"Found rule: " << value << endl;
+        l->push(NewToken(RULE, value.substr(6), l->line, l->column)); // Remove the "#rule " prefix
         l->advanceN(value.length());
-        l->push(NewToken(RULE, value.substr(6))); // Remove the "#rule " prefix
     };
 
     lexer createLexer(const wstring& source) {
@@ -218,7 +236,10 @@ namespace lexer {
                 {wregex(L"^/"), defaultHandler(SLASH, L"/")},
                 {wregex(L"^\\*"), defaultHandler(STAR, L"*")},
                 {wregex(L"^%"), defaultHandler(PERCENT, L"%")},
-            }
+            },
+            vector<Error>(0),
+            1, // line
+            1  // column
         };
     }
 }

@@ -9,7 +9,6 @@
 #include <fstream>
 #include <sstream>
 
-
 using namespace std;
 
 // Global variables
@@ -21,9 +20,8 @@ bool _debug = false;  // Whether to print debug information [false]
 
 struct Error {
     wstring message;
-    int line;
-    int column;
-    Error(const wstring& message, int line, int column) : message(message), line(line), column(column) {}
+    unsigned long long line, column;
+    Error(const wstring& message, unsigned long long line, unsigned long long column) : message(message), line(line), column(column) {}
     Error(const wstring& message) : message(message), line(-1), column(-1) {}
     Error() : message(L""), line(-1), column(-1) {}
     bool isNull() const {
@@ -34,6 +32,13 @@ struct Error {
 #ifndef _O_U16TEXT
 #define _O_U16TEXT 0x20000
 #endif
+
+template<typename T>
+wstring to_wstring(T value) {
+    wstringstream ss;
+    ss << value;
+    return ss.str();
+}
 
 #include "helper/init.hpp"
 #include "lexer/init.hpp"

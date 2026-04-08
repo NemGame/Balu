@@ -1,0 +1,7 @@
+number num = 10;
+mut number num2 = num + 10;
+
+alias x = num2;
+x = 10;  // -> num2 = 10;
+alias x = num;
+x = 10;  // -> num = 10;    -> Error: num is a constant

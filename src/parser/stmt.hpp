@@ -17,6 +17,7 @@ namespace parser {
     ast::Stmt* parse_var_decl_stmt(Parser* p) {
         // Declared using the let or const keyword, otherwise it's either a mut, or a typename declaration
         bool letConst = p->currentTokenKind() == lexer::LET || p->currentTokenKind() == lexer::CONST;
+        bool alias = p->currentTokenKind() == lexer::ALIAS;
 
         bool isConstant;
         ast::Type* explicitType = nullptr;
@@ -24,7 +25,7 @@ namespace parser {
         if (letConst) {
             isConstant = p->currentTokenKind() == lexer::CONST;
             p->advance(); // consume 'let' or 'const'
-        } else {  // Either 'mut' + typename or the typename itself
+        } else if (!alias) {  // Either 'mut' + typename or the typename itself
             isConstant = p->currentTokenKind() != lexer::MUT;  // If it's not 'mut', then it's a constant declaration
             if (!isConstant) p->advance(); // consume 'mut' if it exists
 
@@ -37,14 +38,16 @@ namespace parser {
             if (p->currentTokenKind() != lexer::IDENTIFIER || 
                 (nextKind == lexer::IDENTIFIER || nextKind == lexer::STAR || nextKind == lexer::OPEN_BRACKET)) 
                 explicitType = parse_type(p, default_bp);
+        } else {
+            p->advance(); // consume 'alias'
         }
 
-        wstring varName = p->expectError(lexer::IDENTIFIER, Error(L"Expected variable name after declaration with " + (letConst ? (isConstant ? wstring(L"'const'") : wstring(L"'let'")) : (isConstant ? wstring(L"typename") : wstring(L"'mut'"))) + L", but got " + lexer::TokenKindString(p->currentTokenKind()) + L".")).value;
+        wstring varName = p->expectError(lexer::IDENTIFIER, Error(L"Expected variable name after declaration with " + (letConst ? (isConstant ? wstring(L"'const'") : wstring(L"'let'")) : (isConstant ? wstring(L"typename") : wstring(L"'mut'"))) + L", but got " + lexer::TokenKindString(p->currentTokenKind()) + L" at " + p->position())).value;
         if (p->currentTokenKind() == lexer::COLON) {
             p->advance();  // consume ':'
             if (explicitType != nullptr) {
                 ast::Type* newExplicitType = parse_type(p, default_bp);
-                wstring message = L"Variable declaration for '" + varName + L"' can only contain one type, but multiple were found (" + explicitType->GetName() + L" and " + newExplicitType->GetName() + L")";
+                wstring message = L"Variable declaration for '" + varName + L"' at " + p->position() + L" can only contain one type, but multiple were found (" + explicitType->GetName() + L" and " + newExplicitType->GetName() + L")";
                 p->errors.push_back(ParserError(message));
                 wcout << message << endl;
                 if (_panic) {
@@ -69,7 +72,7 @@ namespace parser {
         
         if (isConstant) {
             if (explicitType->GetName() == L"any") {
-                wstring message = L"Constant variable declaration for '" + varName + L"' cannot have type 'any' as it cannot be reassigned, did you mean 'auto'?";
+                wstring message = L"Constant variable declaration for '" + varName + L"' at " + p->position() + L" cannot have type 'any' as it cannot be reassigned, did you mean 'auto'?";
                 p->errors.push_back(ParserError(message));
                 wcout << message << endl;
                 if (_panic) {
@@ -79,7 +82,7 @@ namespace parser {
                 explicitType = new ast::SymbolType(L"auto");
             }
             if (assignedValue == nullptr) {
-                wstring message = L"Constant variable declaration for '" + varName + L"' must have an initializer";
+                wstring message = L"Constant variable declaration for '" + varName + L"' at " + p->position() + L" must have an initializer";
                 p->errors.push_back(ParserError(message));
                 wcout << message << endl;
                 if (_panic) {
@@ -88,6 +91,19 @@ namespace parser {
                 }
                 assignedValue = new ast::NullExpr();
             }
+        }
+
+        if (alias) {
+            if (assignedValue != nullptr) {
+                wstring message = L"Alias declaration for '" + varName + L"' at " + p->position() + L" cannot have an initializer";
+                p->errors.push_back(ParserError(message));
+                wcout << message << endl;
+                if (_panic) {
+                    if (_debug) wcout << L"Panicing" << endl;
+                    exit(1);
+                }
+            }
+            explicitType = new ast::AliasType(assignedValue);
         }
 
         return new ast::VarDeclStmt{
