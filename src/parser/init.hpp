@@ -130,8 +130,9 @@ namespace parser {
 }
 
 #include "syntax.hpp"
-#include "lookup.hpp"
+#include "lookup_pre.hpp"
 #include "expr.hpp"
 #include "stmt.hpp"
 #include "types.hpp"
+#include "lookup.hpp"
 #include "parser.hpp"
