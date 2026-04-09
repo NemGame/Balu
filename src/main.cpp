@@ -337,5 +337,7 @@ int main(int argc, char* argv[]) {
 
         _wcout << L"[Feedback Mode] End of feedback." << endl;
     }
+
+    if (_debug) _wcout << L"Program finished successfully." << endl;
     return 0;
 }
