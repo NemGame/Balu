@@ -167,4 +167,31 @@ namespace ast {
             }
         }
     };
+    struct IfStmt : public Stmt {
+        ast::Expr* Condition;
+        ast::Stmt* ThenBranch;
+        ast::Stmt* ElseBranch;  // can be nullptr
+        void stmt() override {}
+        IfStmt(ast::Expr* condition, ast::Stmt* thenBranch, ast::Stmt* elseBranch) : Condition(condition), ThenBranch(thenBranch), ElseBranch(elseBranch) {}
+        ~IfStmt() {
+            delete Condition;
+            delete ThenBranch;
+            delete ElseBranch;
+        }
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
+            wcout_ << wstring(indent * 2, L' ') << L"IfStmt" << endl;
+            if (Condition) {
+                wcout_ << wstring((indent + 1) * 2, L' ') << L"Condition:" << endl;
+                Condition->Dump(indent + 2, wcout_);
+            }
+            if (ThenBranch) {
+                wcout_ << wstring((indent + 1) * 2, L' ') << L"ThenBranch:" << endl;
+                ThenBranch->Dump(indent + 2, wcout_);
+            }
+            if (ElseBranch) {
+                wcout_ << wstring((indent + 1) * 2, L' ') << L"ElseBranch:" << endl;
+                ElseBranch->Dump(indent + 2, wcout_);
+            }
+        }
+    };
 }

@@ -61,6 +61,7 @@ namespace parser {
         stmt(lexer::ALIAS, parse_alias_decl_stmt);
         stmt(lexer::OPEN_BRACKET, parse_var_decl_stmt);
         stmt(lexer::STRUCT, parse_struct_decl_stmt);
+        stmt(lexer::IF, parse_if_stmt);
 
         // Types
         stmt(lexer::NUMBER, parse_var_decl_stmt);

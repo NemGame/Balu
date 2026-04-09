@@ -416,4 +416,19 @@ namespace parser {
             reverseUnorderedMap(methods)   // Methods
         );
     }
+    ast::Stmt* parse_if_stmt(Parser* p) {
+        if (_verbose) _wcout << L"Parsing if statement at " << p->position() << endl;
+        p->expect(lexer::IF, lexer::ELIF);
+        p->expect(lexer::OPEN_PAREN);
+        ast::Expr* condition = parse_expr(p, default_bp);
+        p->expect(lexer::CLOSE_PAREN);
+        ast::Stmt* thenBranch = parse_block_stmt(p);
+        ast::Stmt* elseBranch = nullptr;
+        if (p->currentToken().isOneOfMany(lexer::ELSE, lexer::ELIF)) {
+            if (p->currentTokenKind() == lexer::ELSE) p->advance();  // consume 'else'
+            if (p->currentToken().isOneOfMany(lexer::IF, lexer::ELIF)) elseBranch = parse_if_stmt(p);  // else if
+            else elseBranch = parse_block_stmt(p);  // else
+        }
+        return new ast::IfStmt(condition, thenBranch, elseBranch);
+    }
 }

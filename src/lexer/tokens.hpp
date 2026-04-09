@@ -82,6 +82,7 @@ namespace lexer {
         // Control flow
         IF,             // if
         ELSE,           // else
+        ELIF,           // elif
         FOREACH,        // foreach
         WHILE,          // while
         FOR,            // for
@@ -119,6 +120,7 @@ namespace lexer {
 
         {L"if", IF},
         {L"else", ELSE},
+        {L"elif", ELIF},
         {L"foreach", FOREACH},
         {L"while", WHILE},
         {L"for", FOR},
@@ -255,6 +257,7 @@ namespace lexer {
 
             case IF: return L"IF";
             case ELSE: return L"ELSE";
+            case ELIF: return L"ELIF";
             case FOREACH: return L"FOREACH";
             case WHILE: return L"WHILE";
             case FOR: return L"FOR";

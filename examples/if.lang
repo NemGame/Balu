@@ -1,0 +1,11 @@
+mut string wasd;
+
+if (x == 2) {
+    wasd = "2";
+} else if (x == 3) {
+    wasd = "3";
+} elif (x == 4) {
+    wasd = "4";
+} else {
+    wasd = "5";
+}
