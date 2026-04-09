@@ -97,6 +97,18 @@ namespace parser {
         }
 
         if (p->currentTokenKind() != lexer::SEMICOLON) {
+            if (p->currentTokenKind() != lexer::ASSIGNMENT) {
+                wstring message = L"Expected token at " + p->position() + L" to be either an assignment operator '=' for variable initialization or a semicolon ';' to end the declaration, but found " + lexer::TokenKindString(p->currentTokenKind());
+                p->errors.push_back(ParserError(message));
+                _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
+                if (_panic) {
+                    if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                    exit(1);
+                }
+                p->advanceUntil(lexer::SEMICOLON); // Skip to the end of the problematic statement
+                p->expect(lexer::SEMICOLON); // Consume the semicolon
+                return nullptr;
+            }
             p->expect(lexer::ASSIGNMENT); 
             assignedValue = parse_expr(p, assignment);
         }
@@ -291,7 +303,7 @@ namespace parser {
 
                     if (defaultValue == nullptr) defaultValue = new ast::NullExpr();
                     if (paramType == nullptr) paramType = new ast::SymbolType(isConstant ? L"auto" : L"any");
-                    
+
                     parameters[paramName] = new ast::MethodParameter(
                         paramName, 
                         paramType, 
