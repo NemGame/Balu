@@ -167,8 +167,8 @@ namespace parser {
             }
             
             ast::Type* ExpectedType = nullptr;
-            bool isMethod = p->currentTokenKind() == lexer::FN || p->nextTokenKind(2) == lexer::OPEN_PAREN;
-            if (isMethod) p->advance();  // consume 'fn'
+            bool isMethod = p->currentTokenKind() == lexer::FN || p->nextTokenKind(1) == lexer::OPEN_PAREN || p->nextTokenKind(2) == lexer::OPEN_PAREN;
+            if (isMethod && p->nextTokenKind(1) != lexer::OPEN_PAREN) p->advance();  // consume 'fn' / typename
 
             // fn typename methodname() {} or static fn typename methodname() {}
             if ((p->currentTokenKind() == lexer::IDENTIFIER || p->currentToken().isType()) && p->nextTokenKind() == lexer::IDENTIFIER) {
@@ -239,7 +239,7 @@ namespace parser {
                         p->advance();  // consume 'const'
                     }
 
-                    if (p->currentTokenKind() == lexer::IDENTIFIER) {
+                    if (p->currentTokenKind() == lexer::IDENTIFIER || p->currentToken().isType()) {
                         if (p->nextTokenKind() == lexer::IDENTIFIER) {
                             paramType = parse_type(p, default_bp);
                             if (paramType == nullptr) paramType = new ast::SymbolType(L"auto");
@@ -289,12 +289,15 @@ namespace parser {
                         continue;
                     }
 
-                    parameters.emplace(paramName, new ast::MethodParameter(
+                    if (defaultValue == nullptr) defaultValue = new ast::NullExpr();
+                    if (paramType == nullptr) paramType = new ast::SymbolType(isConstant ? L"auto" : L"any");
+                    
+                    parameters[paramName] = new ast::MethodParameter(
                         paramName, 
                         paramType, 
                         defaultValue, 
                         isConstant
-                    ));
+                    );
                     if (p->currentTokenKind() == lexer::COMMA) p->advance();
                 }
                 p->expect(lexer::CLOSE_PAREN);
@@ -314,7 +317,7 @@ namespace parser {
                 }
                 if (p->currentTokenKind() == lexer::ARROW) {  // fn <type> name() => <expr>;
                     p->advance();  // consume '=>'
-                    MethodBody = new ast:: ExpressionStmt(parse_expr(p, assignment));
+                    MethodBody = new ast:: ExpressionStmt(new ast::ReturnExpr(parse_expr(p, assignment)));
                     p->expect(lexer::SEMICOLON);
                 } else MethodBody = parse_block_stmt(p);
             } else {  // Parse property

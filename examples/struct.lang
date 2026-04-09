@@ -1,7 +1,7 @@
 struct Test {
     prop1;
     prop2: number;
-
+    porp3 = 3;
     fn method1(): void {
 
     }
@@ -18,5 +18,11 @@ struct Test {
     fn method5() => method4();
     fn method6: number () {
         return 69 + 3 - 3;
+    }
+    method7() {
+        return 3;
+    }
+    method8(wasd: any = 3, customType x = 2, y, const z): any {
+        return method(wasd);
     }
 }
