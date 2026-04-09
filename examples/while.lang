@@ -1,11 +1,11 @@
 while (1 == 2) {
-    number x = 2;
+
 } else if (1 == 2) {
-    number á = 16;
+
 } elif (1 == 2) {
-    string wasd = "2";
+
 } else {
-    number l = 17;
+
 }
 
 while (1 == 2) {
@@ -15,9 +15,9 @@ while (1 == 2) {
 }
 
 while (1 == 2) {
-    x = y;
+
 } else {
-    string x = "2";
+    
 }
 
 while {
@@ -26,4 +26,6 @@ while {
 
 while {
 
-} else if (1);
+} else if {
+
+}
