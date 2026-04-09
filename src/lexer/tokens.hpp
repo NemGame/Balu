@@ -28,6 +28,8 @@ namespace lexer {
         NOT,           // !
         NOT_EQUALS,    // !=
 
+        ARROW,          // =>
+
         LESS,          // <
         LESS_EQUALS,   // <=
         GREATER,       // >
@@ -163,6 +165,12 @@ namespace lexer {
             }
             return false;
         }
+        bool isType() const {
+            for (TokenKind tokenType : TokenTypes) {
+                if (this->kind == tokenType) return true;
+            }
+            return false;
+        }
     };
 
     Token NewToken(TokenKind kind, const wstring& value = L"", unsigned long long line = 0, unsigned long long column = 0) {
@@ -195,6 +203,9 @@ namespace lexer {
             case EQUALS: return L"EQUALS";
             case NOT: return L"NOT";
             case NOT_EQUALS: return L"NOT_EQUALS";
+
+            case ARROW: return L"ARROW";
+            
             case LESS: return L"LESS";
             case LESS_EQUALS: return L"LESS_EQUALS";
             case GREATER: return L"GREATER";

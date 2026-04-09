@@ -66,6 +66,26 @@ namespace ast {
             }
         }
     };
+    struct MethodParameter {
+        wstring Name;
+        Type* ParamType;
+        ast::Expr* DefaultValue;
+        bool isConstant;
+        MethodParameter(const wstring& n, Type* t, ast::Expr* d, bool c) : Name(n), ParamType(t), DefaultValue(d), isConstant(c) {}
+        ~MethodParameter() {
+            delete ParamType;
+            delete DefaultValue;
+        }
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const {
+            wcout_ << wstring(indent * 2, L' ') << L"MethodParameter: " << Name << (isConstant ? L" (const)" : L"") << endl;
+            if (ParamType) {
+                ParamType->Dump(indent + 1, wcout_);
+            }
+            if (DefaultValue) {
+                DefaultValue->Dump(indent + 1, wcout_);
+            }
+        }
+    };
     struct StructProperty {
         wstring Property;
         ast::Type* Type;
@@ -89,8 +109,27 @@ namespace ast {
     struct StructMethod {  // TODO: implement (add fn type)
         bool isStatic;
         wstring MethodName;
+        Type* ReturnType;
+        Stmt* Body;
+        unordered_map<wstring, MethodParameter*> Parameters;
+        StructMethod(const wstring& n, Type* t, Stmt* b, bool s, unordered_map<wstring, MethodParameter*> params) : MethodName(n), ReturnType(t), Body(b), isStatic(s), Parameters(params) {}
+        ~StructMethod() {
+            delete ReturnType;
+            delete Body;
+            for (auto& p : Parameters) delete p.second;
+        }
         void Dump(int indent = 0, wostream& wcout_ = _wcout) const {
             wcout_ << wstring(indent * 2, L' ') << L"StructMethod: " << MethodName << (isStatic ? L" (static)" : L"") << endl;
+            if (ReturnType) {
+                ReturnType->Dump(indent + 1, wcout_);
+            }
+            for (const auto& param : Parameters) {
+                wcout_ << wstring((indent + 1) * 2, L' ') << L"Parameter: " << param.first << endl;
+                if (param.second) param.second->Dump(indent + 2, wcout_);
+            }
+            if (Body) {
+                Body->Dump(indent + 1, wcout_);
+            }
         }
     };
     struct StructDeclStmt : public Stmt {

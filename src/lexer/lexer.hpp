@@ -220,6 +220,7 @@ namespace lexer {
                 {wregex(L"^\\)"), defaultHandler(CLOSE_PAREN, L")")},
                 {wregex(L"^=="), defaultHandler(EQUALS, L"==")},
                 {wregex(L"^!="), defaultHandler(NOT_EQUALS, L"!=")},
+                {wregex(L"^=>"), defaultHandler(ARROW, L"=>")},
                 {wregex(L"^="), defaultHandler(ASSIGNMENT, L"=")},
                 {wregex(L"^!"), defaultHandler(NOT, L"!")},
                 {wregex(L"^<="), defaultHandler(LESS_EQUALS, L"<=")},

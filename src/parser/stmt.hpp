@@ -23,6 +23,18 @@ namespace parser {
 
         return new ast::ExpressionStmt( expr );
     }
+    ast::Stmt* parse_block_stmt(Parser* p) {
+        if (_verbose) _wcout << L"Parsing block statement at " << p->position() << endl;
+        p->expect(lexer::OPEN_CURLY);  // consume '{'
+        vector<ast::Stmt*> statements;
+        while (p->hasTokens() && p->currentTokenKind() != lexer::CLOSE_CURLY) {
+            ast::Stmt* stmt = parse_stmt(p);
+            if (stmt != nullptr) statements.push_back(stmt);
+        }
+        p->expect(lexer::CLOSE_CURLY);  // consume '}'
+        if (p->currentTokenKind() == lexer::SEMICOLON) p->advance();
+        return new ast::BlockStmt(statements);
+    };
     ast::Stmt* parse_var_decl_stmt(Parser* p) {
         if (_verbose) _wcout << L"Parsing variable declaration statement at " << p->position() << endl;
         // Declared using the let or const keyword, otherwise it's either a mut, or a typename declaration
@@ -153,35 +165,176 @@ namespace parser {
                 isStatic = true;
                 p->advance();  // consume 'static'
             }
+            
+            ast::Type* ExpectedType = nullptr;
+            bool isMethod = p->currentTokenKind() == lexer::FN || p->nextTokenKind(2) == lexer::OPEN_PAREN;
+            if (isMethod) p->advance();  // consume 'fn'
 
-            // Property
-            if (p->currentTokenKind() == lexer::IDENTIFIER) {
-                wstring propertyName = p->advance().value;
-
-                if (properties.find(propertyName) != properties.end()) {
-                    wstring message = L"Duplicate struct property '" + propertyName + L"' found in struct '" + structName + L"' declaration at " + p->position();
+            // fn typename methodname() {} or static fn typename methodname() {}
+            if ((p->currentTokenKind() == lexer::IDENTIFIER || p->currentToken().isType()) && p->nextTokenKind() == lexer::IDENTIFIER) {
+                ExpectedType = parse_type(p, default_bp);
+                if (ExpectedType == nullptr) ExpectedType = new ast::SymbolType(L"auto");
+                if (ExpectedType->GetName() == L"any") {
+                    wstring message = L"Struct method declaration for '" + p->currentToken().value + L"' at " + p->position() + L" cannot have return type 'any', did you mean 'auto'?";
                     p->errors.push_back(ParserError(message));
                     _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
                     if (_panic) {
                         if (_debug) _wcout << L"[Parser] Panicing" << endl;
                         exit(1);
                     }
-                    p->advanceUntil(lexer::SEMICOLON);  // Skip until the end of the property declaration
-                    continue;
+                    delete ExpectedType;
+                    ExpectedType = new ast::SymbolType(L"auto");
                 }
+            }
+            wstring propertyName = p->advance().value;
 
-                ast::Type* ExpectedType = nullptr;
+            // Name & collision check
+            if (p->currentTokenKind() == lexer::IDENTIFIER) {
+                if (properties.find(propertyName) != properties.end()) {
+                    if (!isMethod) {
+                        wstring message = L"Duplicate struct property '" + propertyName + L"' found in struct '" + structName + L"' declaration at " + p->position();
+                        p->errors.push_back(ParserError(message));
+                        _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
+                        if (_panic) {
+                            if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                            exit(1);
+                        }
+                        p->advanceUntil(lexer::SEMICOLON);  // Skip until the end of the property declaration
+                        continue;
+                    }
+                    // TODO: Method overloading based on parameter types and count
+                }
+            }
+
+            // Interpret type
+            if (p->currentTokenKind() == lexer::COLON) {
+                p->advance();  // consume ':'
+                if (ExpectedType != nullptr) {
+                    wstring message = L"Struct property declaration for '" + propertyName + L"' at " + p->position() + L" cannot have an explicit type as it was already specified as '" + ExpectedType->GetName() + L"'";
+                    p->errors.push_back(ParserError(message));
+                    _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
+                    if (_panic) {
+                        if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                        exit(1);
+                    }
+                    p->advance();  // consume the type
+                } else ExpectedType = parse_type(p, default_bp);
+            } else if (!isMethod && ExpectedType == nullptr) ExpectedType = new ast::SymbolType(L"any");  // Default to 'any' type for struct properties if no type is specified
+            
+            ast::Expr* AssignedValue = nullptr;
+            ast::Stmt* MethodBody = nullptr;
+            unordered_map<wstring, ast::MethodParameter*> parameters;
+            
+            // Method parameters
+            if (isMethod) {  // Parse method
+                p->expect(lexer::OPEN_PAREN);
+                while (p->hasTokens() && p->currentTokenKind() != lexer::CLOSE_PAREN)
+                {
+                    wstring paramName = L"UnnamedParam";
+                    ast::Type* paramType = nullptr;
+                    ast::Expr* defaultValue = nullptr;
+                    bool isConstant = false;
+                    if (p->currentTokenKind() == lexer::CONST) {
+                        isConstant = true;
+                        p->advance();  // consume 'const'
+                    }
+
+                    if (p->currentTokenKind() == lexer::IDENTIFIER) {
+                        if (p->nextTokenKind() == lexer::IDENTIFIER) {
+                            paramType = parse_type(p, default_bp);
+                            if (paramType == nullptr) paramType = new ast::SymbolType(L"auto");
+                        }
+                        paramName = p->advance().value;
+                    } else {
+                        wstring message = L"Expected parameter name in method '" + propertyName + L"' declaration at " + p->position() + L", but got " + lexer::TokenKindString(p->currentTokenKind());
+                        p->errors.push_back(ParserError(message));
+                        _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
+                        if (_panic) {
+                            if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                            exit(1);
+                        }
+                        p->advanceUntil(lexer::CLOSE_PAREN, lexer::COMMA);
+                        continue;
+                    }
+
+                    if (p->currentTokenKind() == lexer::COLON) {
+                        p->advance();  // consume ':'
+                        if (paramType != nullptr) {
+                            ast::Type* newParamType = parse_type(p, default_bp);
+                            wstring message = L"Method parameter '" + paramName + L"' in method '" + propertyName + L"' declaration at " + p->position() + L" cannot have an explicit type as it was already specified as '" + paramType->GetName() + L"'";
+                            p->errors.push_back(ParserError(message));
+                            _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
+                            if (_panic) {
+                                if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                                exit(1);
+                            }
+                            p->advance();  // consume the type
+                        } else paramType = parse_type(p, default_bp);
+                    }
+
+                    if (p->currentTokenKind() == lexer::ASSIGNMENT) {
+                        p->advance();  // consume '='
+                        defaultValue = parse_expr(p, assignment);
+                    }
+
+                    if (parameters.find(paramName) != parameters.end()) {
+                        wstring message = L"Duplicate parameter name '" + paramName + L"' found in method '" + propertyName + L"' declaration at " + p->position();
+                        p->errors.push_back(ParserError(message));
+                        _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
+                        if (_panic) {
+                            if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                            exit(1);
+                        }
+                        p->advanceUntil(lexer::COMMA);  // Skip until the end of the parameter declaration
+                        continue;
+                    }
+
+                    parameters.emplace(paramName, new ast::MethodParameter(
+                        paramName, 
+                        paramType, 
+                        defaultValue, 
+                        isConstant
+                    ));
+                    if (p->currentTokenKind() == lexer::COMMA) p->advance();
+                }
+                p->expect(lexer::CLOSE_PAREN);
                 if (p->currentTokenKind() == lexer::COLON) {
                     p->advance();  // consume ':'
-                    ExpectedType = parse_type(p, default_bp);
-                } else ExpectedType = new ast::SymbolType(L"any");  // Default to 'any' type for struct properties if no type is specified
-
-                ast::Expr* AssignedValue = nullptr;
+                    if (ExpectedType != nullptr) {
+                        ast::Type* newExpectedType = parse_type(p, default_bp);
+                        wstring message = L"Struct method declaration for '" + propertyName + L"' at " + p->position() + L" cannot have an explicit return type as it was already specified as '" + ExpectedType->GetName() + L"'";
+                        p->errors.push_back(ParserError(message));
+                        _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
+                        if (_panic) {
+                            if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                            exit(1);
+                        }
+                        p->advance();  // consume the type
+                    } else ExpectedType = parse_type(p, default_bp);
+                }
+                if (p->currentTokenKind() == lexer::ARROW) {  // fn <type> name() => <expr>;
+                    p->advance();  // consume '=>'
+                    MethodBody = new ast:: ExpressionStmt(parse_expr(p, assignment));
+                    p->expect(lexer::SEMICOLON);
+                } else MethodBody = parse_block_stmt(p);
+            } else {  // Parse property
                 if (p->currentTokenKind() == lexer::ASSIGNMENT) {
                     p->advance();  // consume '='
                     AssignedValue = parse_expr(p, assignment);
                 } else AssignedValue = new ast::NullExpr();
+            }
 
+            if (isMethod) {
+                if (ExpectedType == nullptr) ExpectedType = new ast::SymbolType(L"auto");
+                methods[propertyName] = new ast::StructMethod(
+                    propertyName,
+                    ExpectedType,
+                    MethodBody,
+                    isStatic,
+                    parameters
+                );
+                if (p->currentTokenKind() == lexer::SEMICOLON) p->advance();  // Optional semicolon after method declaration
+            } else {
                 properties[propertyName] = new ast::StructProperty(
                     propertyName,
                     ExpectedType,
@@ -189,16 +342,7 @@ namespace parser {
                     isStatic
                 );
                 p->expect(lexer::SEMICOLON);
-                continue;
             }
-
-            if (_panic) {
-                wstring message = L"Struct methods not yet implemented";
-                p->errors.push_back(ParserError(message, p->line, p->column));
-                if (_debug) _wcout << L"[Parser] Panicing" << endl;
-                exit(1);
-            }
-            p->advanceUntil(lexer::CLOSE_CURLY);  // Skip until the end of the method declaration (or the next property if methods are not implemented yet)
         }
 
         p->expect(lexer::CLOSE_CURLY);
@@ -209,5 +353,5 @@ namespace parser {
             reverseUnorderedMap(properties),  // Properties
             reverseUnorderedMap(methods)   // Methods
         );
-    };
+    }
 }

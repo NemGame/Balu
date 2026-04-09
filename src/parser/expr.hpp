@@ -206,4 +206,29 @@ namespace parser {
         parser->expect(lexer::CLOSE_CURLY);
         return new ast::ArrayInstantiationExpr(underlyingType, contents);
     }
+    ast::Expr* parse_function_call_expr(Parser* parser, ast::Expr* left, binding_power bp) {
+        if (_verbose) _wcout << L"[Parser] Parsing function call expression at " << parser->position() << endl;
+        vector<ast::Expr*> arguments;
+        parser->expect(lexer::OPEN_PAREN);
+
+        while (parser->hasTokens() && parser->currentTokenKind() != lexer::CLOSE_PAREN) {
+            arguments.push_back(parse_expr(parser, default_bp));
+            if (parser->currentTokenKind() != lexer::CLOSE_PAREN) {
+                parser->expect(lexer::COMMA);
+            }
+        }
+
+        parser->expect(lexer::CLOSE_PAREN);
+        return new ast::FunctionCallExpr(left->GetValue(), arguments);
+    }
+    ast::Expr* parse_return_expr(Parser* p) {
+        if (_verbose) _wcout << L"Parsing return statement at " << p->position() << endl;
+        p->expect(lexer::RETURN);  // consume 'return'
+        if (p->currentTokenKind() == lexer::SEMICOLON) {
+            p->advance();  // consume ';'
+            return new ast::ReturnExpr(nullptr);
+        }
+        ast::Expr* returnValue = parse_expr(p, default_bp);
+        return new ast::ReturnExpr(returnValue);
+    }
 }

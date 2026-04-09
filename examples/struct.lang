@@ -1,0 +1,19 @@
+struct Test {
+    prop1;
+    prop2: number;
+
+    fn method1(): void {
+
+    }
+    fn method2() {
+
+    }
+    fn number method3() {
+
+    }
+    number method4() {
+        string huh = "wasd";
+        return 10;
+    }
+    fn method5() => method4();
+}

@@ -26,6 +26,8 @@ namespace parser {
     ast::Stmt* parse_struct_decl_stmt(Parser* parser);
     ast::Expr* parse_struct_instantiation_expr(Parser* parser, ast::Expr* left, binding_power bp);
     ast::Expr* parse_array_instantiation_expr(Parser* parser);
+    ast::Expr* parse_function_call_expr(Parser* parser, ast::Expr* left, binding_power bp);
+    ast::Expr* parse_return_expr(Parser* parser);
     
     using stmt_handler = ast::Stmt* (*)(Parser* p);
     using nud_handler = ast::Expr* (*)(Parser* p);
@@ -85,6 +87,7 @@ namespace parser {
 
         // Call/Member/Array expressions
         led(lexer::OPEN_CURLY, call, parse_struct_instantiation_expr);
+        led(lexer::OPEN_PAREN, call, parse_function_call_expr);
         nud(lexer::OPEN_BRACKET, parse_array_instantiation_expr);
 
         // Literals and Symbols
@@ -103,6 +106,7 @@ namespace parser {
         nud(lexer::DASH, parse_prefix_expr);
 
         nud(lexer::RULE, parse_primary_expr);
+        nud(lexer::RETURN, parse_return_expr);
 
         // Statements
         stmt(lexer::LET, parse_var_decl_stmt);
@@ -111,7 +115,7 @@ namespace parser {
         stmt(lexer::ALIAS, parse_var_decl_stmt);
         stmt(lexer::OPEN_BRACKET, parse_var_decl_stmt);
         stmt(lexer::STRUCT, parse_struct_decl_stmt);
-        
+
         // Types
         stmt(lexer::NUMBER, parse_var_decl_stmt);
         stmt(lexer::BYTE, parse_var_decl_stmt);

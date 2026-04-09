@@ -12,11 +12,17 @@ namespace ast {
         wstring GetName(int indent = 0) const override {
             return wstring(indent * 2, L' ') + L"NumberExpr: " + to_wstring(value);
         }
+        wstring GetValue() const override {
+            return to_wstring(value);
+        }
     };
     struct ByteExpr : public Expr {
         unsigned char value;
         ByteExpr(unsigned char v) : value(v) {}
         void expr() override {}
+        wstring GetValue() const override {
+            return to_wstring(value);
+        }
         void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
             wcout_ << GetName(indent) << endl;
         }
@@ -34,6 +40,9 @@ namespace ast {
         wstring GetName(int indent = 0) const override {
             return wstring(indent * 2, L' ') + L"StringExpr: \"" + value + L"\"";
         }
+        wstring GetValue() const override {
+            return value;
+        }
     };
     struct CharExpr : public Expr {
         wchar_t value;
@@ -44,6 +53,9 @@ namespace ast {
         }
         wstring GetName(int indent = 0) const override {
             return wstring(indent * 2, L' ') + L"CharExpr: '" + value + L"'";
+        }
+        wstring GetValue() const override {
+            return wstring(1, value);
         }
     };
     struct BooleanExpr : public Expr {
@@ -56,6 +68,9 @@ namespace ast {
         wstring GetName(int indent = 0) const override {
             return wstring(indent * 2, L' ') + L"BooleanExpr: " + (value ? L"true" : L"false");
         }
+        wstring GetValue() const override {
+            return value ? L"true" : L"false";
+        }
     };
     struct NullExpr : public Expr {
         void expr() override {}
@@ -65,6 +80,9 @@ namespace ast {
         wstring GetName(int indent = 0) const override {
             return wstring(indent * 2, L' ') + L"NullExpr: null";
         }
+        wstring GetValue() const override {
+            return L"null";
+        }
     };
     struct SymbolExpr : public Expr {
         wstring value;
@@ -73,11 +91,46 @@ namespace ast {
         void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
             wcout_ << GetName(indent) << endl;
         }
-        wstring GetName(int indent = 0) const {
+        wstring GetName(int indent = 0) const override {
             return wstring(indent * 2, L' ') + L"SymbolExpr: " + value;
+        }
+        wstring GetValue() const override {
+            return value;
         }
     };
     using IdentifierExpr = SymbolExpr;
+    struct FunctionCallExpr : public Expr {
+        wstring FunctionName;
+        vector<Expr*> Arguments;
+        FunctionCallExpr(const wstring& functionName, const vector<Expr*>& arguments) : FunctionName(functionName), Arguments(arguments) {}
+        ~FunctionCallExpr() {
+            for (Expr* arg : Arguments) {
+                delete arg;
+            }
+        }
+        void expr() override {}
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
+            wcout_ << GetName(indent) << endl;
+        }
+        wstring GetName(int indent = 0) const override {
+            wstring str = wstring(indent * 2, L' ') + L"FunctionCallExpr: " + FunctionName + L"()";
+            for (const auto& arg : Arguments) {
+                str += L"\n" + arg->GetName(indent + 1);
+            }
+            return str;
+        }
+        wstring GetValue() const override {
+            wstring str = FunctionName + L"(";
+            for (size_t i = 0; i < Arguments.size(); ++i) {
+                str += Arguments[i]->GetValue();
+                if (i < Arguments.size() - 1) {
+                    str += L", ";
+                }
+            }
+            str += L")";
+            return str;
+        }
+    };
     struct RuleExpr : public Expr {
         vector<wstring> value;
         RuleExpr(const vector<wstring>& v) : value(v) {}
@@ -86,8 +139,19 @@ namespace ast {
         void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
             wcout_ << GetName(indent) << endl;
         }
-        wstring GetName(int indent = 0) const {
+        wstring GetName(int indent = 0) const override {
             wstring result = wstring(indent * 2, L' ') + L"RuleExpr: [";
+            for (const auto& v : value) {
+                result += v + L", ";
+            }
+            if (!value.empty()) {
+                result = result.substr(0, result.size() - 2); // Remove the last ", "
+            }
+            result += L"]";
+            return result;
+        }
+        wstring GetValue() const override {
+            wstring result = L"rule[";
             for (const auto& v : value) {
                 result += v + L", ";
             }
@@ -120,6 +184,10 @@ namespace ast {
             if (right) str += L"\n" + right->GetName(indent + 1);
             return str;
         }
+        wstring GetValue() const override {
+            wstring str = left->GetValue() + L" " + lexer::TokenKindString(op.kind) + L" " + right->GetValue();
+            return str;
+        }
     };
     struct PrefixExpr : public Expr {
         lexer::Token Operator;
@@ -135,6 +203,10 @@ namespace ast {
         wstring GetName(int indent = 0) const override {
             wstring str = wstring(indent * 2, L' ') + L"PrefixExpr (" + lexer::TokenKindString(Operator.kind) + L")";
             if (RightExpr) str += L"\n" + RightExpr->GetName(indent + 1);
+            return str;
+        }
+        wstring GetValue() const override {
+            wstring str = lexer::TokenKindString(Operator.kind) + L" " + RightExpr->GetValue();
             return str;
         }
     };
@@ -160,6 +232,10 @@ namespace ast {
             if (Value) str += L"\n" + Value->GetName(indent + 1);
             return str;
         }
+        wstring GetValue() const override {
+            wstring str = Assignee->GetValue() + L" " + lexer::TokenKindString(Operator.kind) + L" " + Value->GetValue();
+            return str;
+        }
     };
     struct StructInstantiationExpr : public Expr {
         wstring StructName;
@@ -179,6 +255,14 @@ namespace ast {
             for (const auto& prop : Properties) {
                 str += L"\n" + wstring((indent + 1) * 2, L' ') + L"Property: " + prop.first;
                 if (prop.second) str += L"\n" + wstring((indent + 2) * 2, L' ') + L"Value:\n" + prop.second->GetName(indent + 3);
+            }
+            return str;
+        }
+        wstring GetValue() const override {
+            wstring str = L"StructInstantiationExpr: " + StructName;
+            for (const auto& prop : Properties) {
+                str += L"\nProperty: " + prop.first;
+                if (prop.second) str += L"\nValue:\n" + prop.second->GetValue();
             }
             return str;
         }
@@ -206,5 +290,35 @@ namespace ast {
             }
             return str;
         }
+        wstring GetValue() const override {
+            wstring str = L"ArrayInstantiationExpr: ";
+            if (UnderlyingType) str += L"\nUnderlyingType: " + UnderlyingType->GetName();
+            str += L"\nContents:";
+            for (Expr* expr : Contents) {
+                if (expr) str += L"\n" + expr->GetValue();
+            }
+            return str;
+        }
     };
+    struct ReturnExpr : public Expr {
+        Expr* Value;
+        ReturnExpr(Expr* value) : Value(value) {}
+        ~ReturnExpr() {
+            delete Value;
+        }
+        void expr() override {}
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
+            wcout_ << GetName(indent) << endl;
+        }
+        wstring GetName(int indent = 0) const override {
+            wstring str = wstring(indent * 2, L' ') + L"ReturnExpr";
+            if (Value) str += L"\n" + Value->GetName(indent + 1);
+            return str;
+        }
+        wstring GetValue() const override {
+            wstring str = L"ReturnExpr";
+            if (Value) str += L": " + Value->GetValue();
+            return str;
+        }
+     };
 }
