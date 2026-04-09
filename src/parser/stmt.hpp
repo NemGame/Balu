@@ -419,16 +419,89 @@ namespace parser {
     ast::Stmt* parse_if_stmt(Parser* p) {
         if (_verbose) _wcout << L"Parsing if statement at " << p->position() << endl;
         p->expect(lexer::IF, lexer::ELIF);
-        p->expect(lexer::OPEN_PAREN);
-        ast::Expr* condition = parse_expr(p, default_bp);
-        p->expect(lexer::CLOSE_PAREN);
+        ast::Expr* condition = nullptr;
+        if (p->currentTokenKind() == lexer::OPEN_PAREN) {
+            p->expect(lexer::OPEN_PAREN);
+            condition = parse_expr(p, default_bp);
+            p->expect(lexer::CLOSE_PAREN);
+        } else condition = new ast::BooleanExpr(true);
+        if (p->currentTokenKind() == lexer::SEMICOLON) {
+            wstring message = L"Expected 'if' statement at " + p->position() + L" to have a condition expression in parentheses, but got ';'";
+            p->errors.push_back(ParserError(message));
+            _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
+            if (_panic) {
+                if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                exit(1);
+            }
+            p->advance();
+            return nullptr;
+        }
         ast::Stmt* thenBranch = parse_block_stmt(p);
         ast::Stmt* elseBranch = nullptr;
         if (p->currentToken().isOneOfMany(lexer::ELSE, lexer::ELIF)) {
             if (p->currentTokenKind() == lexer::ELSE) p->advance();  // consume 'else'
             if (p->currentToken().isOneOfMany(lexer::IF, lexer::ELIF)) elseBranch = parse_if_stmt(p);  // else if
-            else elseBranch = parse_block_stmt(p);  // else
+            else {
+                if (p->currentTokenKind() != lexer::OPEN_CURLY) {
+                    wstring message = L"Expected 'else' branch for if statement at " + p->position() + L" to be a block statement starting with '{', but got " + lexer::TokenKindString(p->currentTokenKind());
+                    p->errors.push_back(ParserError(message));
+                    _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
+                    if (_panic) {
+                        if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                        exit(1);
+                    }
+                    p->advanceUntil(lexer::OPEN_CURLY, lexer::SEMICOLON);
+                    if (p->currentTokenKind() != lexer::SEMICOLON) p->advanceDepth(lexer::OPEN_CURLY, lexer::CLOSE_CURLY);
+                    p->advance();
+                } else elseBranch = parse_block_stmt(p);  // else
+            }
         }
         return new ast::IfStmt(condition, thenBranch, elseBranch);
+    }
+    ast::Stmt* parse_while_stmt(Parser* p) {
+        if (_verbose) _wcout << L"Parsing while statement at " << p->position() << endl;
+        p->expect(lexer::WHILE);
+        ast::Expr* condition = nullptr;
+        if (p->currentTokenKind() == lexer::OPEN_PAREN) {
+            p->expect(lexer::OPEN_PAREN);
+            condition = parse_expr(p, default_bp);
+            p->expect(lexer::CLOSE_PAREN);
+        }
+        if (p->currentTokenKind() == lexer::SEMICOLON) {
+            wstring message = L"Expected 'while' statement at " + p->position() + L" to have a condition expression in parentheses, but got ';'";
+            p->errors.push_back(ParserError(message));
+            _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
+            if (_panic) {
+                if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                exit(1);
+            }
+            p->advance();
+            return nullptr;
+        }
+        if (condition == nullptr) condition = new ast::BooleanExpr(true);
+        ast::Stmt* body = parse_block_stmt(p);
+        ast::Stmt* elseBranch = nullptr;
+        if (p->currentTokenKind() == lexer::ELIF) {
+            elseBranch = parse_if_stmt(p);
+        } else if (p->currentTokenKind() == lexer::ELSE) {
+            p->advance();  // consume 'else'
+            if (p->currentTokenKind() == lexer::IF) elseBranch = parse_if_stmt(p);  // else if
+            else {
+                if (p->currentTokenKind() != lexer::OPEN_CURLY) {
+                    wstring message = L"Expected 'else' branch for while statement at " + p->position() + L" to be a block statement starting with '{', but got " + lexer::TokenKindString(p->currentTokenKind());
+                    p->errors.push_back(ParserError(message));
+                    _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
+                    if (_panic) {
+                        if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                        exit(1);
+                    }
+                    p->advanceUntil(lexer::OPEN_CURLY, lexer::SEMICOLON);
+                    if (p->currentTokenKind() != lexer::SEMICOLON) p->advanceDepth(lexer::OPEN_CURLY, lexer::CLOSE_CURLY);
+                    p->advance();
+                } else elseBranch = parse_block_stmt(p);  // else
+            }
+        }
+        if (p->currentTokenKind() == lexer::SEMICOLON) p->advance();  // Optional semicolon after while statement
+        return new ast::WhileStmt(condition, body, elseBranch);
     }
 }

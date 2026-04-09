@@ -194,4 +194,31 @@ namespace ast {
             }
         }
     };
+    struct WhileStmt : public Stmt {
+        ast::Expr* Condition;
+        ast::Stmt* Body;
+        ast::Stmt* ElseBranch;  // can be nullptr
+        void stmt() override {}
+        WhileStmt(ast::Expr* condition, ast::Stmt* body, ast::Stmt* elseBranch = nullptr) : Condition(condition), Body(body), ElseBranch(elseBranch) {}
+        ~WhileStmt() {
+            delete Condition;
+            delete Body;
+            delete ElseBranch;
+        }
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
+            wcout_ << wstring(indent * 2, L' ') << L"WhileStmt" << endl;
+            if (Condition) {
+                wcout_ << wstring((indent + 1) * 2, L' ') << L"Condition:" << endl;
+                Condition->Dump(indent + 2, wcout_);
+            }
+            if (Body) {
+                wcout_ << wstring((indent + 1) * 2, L' ') << L"Body:" << endl;
+                Body->Dump(indent + 2, wcout_);
+            }
+            if (ElseBranch) {
+                wcout_ << wstring((indent + 1) * 2, L' ') << L"ElseBranch:" << endl;
+                ElseBranch->Dump(indent + 2, wcout_);
+            }
+        }
+    };
 }
