@@ -90,6 +90,9 @@ namespace parser {
             case lexer::STRING: {
                 return new ast::StringExpr(parser->advance().value);
             }
+            case lexer::FSTRING: {
+                return new ast::StringExpr(parser->advance().value, true);
+            }
             case lexer::CHAR: {
                 return new ast::CharExpr(parser->advance().value[0]);
             }

@@ -27,7 +27,6 @@ namespace parser {
             }
         }
         
-
         return ast::BlockStmt{
             Body,
         };

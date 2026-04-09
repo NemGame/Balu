@@ -39,7 +39,6 @@ namespace parser {
         if (_verbose) _wcout << L"Parsing variable declaration statement at " << p->position() << endl;
         // Declared using the let or const keyword, otherwise it's either a mut, or a typename declaration
         bool letConst = p->currentTokenKind() == lexer::LET || p->currentTokenKind() == lexer::CONST;
-        bool alias = p->currentTokenKind() == lexer::ALIAS;
 
         bool isConstant;
         ast::Type* explicitType = nullptr;
@@ -47,7 +46,7 @@ namespace parser {
         if (letConst) {
             isConstant = p->currentTokenKind() == lexer::CONST;
             p->advance(); // consume 'let' or 'const'
-        } else if (!alias) {  // Either 'mut' + typename or the typename itself
+        } else {  // Either 'mut' + typename or the typename itself
             isConstant = p->currentTokenKind() != lexer::MUT;  // If it's not 'mut', then it's a constant declaration
             if (!isConstant) p->advance(); // consume 'mut' if it exists
 
@@ -60,38 +59,25 @@ namespace parser {
             if (p->currentTokenKind() != lexer::IDENTIFIER || 
                 (nextKind == lexer::IDENTIFIER || nextKind == lexer::STAR || nextKind == lexer::OPEN_BRACKET)) 
                 explicitType = parse_type(p, default_bp);
-        } else {
-            p->advance(); // consume 'alias'
         }
 
         wstring varName = p->expectError(lexer::IDENTIFIER, Error(L"Expected variable name after declaration with " + (letConst ? (isConstant ? wstring(L"'const'") : wstring(L"'let'")) : (isConstant ? wstring(L"typename") : wstring(L"'mut'"))) + L", but got " + lexer::TokenKindString(p->currentTokenKind()) + L" at " + p->position())).value;
         if (p->currentTokenKind() == lexer::COLON) {
-                p->advance();  // consume ':'
-            if (alias) {
-                wstring message = L"Alias declaration for '" + varName + L"' at " + p->position() + L" cannot have an explicit type";
+            p->advance();  // consume ':'
+            if (explicitType != nullptr) {
+                ast::Type* newExplicitType = parse_type(p, default_bp);
+                wstring message = L"Variable declaration for '" + varName + L"' at " + p->position() + L" can only contain one type, but multiple were found (" + explicitType->GetName() + L" and " + newExplicitType->GetName() + L")";
                 p->errors.push_back(ParserError(message));
                 _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
                 if (_panic) {
                     if (_debug) _wcout << L"[Parser] Panicing" << endl;
                     exit(1);
                 }
-                parse_type(p, default_bp);
-            } else {
-                if (explicitType != nullptr) {
-                    ast::Type* newExplicitType = parse_type(p, default_bp);
-                    wstring message = L"Variable declaration for '" + varName + L"' at " + p->position() + L" can only contain one type, but multiple were found (" + explicitType->GetName() + L" and " + newExplicitType->GetName() + L")";
-                    p->errors.push_back(ParserError(message));
-                    _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-                    if (_panic) {
-                        if (_debug) _wcout << L"[Parser] Panicing" << endl;
-                        exit(1);
-                    }
-                } else explicitType = parse_type(p, default_bp);
-            }
+            } else explicitType = parse_type(p, default_bp);
         }
 
         // Default to type: auto (const) | any (let/mut)
-        if (explicitType == nullptr && !alias) {
+        if (explicitType == nullptr) {
             if (isConstant) explicitType = new ast::SymbolType(L"auto");
             else explicitType = new ast::SymbolType(L"any");
         }
@@ -137,25 +123,86 @@ namespace parser {
                 assignedValue = new ast::NullExpr();
             }
         }
-        if (alias) {
-            if (assignedValue == nullptr) {
-                wstring message = L"Alias declaration for '" + varName + L"' at " + p->position() + L" must have an initializer";
-                p->errors.push_back(ParserError(message));
-                _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-                if (_panic) {
-                    if (_debug) _wcout << L"[Parser] Panicing" << endl;
-                    exit(1);
-                }
-                assignedValue = new ast::NullExpr();
-            }
-            explicitType = new ast::AliasType(assignedValue);
-        }
 
+        if (assignedValue == nullptr) assignedValue = new ast::NullExpr();
         return new ast::VarDeclStmt{
             varName,
             isConstant,
             assignedValue,
             explicitType
+        };
+    }
+    ast::Stmt* parse_alias_decl_stmt(Parser* p) {
+        if (_verbose) _wcout << L"Parsing alias declaration statement at " << p->position() << endl;
+        p->expect(lexer::ALIAS);  // consume 'alias'
+
+        const wstring correctSyntax = GetCorrectSyntax(lexer::ALIAS);
+
+        if (p->currentTokenKind() == lexer::COLON) p->advance();  // consume ':'
+        const bool currentIsTypename = p->currentToken().mightBeType() 
+                                        && p->nextTokenKind() == lexer::IDENTIFIER;
+        if (currentIsTypename) {
+            wstring probableAliasName = currentIsTypename ? p->nextToken().value : L"?";
+            wstring message = L"Alias declaration for '" + probableAliasName + L"' at " + p->position() + L" cannot have an explicit type ("+ lexer::TokenKindString(p->currentTokenKind()) + L")" + correctSyntax;
+            p->errors.push_back(ParserError(message));
+            _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
+            if (_panic) {
+                if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                exit(1);
+            }
+            if (p->currentTokenKind() == lexer::COLON) p->advance();
+            delete parse_type(p, default_bp);
+        }
+
+        wstring aliasName = p->expectError(lexer::IDENTIFIER, Error(L"Expected alias name after 'alias' keyword, but got " + lexer::TokenKindString(p->currentTokenKind()) + L" at " + p->position() + correctSyntax)).value;
+        if (p->previousTokenKind() != lexer::IDENTIFIER) {
+            p->advanceUntil(lexer::SEMICOLON); // Skip to the end of the problematic statement
+            p->expect(lexer::SEMICOLON); // Consume the semicolon
+            return nullptr;
+        }
+        if (p->currentTokenKind() == lexer::COLON) {
+            wstring message = L"Alias declaration for '" + aliasName + L"' at " + p->position() + L" cannot have an explicit type";
+            p->errors.push_back(ParserError(message));
+            _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
+            if (_panic) {
+                if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                exit(1);
+            }
+            p->advance();  // consume ':'
+
+            if (p->currentToken().mightBeType()) parse_type(p, default_bp);
+        }
+
+        if (p->currentTokenKind() != lexer::ASSIGNMENT) {
+            wstring message = L"Alias '" + aliasName + L"' must be initialized at " + p->position() + correctSyntax;
+            p->errors.push_back(ParserError(message));
+            _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
+            if (_panic) {
+                if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                exit(1);
+            }
+            p->advanceUntil(lexer::SEMICOLON); // Skip to the end of the problematic statement
+            p->expect(lexer::SEMICOLON); // Consume the semicolon
+            return nullptr;
+        }
+        p->expect(lexer::ASSIGNMENT);
+
+        ast::Expr* aliasedValue = parse_expr(p, assignment);
+        p->expect(lexer::SEMICOLON);
+
+        if (aliasedValue == nullptr) {
+            wstring message = L"Alias declaration for '" + aliasName + L"' at " + p->position() + L" must have an initializer" + correctSyntax;
+            p->errors.push_back(ParserError(message));
+            _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
+            if (_panic) {
+                if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                exit(1);
+            }
+            aliasedValue = new ast::NullExpr();
+        }
+        return new ast::AliasDeclStmt{
+            aliasName,
+            aliasedValue
         };
     }
     ast::Stmt* parse_struct_decl_stmt(Parser* p) {

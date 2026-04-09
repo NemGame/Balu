@@ -7,16 +7,16 @@
 #define byte wchar_t
 
 namespace lexer {
-    struct lexer;
+    struct Lexer;
 
     // type regexHandler func (lex* lexer, regex *regexp.Regexp) in GO -> C++
-    #define regexHandler function<void(lexer* l, const wregex& regexp)> // Regex handler type
+    #define regexHandler function<void(Lexer* l, const wregex& regexp)> // Regex handler type
     struct RegexPattern {
         wregex pattern;
         regexHandler handler;
     };
 
-    struct lexer {
+    struct Lexer {
         int pos;
         wstring source;
         vector<Token> tokens;
@@ -55,10 +55,10 @@ namespace lexer {
         }
     };
 
-    lexer createLexer(const wstring& source);
+    Lexer createLexer(const wstring& source);
 
     vector<Token> Tokenize(const wstring& source) {
-        lexer lex = createLexer(source);
+        Lexer lex = createLexer(source);
 
         while (!lex.at_eof())
         {
@@ -84,14 +84,14 @@ namespace lexer {
     }
 
     regexHandler defaultHandler(TokenKind kind, const wstring& value = L"") {
-        return [kind, value](lexer* l, const wregex& regexp) {
+        return [kind, value](Lexer* l, const wregex& regexp) {
             l->push(NewToken(kind, value, l->line, l->column));
             l->advanceN(value.length());
         };
     }
 
     
-    regexHandler numberHandler = [](lexer* l, const wregex& regexp) {
+    regexHandler numberHandler = [](Lexer* l, const wregex& regexp) {
         wsmatch match;
         const wstring remaining = l->remainder();
         regex_search(remaining, match, regexp);
@@ -100,7 +100,7 @@ namespace lexer {
         l->advanceN(value.length());
     };
 
-    regexHandler symbolHandler = [](lexer* l, const wregex& regexp) {
+    regexHandler symbolHandler = [](Lexer* l, const wregex& regexp) {
         wsmatch match;
         const wstring remaining = l->remainder();
         regex_search(remaining, match, regexp);
@@ -116,7 +116,7 @@ namespace lexer {
         l->advanceN(value.length());
     };
 
-    regexHandler skipHandler = [](lexer* l, const wregex& regexp) {
+    regexHandler skipHandler = [](Lexer* l, const wregex& regexp) {
         wsmatch match;
         const wstring remaining = l->remainder();
         regex_search(remaining, match, regexp);
@@ -124,7 +124,7 @@ namespace lexer {
         l->advanceN(value.length());
     };
 
-    regexHandler multilineSkipHandler = [](lexer* l, const wregex& regexp) {
+    regexHandler multilineSkipHandler = [](Lexer* l, const wregex& regexp) {
         wsmatch match;
         const wstring remaining = l->remainder();
         regex_search(remaining, match, regexp);
@@ -145,7 +145,7 @@ namespace lexer {
         }
     };
 
-    regexHandler semicolonHandler = [](lexer* l, const wregex& regexp) {
+    regexHandler semicolonHandler = [](Lexer* l, const wregex& regexp) {
         wsmatch match;
         const wstring remaining = l->remainder();
         regex_search(remaining, match, regexp);
@@ -154,7 +154,7 @@ namespace lexer {
         l->advanceN(value.length()); // Advance past the semicolon
     };
 
-    regexHandler stringHandler = [](lexer* l, const wregex& regexp) {
+    regexHandler stringHandler = [](Lexer* l, const wregex& regexp) {
         wsmatch match;
         const wstring remaining = l->remainder();
         regex_search(remaining, match, regexp);
@@ -162,8 +162,17 @@ namespace lexer {
         l->push(NewToken(STRING, value, l->line, l->column));
         l->advanceN(value.length() + 2); // Advance past the string including the quotes
     };
+    
+    regexHandler fstringHandler = [](Lexer* l, const wregex& regexp) {
+        wsmatch match;
+        const wstring remaining = l->remainder();
+        regex_search(remaining, match, regexp);
+        wstring value = match.str(0).substr(2, match.str(0).length() - 3); // Remove the $" and " surrounding the format string
+        l->push(NewToken(FSTRING, value, l->line, l->column));
+        l->advanceN(value.length() + 3); // Advance past the string including the $" and " surrounding the format string
+    };
 
-    regexHandler characterHandler = [](lexer* l, const wregex& regexp) {
+    regexHandler characterHandler = [](Lexer* l, const wregex& regexp) {
         wsmatch match;
         const wstring remaining = l->remainder();
         regex_search(remaining, match, regexp);
@@ -184,7 +193,7 @@ namespace lexer {
         l->push(NewToken(CHAR, value, line, col));
     };
 
-    regexHandler ruleHandler = [](lexer* l, const wregex& regexp) {
+    regexHandler ruleHandler = [](Lexer* l, const wregex& regexp) {
         wsmatch match;
         const wstring remaining = l->remainder();
         regex_search(remaining, match, regexp);
@@ -194,15 +203,16 @@ namespace lexer {
         l->advanceN(value.length());
     };
 
-    lexer createLexer(const wstring& source) {
-        return lexer {
+    Lexer createLexer(const wstring& source) {
+        return Lexer {
             0,
             source,
             vector<Token>(0),
             {
                 {wregex(L"^true"), defaultHandler(BOOL, L"true")},
                 {wregex(L"^false"), defaultHandler(BOOL, L"false")},
-                {wregex(L"^[a-zA-Z_\\u0080-\\uFFFF][a-zA-Z0-9_\\u0080-\\uFFFF]*"), symbolHandler},
+                {wregex(L"^[\\$f]\"[^\"]*\""), fstringHandler},
+                {wregex(L"^[a-zA-Z_\\u0080-\\uFFFF\\$][a-zA-Z0-9_\\u0080-\\uFFFF\\$]*"), symbolHandler},
                 {wregex(L"^[0-9]+(\\.[0-9]+)?"), numberHandler},
                 {wregex(L"^\"[^\"]*\""), stringHandler},
                 {wregex(L"^\'[^\']*\'"), characterHandler},

@@ -1,3 +1,20 @@
+/*alias x1 = 2;
+alias: any x2 = 2;
+alias: wasd x3 = 2;
+alias any x4 = 2;
+alias wasd x5 = 2;
+alias x6: any = 2;
+alias x7: wasd = 2;
+alias x8;
+alias: x9 = 2;
+alias x10: = 2;
+
+alias = 2;
+alias: = 2;
+alias: : = 2;
+*/
+alias;
+
 number num = 10;
 mut number num2 = num + 10;
 

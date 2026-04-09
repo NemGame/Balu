@@ -1,0 +1,7 @@
+number $wasd = 10;
+
+string x = "normal string";
+string y = f"format string1";
+string z = $"format string2";
+
+mut fstring error;

@@ -15,6 +15,7 @@ namespace lexer {
 
         IDENTIFIER,    // e.g., variable names, function names, etc.
         RULE,          // #rule
+        FSTRING,       // Format string, e.g., $"Hello {name}"
 
         OPEN_BRACKET,  // [
         CLOSE_BRACKET, // ]
@@ -149,7 +150,7 @@ namespace lexer {
         unsigned long long column;
         void Debug(wostream& wcout_ = _wcout, bool endWithNewLine = true) const { // Change ostream to wostream, cout to wcout
             wcout_ << L"[" << line << L":" << column << L"] ";
-            if (isOneOfMany(NUMBER, STRING, CHAR, BOOL, BYTE, ANY, AUTO, IDENTIFIER, RULE)) {
+            if (isOneOfMany(NUMBER, STRING, CHAR, BOOL, BYTE, ANY, AUTO, IDENTIFIER, RULE, FSTRING)) {
                 wcout_ << TokenKindString(kind) << L" (" << value << L")";
             } else {
                 wcout_ << TokenKindString(kind) << L" ()";
@@ -170,6 +171,9 @@ namespace lexer {
                 if (this->kind == tokenType) return true;
             }
             return false;
+        }
+        bool mightBeType() const {
+            return isType() || kind == IDENTIFIER;
         }
     };
 
@@ -192,6 +196,7 @@ namespace lexer {
 
             case IDENTIFIER: return L"IDENTIFIER";
             case RULE: return L"RULE";
+            case FSTRING: return L"FSTRING";
 
             case OPEN_BRACKET: return L"OPEN_BRACKET";
             case CLOSE_BRACKET: return L"CLOSE_BRACKET";
@@ -205,7 +210,7 @@ namespace lexer {
             case NOT_EQUALS: return L"NOT_EQUALS";
 
             case ARROW: return L"ARROW";
-            
+
             case LESS: return L"LESS";
             case LESS_EQUALS: return L"LESS_EQUALS";
             case GREATER: return L"GREATER";

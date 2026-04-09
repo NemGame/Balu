@@ -32,13 +32,14 @@ namespace ast {
     };
     struct StringExpr : public Expr {
         wstring value;
-        StringExpr(const wstring& v) : value(v) {}
+        bool isFormatString;
+        StringExpr(const wstring& v, bool isFormat = false) : value(v), isFormatString(isFormat) {}
         void expr() override {}
         void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
             wcout_ << GetName(indent) << endl;
         }
         wstring GetName(int indent = 0) const override {
-            return wstring(indent * 2, L' ') + L"StringExpr: \"" + value + L"\"";
+            return wstring(indent * 2, L' ') + (isFormatString ? L"F-" : L"") + L"StringExpr: \"" + value + L"\"";
         }
         wstring GetValue() const override {
             return value;

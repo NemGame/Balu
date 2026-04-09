@@ -152,4 +152,19 @@ namespace ast {
             }
         }
     };
+    struct AliasDeclStmt : public Stmt {
+        wstring AliasName;
+        ast::Expr* AliasedValue;
+        void stmt() override {}
+        AliasDeclStmt(const wstring& n, ast::Expr* v) : AliasName(n), AliasedValue(v) {}
+        ~AliasDeclStmt() {
+            delete AliasedValue;
+        }
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
+            wcout_ << wstring(indent * 2, L' ') << L"AliasDeclStmt: " << AliasName << endl;
+            if (AliasedValue) {
+                AliasedValue->Dump(indent + 1, wcout_);
+            }
+        }
+    };
 }

@@ -19,6 +19,7 @@ bool _verbose = false;  // Whether to print verbose output [false]
 bool _showWarnings = true;  // Whether to show warnings [true]
 bool _panic = true;  // Whether to panic on errors (exit immediately) [true]
 bool _debug = false;  // Whether to print debug information [false]
+bool _provideHelp = true;  // Whether to tell the user about the correct syntax when they make a syntax error [true]
 
 wostream& _wcout = wcout;
 

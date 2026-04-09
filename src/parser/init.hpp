@@ -30,6 +30,13 @@ namespace parser {
         lexer::TokenKind nextTokenKind(int offset = 1) const {
             return nextToken(offset).kind;
         }
+        lexer::Token previousToken() const {
+            if (pos <= 0) return NewToken(lexer::EOF_TOKEN, L"EOF");
+            return tokens[pos - 1];
+        }
+        lexer::TokenKind previousTokenKind() const {
+            return previousToken().kind;
+        }
         lexer::Token advance() {
             lexer::Token token = currentToken();
             pos++;
@@ -122,6 +129,7 @@ namespace parser {
     };
 }
 
+#include "syntax.hpp"
 #include "lookup.hpp"
 #include "expr.hpp"
 #include "stmt.hpp"
