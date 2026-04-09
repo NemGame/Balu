@@ -16,4 +16,7 @@ struct Test {
         return 10;
     }
     fn method5() => method4();
+    fn method6: number () {
+        return 69 + 3 - 3;
+    }
 }
