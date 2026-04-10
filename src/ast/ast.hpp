@@ -12,6 +12,7 @@ namespace ast {
         virtual ~Stmt() = default;
         virtual void stmt() = 0;
         virtual void Dump(int indent = 0, wostream& wcout_ = _wcout) const = 0;
+        virtual wstring kind() const = 0;
     };
 
     interface Expr {

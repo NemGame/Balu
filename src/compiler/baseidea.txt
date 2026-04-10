@@ -1,0 +1,4 @@
+AST -> Compiler:
+-> BASM (Balu-Assembly): -> Assembly-like language
+-> Assembly (based on chosen architecture): CPU's language
+-> Machine Code: Binary code (for given architecture)

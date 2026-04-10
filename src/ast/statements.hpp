@@ -30,6 +30,7 @@ namespace ast {
         }
         static BlockStmt Null() { return BlockStmt({}); }
         static BlockStmt* NullPtr() { return new BlockStmt({}); }
+        wstring kind() const { return L"BlockStmt"; }
     };
     struct ExpressionStmt : public Stmt {
         Expr* expression;
@@ -44,6 +45,7 @@ namespace ast {
                 expression->Dump(indent + 1, wcout_);
             }
         }
+        wstring kind() const { return L"ExpressionStmt"; }
     };
     struct VarDeclStmt : public Stmt {
         wstring VariableName;
@@ -65,6 +67,7 @@ namespace ast {
                 AssignedValue->Dump(indent + 1, wcout_);
             }
         }
+        wstring kind() const { return L"VarDeclStmt"; }
     };
     struct MethodParameter {
         wstring Name;
@@ -151,6 +154,7 @@ namespace ast {
                 m.second->Dump(indent + 1, wcout_);
             }
         }
+        wstring kind() const { return L"StructDeclStmt"; }
     };
     struct AliasDeclStmt : public Stmt {
         wstring AliasName;
@@ -166,6 +170,7 @@ namespace ast {
                 AliasedValue->Dump(indent + 1, wcout_);
             }
         }
+        wstring kind() const { return L"AliasDeclStmt"; }
     };
     struct IfStmt : public Stmt {
         ast::Expr* Condition;
@@ -193,6 +198,7 @@ namespace ast {
                 ElseBranch->Dump(indent + 2, wcout_);
             }
         }
+        wstring kind() const { return L"IfStmt"; }
     };
     struct WhileStmt : public Stmt {
         ast::Expr* Condition;
@@ -220,5 +226,6 @@ namespace ast {
                 ElseBranch->Dump(indent + 2, wcout_);
             }
         }
+        wstring kind() const { return L"WhileStmt"; }
     };
 }
