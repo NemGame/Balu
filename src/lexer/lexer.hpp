@@ -199,7 +199,7 @@ namespace lexer {
         regex_search(remaining, match, regexp);
         wstring value = match.str(0);
         if (_verbose) _wcout << L"Found rule: " << value << endl;
-        l->push(NewToken(RULE, value.substr(6), l->line, l->column)); // Remove the "#rule " prefix
+        l->push(NewToken(RULE, value.substr(1), l->line, l->column)); // Remove the "#" prefix
         l->advanceN(value.length());
     };
 
@@ -220,7 +220,9 @@ namespace lexer {
                 {wregex(L"^/\\*"), multilineSkipHandler},
                 {wregex(L"^;+"), semicolonHandler},
                 {wregex(L"^\\s+"), skipHandler},
-                {wregex(L"^#rule[^;\n]*"), ruleHandler},
+                {wregex(L"^#[^;\n\\s]*"), ruleHandler},
+                {wregex(L"^%:[^;\n\\s]*"), ruleHandler},
+                {wregex(L"^\\?\\?=[^;\n\\s]*"), ruleHandler},
 
                 {wregex(L"^\\["), defaultHandler(OPEN_BRACKET, L"[")},
                 {wregex(L"^\\]"), defaultHandler(CLOSE_BRACKET, L"]")},
@@ -233,9 +235,26 @@ namespace lexer {
                 {wregex(L"^=>"), defaultHandler(ARROW, L"=>")},
                 {wregex(L"^="), defaultHandler(ASSIGNMENT, L"=")},
                 {wregex(L"^!"), defaultHandler(NOT, L"!")},
+                {wregex(L"^\\|"), defaultHandler(BITWISE_OR, L"|")},
+                {wregex(L"^&"), defaultHandler(BITWISE_AND, L"&")},
+                {wregex(L"^\\^"), defaultHandler(BITWISE_XOR, L"^")},
+                {wregex(L"^~"), defaultHandler(BITWISE_NOT, L"~")},
+                {wregex(L"^<<"), defaultHandler(BITWISE_LEFT, L"<<")},
+                {wregex(L"^>>"), defaultHandler(BITWISE_RIGHT, L">>")},
+                {wregex(L"^\\?\\?-"), defaultHandler(BITWISE_NOT, L"\?\?-")},
+                {wregex(L"^\\?\\?'"), defaultHandler(BITWISE_XOR, L"\?\?'")},
+                {wregex(L"^\\?\\?!"), defaultHandler(BITWISE_OR, L"\?\?!")}, 
+                {wregex(L"^\\?\\?<"), defaultHandler(OPEN_CURLY, L"\?\?<")},
+                {wregex(L"^\\?\\?>"), defaultHandler(CLOSE_CURLY, L"\?\?>")},
+                {wregex(L"^\\?\\?\\("), defaultHandler(OPEN_BRACKET, L"\?\?(")},
+                {wregex(L"^\\?\\?\\)"), defaultHandler(CLOSE_BRACKET, L"\?\?)")},
                 {wregex(L"^<="), defaultHandler(LESS_EQUALS, L"<=")},
+                {wregex(L"^<%"), defaultHandler(OPEN_CURLY, L"<%")},
+                {wregex(L"^<:"), defaultHandler(OPEN_BRACKET, L"<:")},
                 {wregex(L"^<"), defaultHandler(LESS, L"<")},
                 {wregex(L"^>="), defaultHandler(GREATER_EQUALS, L">=")},
+                {wregex(L"^%>"), defaultHandler(CLOSE_CURLY, L"%>")},
+                {wregex(L"^:>"), defaultHandler(CLOSE_BRACKET, L":>")},
                 {wregex(L"^>"), defaultHandler(GREATER, L">")},
                 {wregex(L"^\\|\\|"), defaultHandler(OR, L"||")},
                 {wregex(L"^&&"), defaultHandler(AND, L"&&")},

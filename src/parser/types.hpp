@@ -26,7 +26,11 @@ namespace parser {
         bool exists = type_nud_lu.find(tokenKind) != type_nud_lu.end();
 
         if (!exists) {
-            _wcout << (_debug ? L"[Parser] " : L"") << L"TYPE_NUD HANDLER EXPECTED FOR TOKEN " << lexer::TokenKindString(tokenKind) << L" BUT NOT FOUND" << endl;
+            if (_debug) {
+                _wcout << L"[Parser] TYPE_NUD HANDLER EXPECTED FOR TOKEN " << lexer::TokenKindString(tokenKind) << L" BUT NOT FOUND AT " << parser->position() << endl;
+            } else {
+                _wcout << L"Unexpected token at " << parser->position() << ": " << lexer::TokenKindString(tokenKind) << endl;
+            }
             if (_panic) {
                 if (_debug) _wcout << L"[Parser] Panicing" << endl;
                 exit(1);
@@ -43,7 +47,11 @@ namespace parser {
             bool exists = type_led_lu.find(tokenKind) != type_led_lu.end();
 
             if (!exists) {
-                _wcout << (_debug ? L"[Parser] " : L"") << L"TYPE_LED HANDLER EXPECTED FOR TOKEN " << lexer::TokenKindString(tokenKind) << L" BUT NOT FOUND" << endl;
+                if (_debug) {
+                    _wcout << L"[Parser] TYPE_LED HANDLER EXPECTED FOR TOKEN " << lexer::TokenKindString(tokenKind) << L" BUT NOT FOUND AT " << parser->position() << endl;
+                } else {
+                    _wcout << L"Unexpected token at " << parser->position() << ": " << lexer::TokenKindString(tokenKind) << endl;
+                }
                 if (_panic) {
                     if (_debug) _wcout << L"[Parser] Panicing" << endl;
                     exit(1);

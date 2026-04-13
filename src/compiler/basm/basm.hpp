@@ -1,6 +1,10 @@
 #pragma once
 
 namespace BASM {
+    struct BASMStruct {
+        // This structure holds the translated BASM instructions/data
+    };
+
     enum TokenKind {
         EXIT = 0,       // Exit the program
         CREATE_VAR,    // Create a variable

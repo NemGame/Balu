@@ -39,6 +39,13 @@ namespace lexer {
         OR,            // ||
         AND,           // &&
 
+        BITWISE_OR,    // |
+        BITWISE_AND,   // &
+        BITWISE_XOR,   // ^
+        BITWISE_NOT,   // ~
+        BITWISE_LEFT,  // <<
+        BITWISE_RIGHT, // >>
+
         DOT,           // .
         DOT_DOT,       // ..
         SEMICOLON,     // ;
@@ -217,14 +224,24 @@ namespace lexer {
             case LESS_EQUALS: return L"LESS_EQUALS";
             case GREATER: return L"GREATER";
             case GREATER_EQUALS: return L"GREATER_EQUALS";
+
             case OR: return L"OR";
             case AND: return L"AND";
+
+            case BITWISE_OR: return L"BITWISE_OR";
+            case BITWISE_AND: return L"BITWISE_AND";
+            case BITWISE_XOR: return L"BITWISE_XOR";
+            case BITWISE_NOT: return L"BITWISE_NOT";
+            case BITWISE_LEFT: return L"BITWISE_LEFT";
+            case BITWISE_RIGHT: return L"BITWISE_RIGHT";
+            
             case DOT: return L"DOT";
             case DOT_DOT: return L"DOT_DOT";
             case SEMICOLON: return L"SEMICOLON";
             case COLON: return L"COLON";
             case COMMA: return L"COMMA";
             case QUESTION: return L"QUESTION";
+
             case PLUS_PLUS: return L"PLUS_PLUS";
             case MINUS_MINUS: return L"MINUS_MINUS";
             case PLUS_EQUALS: return L"PLUS_EQUALS";
@@ -232,6 +249,7 @@ namespace lexer {
             case SLASH_EQUALS: return L"SLASH_EQUALS";
             case STAR_EQUALS: return L"STAR_EQUALS";
             case PERCENT_EQUALS: return L"PERCENT_EQUALS";
+
             case PLUS: return L"PLUS";
             case DASH: return L"DASH";
             case SLASH: return L"SLASH";

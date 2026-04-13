@@ -15,6 +15,14 @@ namespace parser {
         led(lexer::OR, logical, parse_binary_expr);
         led(lexer::DOT_DOT, logical, parse_binary_expr);
 
+        // Bitwise
+        led(lexer::BITWISE_AND, logical, parse_binary_expr);
+        led(lexer::BITWISE_OR, logical, parse_binary_expr);
+        led(lexer::BITWISE_XOR, logical, parse_binary_expr);
+        nud(lexer::BITWISE_NOT, parse_prefix_expr);
+        led(lexer::BITWISE_LEFT, logical, parse_binary_expr);
+        led(lexer::BITWISE_RIGHT, logical, parse_binary_expr);
+
         // Relational
         led(lexer::LESS, relational, parse_binary_expr);
         led(lexer::LESS_EQUALS, relational, parse_binary_expr);
