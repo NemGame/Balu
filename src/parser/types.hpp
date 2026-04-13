@@ -23,13 +23,14 @@ namespace parser {
     ast::Type* parse_type(Parser* parser, binding_power bp) {
         // NUD
         lexer::TokenKind tokenKind = parser->currentTokenKind();
+        wstring tokenName = parser->currentToken().value;
         bool exists = type_nud_lu.find(tokenKind) != type_nud_lu.end();
 
         if (!exists) {
             if (_debug) {
                 _wcout << L"[Parser] TYPE_NUD HANDLER EXPECTED FOR TOKEN " << lexer::TokenKindString(tokenKind) << L" BUT NOT FOUND AT " << parser->position() << endl;
             } else {
-                _wcout << L"Unexpected token at " << parser->position() << ": " << lexer::TokenKindString(tokenKind) << endl;
+                _wcout << L"Unexpected token at " << parser->position() << ": " << tokenName << " (" << lexer::TokenKindString(tokenKind) << L")" << endl;
             }
             if (_panic) {
                 if (_debug) _wcout << L"[Parser] Panicing" << endl;
@@ -50,7 +51,7 @@ namespace parser {
                 if (_debug) {
                     _wcout << L"[Parser] TYPE_LED HANDLER EXPECTED FOR TOKEN " << lexer::TokenKindString(tokenKind) << L" BUT NOT FOUND AT " << parser->position() << endl;
                 } else {
-                    _wcout << L"Unexpected token at " << parser->position() << ": " << lexer::TokenKindString(tokenKind) << endl;
+                    _wcout << L"Unexpected token at " << parser->position() << ": " << tokenName << " (" << lexer::TokenKindString(tokenKind) << L")" << endl;
                 }
                 if (_panic) {
                     if (_debug) _wcout << L"[Parser] Panicing" << endl;

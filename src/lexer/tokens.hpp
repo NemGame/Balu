@@ -151,7 +151,7 @@ namespace lexer {
 
         {L"#rule", RULE},
     };
-
+    
     struct Token {
         TokenKind kind;
         wstring value;

@@ -12,13 +12,14 @@ namespace parser {
         if (_verbose) _wcout << L"[Parser] Parsing expression at " << parser->position() << endl;
         // NUD
         lexer::TokenKind tokenKind = parser->currentTokenKind();
+        wstring tokenName = parser->currentToken().value;
         bool exists = nud_lu.find(tokenKind) != nud_lu.end();
 
         if (!exists) {
             if (_debug) {
-                _wcout << L"[Parser] NUD HANDLER EXPECTED FOR TOKEN " << lexer::TokenKindString(tokenKind) << L" BUT NOT FOUND AT " << parser->position() << endl;
+                _wcout << L"[Parser] NUD HANDLER EXPECTED FOR TOKEN " << lexer::TokenKindString(tokenKind) << L'(' << tokenName << L')' << L" BUT NOT FOUND AT " << parser->position() << endl;
             } else {
-                _wcout << L"Unexpected token at " << parser->position() << ": " << lexer::TokenKindString(tokenKind) << endl;
+                _wcout << L"Unexpected token at " << parser->position() << ": " << tokenName << " (" << lexer::TokenKindString(tokenKind) << L")" << endl;
             }
             if (_panic) {
                 if (_debug) _wcout << L"[Parser] Panicing" << endl;
@@ -37,9 +38,9 @@ namespace parser {
 
             if (!exists) {
                 if (_debug) {
-                    _wcout << L"[Parser] LED HANDLER EXPECTED FOR TOKEN " << lexer::TokenKindString(tokenKind) << L" BUT NOT FOUND AT " << parser->position() << endl;
+                    _wcout << L"[Parser] LED HANDLER EXPECTED FOR TOKEN " << lexer::TokenKindString(tokenKind) << L'(' << tokenName << L')' << L" BUT NOT FOUND AT " << parser->position() << endl;
                 } else {
-                    _wcout << L"Unexpected token at " << parser->position() << ": " << lexer::TokenKindString(tokenKind) << endl;
+                    _wcout << L"Unexpected token at " << parser->position() << ": " << tokenName << " (" << lexer::TokenKindString(tokenKind) << L")" << endl;
                 }
                 if (_panic) {
                     if (_debug) _wcout << L"[Parser] Panicing" << endl;
@@ -122,7 +123,7 @@ namespace parser {
             default: {
                 lexer::Token token = parser->currentToken();
                 if (_verbose || _debug) _wcout << L"[Parser] Cannot create primary expression from token: " << lexer::TokenKindString(parser->currentTokenKind()) << endl;
-                wstring message = L"Unexpected token at " + parser->position() + L": " + lexer::TokenKindString(token.kind);
+                wstring message = L"Unexpected token at " + parser->position() + L": " + token.value + L" (" + lexer::TokenKindString(token.kind) + L")";
                 parser->errors.push_back(ParserError(message, token.line, token.column));
                 return nullptr;
             }
