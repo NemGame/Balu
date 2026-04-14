@@ -1,10 +1,9 @@
 #pragma once
 
-namespace BASM {
-    struct BASMStruct {
-        // This structure holds the translated BASM instructions/data
+namespace ASM {
+    interface ConverterInterface {
+        virtual vector<wstring> parse(const ast::Stmt* stmt) = 0;
     };
-
     enum TokenKind {
         EXIT = 0,       // Exit the program
         CREATE_VAR,    // Create a variable

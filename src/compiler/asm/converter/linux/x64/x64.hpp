@@ -1,6 +1,13 @@
 #pragma once
 
-namespace BASM::converter::Linux::x64 {
+namespace ASM::converter::Linux::x64 {
+    class Converter : public ASM::ConverterInterface {
+    public:
+        vector<wstring> parse(const ast::Stmt* stmt) override {
+            vector<wstring> assembly;
+            return assembly;
+        }
+    };
     wstring exit(int code = 0) {
         wstringstream wss;
         wss << L"mov edi, 0x" << std::hex << code << L"\n"
