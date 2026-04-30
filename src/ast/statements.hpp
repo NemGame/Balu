@@ -1,6 +1,11 @@
 #pragma once
 
 namespace ast {
+    enum FunctionLining {
+        FLAutomatic = 0,
+        FLInline,
+        FLOutline
+    };
     // {...Stmt[]}
     struct BlockStmt : public Stmt {
         vector<Stmt*> statements;
@@ -109,7 +114,7 @@ namespace ast {
             }
         }
     };
-    struct StructMethod {  // TODO: implement (add fn type)
+    struct StructMethod {  // TODO: implement (add fn type) ; Replace with FuncDeclStmt
         bool isStatic;
         wstring MethodName;
         Type* ReturnType;
@@ -227,5 +232,33 @@ namespace ast {
             }
         }
         wstring kind() const { return L"WhileStmt"; }
+    };
+    struct FuncDeclStmt : public Stmt {
+        wstring FunctionName;
+        Type* ReturnType;
+        Stmt* Body;
+        unordered_map<wstring, MethodParameter*> Parameters;
+        FunctionLining Lining;
+        void stmt() override {}
+        FuncDeclStmt(const wstring& n, Type* t, Stmt* b, FunctionLining l, unordered_map<wstring, MethodParameter*> params) : FunctionName(n), ReturnType(t), Body(b), Lining(l), Parameters(params) {}
+        ~FuncDeclStmt() {
+            delete ReturnType;
+            delete Body;
+            for (auto& p : Parameters) delete p.second;
+        }
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
+            wcout_ << wstring(indent * 2, L' ') << L"FunctionStmt: " << FunctionName << (Lining == FLInline ? L" (inline)" : (Lining == FLOutline ? L" (outline)" : L"")) << endl;
+            if (ReturnType) {
+                ReturnType->Dump(indent + 1, wcout_);
+            }
+            for (const auto& param : Parameters) {
+                wcout_ << wstring((indent + 1) * 2, L' ') << L"Parameter: " << param.first << endl;
+                if (param.second) param.second->Dump(indent + 2, wcout_);
+            }
+            if (Body) {
+                Body->Dump(indent + 1, wcout_);
+            }
+        }
+        wstring kind() const { return L"FunctionStmt"; }
     };
 }

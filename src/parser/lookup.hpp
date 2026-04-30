@@ -71,7 +71,10 @@ namespace parser {
         stmt(lexer::STRUCT, parse_struct_decl_stmt);
         stmt(lexer::IF, parse_if_stmt);
         stmt(lexer::WHILE, parse_while_stmt);
-
+        stmt(lexer::INLINE, parse_func_decl_stmt);
+        stmt(lexer::OUTLINE, parse_func_decl_stmt);
+        stmt(lexer::FN, parse_func_decl_stmt);
+        
         // Types
         stmt(lexer::NUMBER, parse_var_decl_stmt);
         stmt(lexer::BYTE, parse_var_decl_stmt);

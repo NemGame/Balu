@@ -1,5 +1,7 @@
 #pragma once
 
+// TODO: Add keyword to jump out of the current block for if and simple blocks, 'jup'?
+
 namespace lexer {    
     enum TokenKind {
         EOF_TOKEN = 0,
@@ -77,6 +79,8 @@ namespace lexer {
         ALIAS,          // alias
         NEW,            // new
         FN,             // fn
+        INLINE,         // inline
+        OUTLINE,        // outline
         STATIC,         // static
         GET,            // get
         SET,            // set
@@ -117,6 +121,8 @@ namespace lexer {
         {L"alias", ALIAS},
         {L"new", NEW},
         {L"fn", FN},
+        {L"inline", INLINE},
+        {L"outline", OUTLINE},
         {L"static", STATIC},
         {L"get", GET},
         {L"set", SET},
@@ -268,6 +274,8 @@ namespace lexer {
             case SET: return L"SET";
             case NEW: return L"NEW";
             case FN: return L"FN";
+            case INLINE: return L"INLINE";
+            case OUTLINE: return L"OUTLINE";
 
             case IMPORT: return L"IMPORT";
             case FROM: return L"FROM";

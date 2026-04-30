@@ -1,0 +1,9 @@
+inline fn FunctionName(param1, number param2, param3: auto): string {
+    return 1 + 2;
+}
+
+outline fn fnName() => 1 + 2;
+
+// inline wasd() => {return 1 + 2;};
+
+const x = 2;
