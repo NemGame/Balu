@@ -95,6 +95,7 @@ namespace lexer {
         PUBLIC,         // public
         PRIVATE,        // private
         PROTECTED,      // protected
+        INTERNAL,       // internal
         GET,            // get
         SET,            // set
 
@@ -140,6 +141,7 @@ namespace lexer {
         {L"public", PUBLIC},
         {L"private", PRIVATE},
         {L"protected", PROTECTED},
+        {L"internal", INTERNAL},
         {L"get", GET},
         {L"set", SET},
 
@@ -288,6 +290,7 @@ namespace lexer {
             case PUBLIC: return L"PUBLIC";
             case PRIVATE: return L"PRIVATE";
             case PROTECTED: return L"PROTECTED";
+            case INTERNAL: return L"INTERNAL";
             case GET: return L"GET";
             case SET: return L"SET";
             case NEW: return L"NEW";

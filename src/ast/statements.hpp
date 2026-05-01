@@ -17,13 +17,15 @@ namespace ast {
     enum AccessModifier {
         AMPrivate = 0,
         AMProtected,
-        AMPublic
+        AMPublic,
+        AMInternal,
     };
     wstring AccessModifierString(AccessModifier am) {
         switch (am) {
             case AMPrivate: return L"private";
             case AMProtected: return L"protected";
             case AMPublic: return L"public";
+            case AMInternal: return L"internal";
             default: return L"unknown";
         }
     }
