@@ -47,6 +47,8 @@ namespace lexer {
         BITWISE_NOT,   // ~
         BITWISE_LEFT,  // <<
         BITWISE_RIGHT, // >>
+        BITWISE_LEFT_ROTATE,  // <<<< (rotate left) -> (x << n) | (x >> (bitsize - n))
+        BITWISE_RIGHT_ROTATE, // >>> (rotate right) -> (x >> n) | (x << (bitsize - n))
 
         DOT,           // .
         DOT_DOT,       // ..
@@ -62,6 +64,14 @@ namespace lexer {
         SLASH_EQUALS,    // /=
         STAR_EQUALS,     // *=
         PERCENT_EQUALS,  // %=
+        BITWISE_OR_EQUALS,  // |=
+        BITWISE_AND_EQUALS, // &=
+        BITWISE_XOR_EQUALS, // ^=
+        BITWISE_NOT_EQUALS, // ~=
+        BITWISE_LEFT_EQUALS,  // <<=
+        BITWISE_RIGHT_EQUALS, // >>=
+        BITWISE_LEFT_ROTATE_EQUALS,  // <<<<=
+        BITWISE_RIGHT_ROTATE_EQUALS, // >>>=
 
         PLUS,            // +
         DASH,            // -
@@ -82,6 +92,9 @@ namespace lexer {
         INLINE,         // inline
         OUTLINE,        // outline
         STATIC,         // static
+        PUBLIC,         // public
+        PRIVATE,        // private
+        PROTECTED,      // protected
         GET,            // get
         SET,            // set
 
@@ -124,6 +137,9 @@ namespace lexer {
         {L"inline", INLINE},
         {L"outline", OUTLINE},
         {L"static", STATIC},
+        {L"public", PUBLIC},
+        {L"private", PRIVATE},
+        {L"protected", PROTECTED},
         {L"get", GET},
         {L"set", SET},
 
@@ -157,7 +173,6 @@ namespace lexer {
 
         {L"#rule", RULE},
     };
-    
     struct Token {
         TokenKind kind;
         wstring value;
@@ -270,6 +285,9 @@ namespace lexer {
             case ALIAS: return L"ALIAS";
             case STRUCT: return L"STRUCT";
             case STATIC: return L"STATIC";
+            case PUBLIC: return L"PUBLIC";
+            case PRIVATE: return L"PRIVATE";
+            case PROTECTED: return L"PROTECTED";
             case GET: return L"GET";
             case SET: return L"SET";
             case NEW: return L"NEW";

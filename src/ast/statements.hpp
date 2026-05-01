@@ -6,6 +6,27 @@ namespace ast {
         FLInline,
         FLOutline
     };
+    wstring FunctionLiningString(FunctionLining fl) {
+        switch (fl) {
+            case FLAutomatic: return L"automatic";
+            case FLInline: return L"inline";
+            case FLOutline: return L"outline";
+            default: return L"unknown";
+        }
+    }
+    enum AccessModifier {
+        AMPrivate = 0,
+        AMProtected,
+        AMPublic
+    };
+    wstring AccessModifierString(AccessModifier am) {
+        switch (am) {
+            case AMPrivate: return L"private";
+            case AMProtected: return L"protected";
+            case AMPublic: return L"public";
+            default: return L"unknown";
+        }
+    }
     // {...Stmt[]}
     struct BlockStmt : public Stmt {
         vector<Stmt*> statements;
@@ -99,13 +120,14 @@ namespace ast {
         ast::Type* Type;
         ast::Expr* AssignedValue;
         bool isStatic;
-        StructProperty(const wstring& p, ast::Type* t, ast::Expr* v, bool s) : Property(p), Type(t), AssignedValue(v), isStatic(s) {}
+        AccessModifier Access;
+        StructProperty(const wstring& p, ast::Type* t, ast::Expr* v, bool s, AccessModifier a) : Property(p), Type(t), AssignedValue(v), isStatic(s), Access(a) {}
         ~StructProperty() {
             delete Type;
             delete AssignedValue;
         }
         void Dump(int indent = 0, wostream& wcout_ = _wcout) const {
-            wcout_ << wstring(indent * 2, L' ') << L"StructProperty: " << Property << (isStatic ? L" (static)" : L"") << endl;
+            wcout_ << wstring(indent * 2, L' ') << L"StructProperty: " << Property << (isStatic ? L" (static)" : L"") << L" (" << AccessModifierString(Access) << L")" << endl;
             if (Type) {
                 Type->Dump(indent + 1, wcout_);
             }
@@ -116,18 +138,19 @@ namespace ast {
     };
     struct StructMethod {  // TODO: implement (add fn type) ; Replace with FuncDeclStmt
         bool isStatic;
+        AccessModifier Access;
         wstring MethodName;
         Type* ReturnType;
         Stmt* Body;
         unordered_map<wstring, MethodParameter*> Parameters;
-        StructMethod(const wstring& n, Type* t, Stmt* b, bool s, unordered_map<wstring, MethodParameter*> params) : MethodName(n), ReturnType(t), Body(b), isStatic(s), Parameters(params) {}
+        StructMethod(const wstring& n, Type* t, Stmt* b, bool s, AccessModifier a, unordered_map<wstring, MethodParameter*> params) : MethodName(n), ReturnType(t), Body(b), isStatic(s), Access(a), Parameters(params) {}
         ~StructMethod() {
             delete ReturnType;
             delete Body;
             for (auto& p : Parameters) delete p.second;
         }
         void Dump(int indent = 0, wostream& wcout_ = _wcout) const {
-            wcout_ << wstring(indent * 2, L' ') << L"StructMethod: " << MethodName << (isStatic ? L" (static)" : L"") << endl;
+            wcout_ << wstring(indent * 2, L' ') << L"StructMethod: " << MethodName << (isStatic ? L" (static)" : L"") << L" (" << AccessModifierString(Access) << L")" << endl;
             if (ReturnType) {
                 ReturnType->Dump(indent + 1, wcout_);
             }
