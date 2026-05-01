@@ -15,7 +15,6 @@ namespace parser {
         vector<lexer::Token> tokens;
         int pos;
         unsigned long long line, column;
-
         lexer::Token currentToken() const {
             if (pos >= (int)tokens.size()) return lexer::Token{ lexer::EOF_TOKEN, L"EOF" };
             return tokens[pos];

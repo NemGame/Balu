@@ -205,6 +205,46 @@ namespace parser {
             aliasedValue
         };
     }
+    // Able to parse complex modifiers
+    ast::AccessModifier parse_access_modifier(Parser* p, bool* accessModifierSet = nullptr) {
+        if (p->currentToken().isAccessModifier()) {
+            ast::AccessModifier accessModifier = ast::TokenToAccessModifier(p->currentTokenKind());
+            if (p->nextToken().isAccessModifier()) {
+                ast::AccessModifier next = ast::TokenToAccessModifier(p->nextTokenKind());
+                if (accessModifier == ast::AMPrivate && next == ast::AMInternal || accessModifier == ast::AMInternal && next == ast::AMPrivate) {
+                    p->advance();  // consume the first access modifier
+                    p->advance();  // consume the sencond access modifier
+                    if (accessModifierSet) *accessModifierSet = true;
+                    return ast::AMPrivateInternal;
+                }
+                if (accessModifier == ast::AMProtected && next == ast::AMInternal || accessModifier == ast::AMInternal && next == ast::AMProtected) {
+                    p->advance();  // consume the first access modifier
+                    p->advance();  // consume the sencond access modifier
+                    if (accessModifierSet) *accessModifierSet = true;
+                    return ast::AMProtectedInternal;
+                }
+                if (accessModifier == ast::AMPublic && next == ast::AMInternal || accessModifier == ast::AMInternal && next == ast::AMPublic) {
+                    p->advance();  // consume the first access modifier
+                    p->advance();  // consume the sencond access modifier
+                    if (accessModifierSet) *accessModifierSet = true;
+                    return ast::AMInternal;
+                }
+                wstring message = L"Conflicting access modifiers for struct member at " + p->position() + L" (" + lexer::TokenKindString(p->currentTokenKind()) + L" and " + lexer::TokenKindString(p->nextTokenKind()) + L")";
+                p->errors.push_back(ParserError(message));
+                _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
+                if (_panic) {
+                    if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                    exit(1);
+                }
+                p->advanceUntil(lexer::IDENTIFIER, lexer::STATIC, lexer::FN, lexer::STRUCT, lexer::SEMICOLON);  // Skip to the next relevant token
+                return ast::AMPrivate;  // Default to private if there are conflicting access modifiers
+            }
+            p->advance();  // consume the access modifier
+            if (accessModifierSet) *accessModifierSet = true;
+            return accessModifier;
+        }
+        return ast::AMPrivate;  // Default access modifier is private
+    }
     ast::Stmt* parse_struct_decl_stmt(Parser* p) {
         if (_verbose) _wcout << L"Parsing struct declaration statement at " << p->position() << endl;
         p->expect(lexer::STRUCT);  // consume 'struct'
@@ -219,12 +259,29 @@ namespace parser {
         p->expect(lexer::OPEN_CURLY);
 
         while (p->hasTokens() && p->currentTokenKind() != lexer::CLOSE_CURLY) {
+            bool accessModifierSet = false;
+            ast::AccessModifier accessModifier = parse_access_modifier(p, &accessModifierSet);  // Default access modifier for struct members is private
             bool isStatic = false;
             if (p->currentTokenKind() == lexer::STATIC) {
                 isStatic = true;
                 p->advance();  // consume 'static'
             }
-            
+            if (p->currentToken().isAccessModifier()) {
+                if (accessModifierSet) {
+                    wstring message = L"Duplicate access modifier for struct member at " + p->position() + L" (" + lexer::TokenKindString(p->currentTokenKind()) + L" and " + AccessModifierString(accessModifier) + L")";
+                    p->errors.push_back(ParserError(message));
+                    _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
+                    if (_panic) {
+                        if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                        exit(1);
+                    }
+                }
+                accessModifier = parse_access_modifier(p);
+            }
+
+            bool isConstant = p->currentTokenKind() == lexer::CONST;
+            if (isConstant) p->advance();  // consume 'const'
+
             ast::Type* ExpectedType = nullptr;
             bool isMethod = p->currentTokenKind() == lexer::FN || p->nextTokenKind(1) == lexer::OPEN_PAREN || p->nextTokenKind(2) == lexer::OPEN_PAREN;
             if (isMethod && p->nextTokenKind(1) != lexer::OPEN_PAREN) p->advance();  // consume 'fn' / typename
@@ -292,7 +349,6 @@ namespace parser {
                     wstring paramName = L"UnnamedParam";
                     ast::Type* paramType = nullptr;
                     ast::Expr* defaultValue = nullptr;
-                    bool isConstant = false;
                     if (p->currentTokenKind() == lexer::CONST) {
                         isConstant = true;
                         p->advance();  // consume 'const'
@@ -397,7 +453,9 @@ namespace parser {
                     ExpectedType,
                     MethodBody,
                     isStatic,
-                    parameters
+                    accessModifier,
+                    parameters,
+                    isConstant
                 );
                 if (p->currentTokenKind() == lexer::SEMICOLON) p->advance();  // Optional semicolon after method declaration
             } else {
@@ -405,7 +463,9 @@ namespace parser {
                     propertyName,
                     ExpectedType,
                     AssignedValue,
-                    isStatic
+                    isStatic,
+                    accessModifier,
+                    isConstant
                 );
                 p->expect(lexer::SEMICOLON);
             }
@@ -420,51 +480,7 @@ namespace parser {
             reverseUnorderedMap(methods)   // Methods
         );
     }
-    ast::Stmt* parse_func_decl_stmt(Parser* p) {
-        if (_verbose) _wcout << L"Parsing function declaration statement at " << p->position() << endl;
-        const ast::FunctionLining functionLining = p->currentToken().kind == lexer::INLINE ? ast::FLInline : (p->currentToken().kind == lexer::OUTLINE ? ast::FLOutline : ast::FLAutomatic);
-        if (functionLining != ast::FLAutomatic) p->advance();  // consume 'inline' or 'outline'
-        if (p->currentToken().isOneOfMany(lexer::INLINE, lexer::OUTLINE)) {
-            wstring message = L"Function declaration at " + p->position() + L" has multiple function lining specifiers, only one is allowed";
-            p->errors.push_back(ParserError(message));
-            _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-            if (_panic) {
-                if (_debug) _wcout << L"[Parser] Panicing" << endl;
-                exit(1);
-            }
-            while (p->currentToken().isOneOfMany(lexer::INLINE, lexer::OUTLINE)) p->advance();  // consume any extra 'inline' or 'outline' keywords
-        }
-        if (p->currentTokenKind() == lexer::FN) p->advance();  // consume 'fn' if it exists, but allow it to be optional for better ergonomics
-        else if (functionLining != ast::FLAutomatic) {
-            wstring message = L"Expected 'fn' keyword after function lining specifier '" + (functionLining == ast::FLInline ? wstring(L"'inline'") : wstring(L"'outline'")) + L"' at " + p->position() + L", but got " + lexer::TokenKindString(p->currentTokenKind());
-            p->errors.push_back(ParserError(message));
-            _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-            if (_panic) {
-                if (_debug) _wcout << L"[Parser] Panicing" << endl;
-                exit(1);
-            }
-            // If function name, try ignoring 'fn' keyword
-            if (p->currentTokenKind() != lexer::IDENTIFIER) {
-                p->advanceUntil(lexer::SEMICOLON);
-                p->expect(lexer::SEMICOLON);
-                return nullptr;
-            }
-        }
-        const wstring funcName = p->advance().value;  // consume function name
-
-        // Expect '('
-        if (p->currentTokenKind() != lexer::OPEN_PAREN) {
-            wstring message = L"Expected '(' after function name '" + funcName + L"' at " + p->position() + L", but got " + lexer::TokenKindString(p->currentTokenKind());
-            p->errors.push_back(ParserError(message));
-            _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-            if (_panic) {
-                if (_debug) _wcout << L"[Parser] Panicing" << endl;
-                exit(1);
-            }
-            p->advanceUntil(lexer::SEMICOLON);
-            p->expect(lexer::SEMICOLON);
-            return nullptr;
-        }
+    unordered_map<wstring, ast::MethodParameter*> parse_func_parameters(Parser* p, wstring funcName) {
         p->expect(lexer::OPEN_PAREN);  // consume '('
         unordered_map<wstring, ast::MethodParameter*> parameters;
         const wstring defaultParameterType = L"auto";
@@ -520,7 +536,17 @@ namespace parser {
             );
             if (p->currentTokenKind() == lexer::COLON) {
                 p->advance();  // consume ':'
-
+                if (paramType != nullptr) {
+                    ast::Type* newParamType = parse_type(p, default_bp);
+                    wstring message = L"Function parameter '" + paramName + L"' in function '" + funcName + L"' declaration at " + p->position() + L" cannot have an explicit type as it was already specified as '" + paramType->GetName() + L"'";
+                    p->errors.push_back(ParserError(message));
+                    _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
+                    if (_panic) {
+                        if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                        exit(1);
+                    }
+                    p->advance();  // consume the type
+                } else parameters[paramName]->ParamType = parse_type(p, default_bp);
             }
             if (p->currentToken().isOneOfMany(lexer::COMMA, lexer::SEMICOLON)) p->advance();
             else if (p->currentTokenKind() != lexer::CLOSE_PAREN) {
@@ -536,6 +562,55 @@ namespace parser {
             }
         }
         p->expect(lexer::CLOSE_PAREN);  // consume ')'
+        return parameters;
+    }
+    ast::Stmt* parse_func_decl_stmt(Parser* p) {
+        if (_verbose) _wcout << L"Parsing function declaration statement at " << p->position() << endl;
+        const ast::FunctionLining functionLining = p->currentToken().kind == lexer::INLINE ? ast::FLInline : (p->currentToken().kind == lexer::OUTLINE ? ast::FLOutline : ast::FLAutomatic);
+        if (functionLining != ast::FLAutomatic) p->advance();  // consume 'inline' or 'outline'
+        if (p->currentToken().isOneOfMany(lexer::INLINE, lexer::OUTLINE)) {
+            wstring message = L"Function declaration at " + p->position() + L" has multiple function lining specifiers, only one is allowed";
+            p->errors.push_back(ParserError(message));
+            _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
+            if (_panic) {
+                if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                exit(1);
+            }
+            while (p->currentToken().isOneOfMany(lexer::INLINE, lexer::OUTLINE)) p->advance();  // consume any extra 'inline' or 'outline' keywords
+        }
+        if (p->currentTokenKind() == lexer::FN) p->advance();  // consume 'fn' if it exists, but allow it to be optional for better ergonomics
+        else if (functionLining != ast::FLAutomatic) {
+            wstring message = L"Expected 'fn' keyword after function lining specifier '" + (functionLining == ast::FLInline ? wstring(L"'inline'") : wstring(L"'outline'")) + L"' at " + p->position() + L", but got " + lexer::TokenKindString(p->currentTokenKind());
+            p->errors.push_back(ParserError(message));
+            _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
+            if (_panic) {
+                if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                exit(1);
+            }
+            // If function name, try ignoring 'fn' keyword
+            if (p->currentTokenKind() != lexer::IDENTIFIER) {
+                p->advanceUntil(lexer::SEMICOLON);
+                p->expect(lexer::SEMICOLON);
+                return nullptr;
+            }
+        }
+        const wstring funcName = p->advance().value;  // consume function name
+
+        // Expect '('
+        if (p->currentTokenKind() != lexer::OPEN_PAREN) {
+            wstring message = L"Expected '(' after function name '" + funcName + L"' at " + p->position() + L", but got " + lexer::TokenKindString(p->currentTokenKind());
+            p->errors.push_back(ParserError(message));
+            _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
+            if (_panic) {
+                if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                exit(1);
+            }
+            p->advanceUntil(lexer::SEMICOLON);
+            p->expect(lexer::SEMICOLON);
+            return nullptr;
+        }
+        unordered_map<wstring, ast::MethodParameter*> parameters = parse_func_parameters(p, funcName);
+
         ast::Type* returnType = nullptr;
         if (p->currentTokenKind() == lexer::COLON) {
             p->advance();  // consume ':'

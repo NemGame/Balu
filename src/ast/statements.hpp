@@ -15,10 +15,13 @@ namespace ast {
         }
     }
     enum AccessModifier {
-        AMPrivate = 0,
-        AMProtected,
-        AMPublic,
-        AMInternal,
+        AMPrivate = 0,  // Only accessible within the struct/class it is declared in
+        AMProtected,    // Accessible within the struct/class it is declared in and its subclasses (if it's a class)
+        AMPublic,       // Accessible from anywhere
+        AMInternal,     // Accessible within the same module (.exe, .dll, etc.), but not from other modules (like dllimport -> cannot access it)
+        // Complex modifiers
+        AMPrivateInternal, // Accessible within the same module and only within the struct/class it is declared in (like private but also not accessible from other modules)
+        AMProtectedInternal, // Accessible within the same module and within the struct/class it is declared
     };
     wstring AccessModifierString(AccessModifier am) {
         switch (am) {
@@ -26,7 +29,18 @@ namespace ast {
             case AMProtected: return L"protected";
             case AMPublic: return L"public";
             case AMInternal: return L"internal";
+            case AMPrivateInternal: return L"private_internal";
+            case AMProtectedInternal: return L"protected_internal";
             default: return L"unknown";
+        }
+    }
+    AccessModifier TokenToAccessModifier(lexer::TokenKind kind) {
+        switch (kind) {
+            case lexer::PRIVATE: return AMPrivate;
+            case lexer::PROTECTED: return AMProtected;
+            case lexer::PUBLIC: return AMPublic;
+            case lexer::INTERNAL: return AMInternal;
+            default: return AMPrivate;  // Default to private if not an access modifier
         }
     }
     // {...Stmt[]}
@@ -123,13 +137,14 @@ namespace ast {
         ast::Expr* AssignedValue;
         bool isStatic;
         AccessModifier Access;
-        StructProperty(const wstring& p, ast::Type* t, ast::Expr* v, bool s, AccessModifier a) : Property(p), Type(t), AssignedValue(v), isStatic(s), Access(a) {}
+        bool isConstant;
+        StructProperty(const wstring& p, ast::Type* t, ast::Expr* v, bool s, AccessModifier a, bool c) : Property(p), Type(t), AssignedValue(v), isStatic(s), Access(a), isConstant(c) {}
         ~StructProperty() {
             delete Type;
             delete AssignedValue;
         }
         void Dump(int indent = 0, wostream& wcout_ = _wcout) const {
-            wcout_ << wstring(indent * 2, L' ') << L"StructProperty: " << Property << (isStatic ? L" (static)" : L"") << L" (" << AccessModifierString(Access) << L")" << endl;
+            wcout_ << wstring(indent * 2, L' ') << L"StructProperty: " << Property << (isStatic ? L" (static)" : L"") << (isConstant ? L" (const)" : L"") << L" (" << AccessModifierString(Access) << L")" << endl;
             if (Type) {
                 Type->Dump(indent + 1, wcout_);
             }
@@ -145,14 +160,15 @@ namespace ast {
         Type* ReturnType;
         Stmt* Body;
         unordered_map<wstring, MethodParameter*> Parameters;
-        StructMethod(const wstring& n, Type* t, Stmt* b, bool s, AccessModifier a, unordered_map<wstring, MethodParameter*> params) : MethodName(n), ReturnType(t), Body(b), isStatic(s), Access(a), Parameters(params) {}
+        bool isConstant;
+        StructMethod(const wstring& n, Type* t, Stmt* b, bool s, AccessModifier a, unordered_map<wstring, MethodParameter*> params, bool c) : MethodName(n), ReturnType(t), Body(b), isStatic(s), Access(a), Parameters(params), isConstant(c) {}
         ~StructMethod() {
             delete ReturnType;
             delete Body;
             for (auto& p : Parameters) delete p.second;
         }
         void Dump(int indent = 0, wostream& wcout_ = _wcout) const {
-            wcout_ << wstring(indent * 2, L' ') << L"StructMethod: " << MethodName << (isStatic ? L" (static)" : L"") << L" (" << AccessModifierString(Access) << L")" << endl;
+            wcout_ << wstring(indent * 2, L' ') << L"StructMethod: " << MethodName << (isStatic ? L" (static)" : L"") << (isConstant ? L" (const)" : L"") << L" (" << AccessModifierString(Access) << L")" << endl;
             if (ReturnType) {
                 ReturnType->Dump(indent + 1, wcout_);
             }

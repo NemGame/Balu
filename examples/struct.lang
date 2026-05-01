@@ -2,7 +2,13 @@ struct Test {
     prop1;
     prop2: number;
     porp3 = 3;
-    fn method1(): void {
+    public static prop4: number = 9;
+    protected number prop5;
+    internal prop6;
+    public internal prop7;
+    private internal prop8;
+    protected internal const prop9;
+    public const fn method1(): void {
 
     }
     fn method2() {
