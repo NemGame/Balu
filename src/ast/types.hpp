@@ -8,7 +8,7 @@ namespace ast {
         void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
             wcout_ << wstring(indent * 2, L' ') << L"SymbolType: " << name << endl;
         }
-        wstring GetName() const override {
+        wstring GetName(int indent = 0) const {
             return name;
         }
     };
@@ -23,8 +23,8 @@ namespace ast {
             wcout_ << wstring(indent * 2, L' ') << L"ArrayType:" << endl;
             Underlying->Dump(indent + 1, wcout_);
         }
-        wstring GetName() const override {
-            return Underlying->GetName() + L"[]";
+        wstring GetName(int indent = 0) const override {
+            return Underlying->GetName(indent) + L"[]";
         }
     };
 }

@@ -62,6 +62,8 @@ namespace parser {
         nud(lexer::RULE, parse_primary_expr);
         nud(lexer::RETURN, parse_return_expr);
 
+        nud(lexer::TYPEOF, parse_typeof_expr);
+
         // Statements
         stmt(lexer::LET, parse_var_decl_stmt);
         stmt(lexer::CONST, parse_var_decl_stmt);
@@ -74,6 +76,8 @@ namespace parser {
         stmt(lexer::INLINE, parse_func_decl_stmt);
         stmt(lexer::OUTLINE, parse_func_decl_stmt);
         stmt(lexer::FN, parse_func_decl_stmt);
+
+        stmt(lexer::TYPEOF, parse_type_change_stmt);
         
         // Types
         stmt(lexer::NUMBER, parse_var_decl_stmt);

@@ -1,0 +1,2 @@
+auto y = 4;
+typeof y = typeof(3);

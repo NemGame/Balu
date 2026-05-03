@@ -321,5 +321,26 @@ namespace ast {
             if (Value) str += L": " + Value->GetValue();
             return str;
         }
-     };
+    };
+    struct TypeOfExpr : public Expr {
+        Expr* QueriedExpr;
+        TypeOfExpr(Expr* queriedType) : QueriedExpr(queriedType) {}
+        ~TypeOfExpr() {
+            delete QueriedExpr;
+        }
+        void expr() override {}
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
+            wcout_ << GetName(indent) << endl;
+        }
+        wstring GetName(int indent = 0) const override {
+            wstring str = wstring(indent * 2, L' ') + L"TypeOfExpr";
+            if (QueriedExpr) str += L"\n" + QueriedExpr->GetName(indent + 1);
+            return str;
+        }
+        wstring GetValue() const override {
+            wstring str = L"TypeOfExpr";
+            if (QueriedExpr) str += L": " + QueriedExpr->GetValue();
+            return str;
+        }
+    };
 }

@@ -243,4 +243,31 @@ namespace parser {
         ast::Expr* returnValue = parse_expr(p, default_bp);
         return new ast::ReturnExpr(returnValue);
     }
+    ast::Expr* parse_typeof_expr(Parser* p) {
+        if (_verbose) _wcout << L"Parsing typeof expression at " << p->position() << endl;
+        p->expect(lexer::TYPEOF);  // consume 'typeof'
+        ast::Expr* expr = new ast::NullExpr();
+        bool alreadyGotError = false;
+        if (p->currentTokenKind() != lexer::OPEN_PAREN) {
+            wstring message = L"Expected 'typeof' expression at " + p->position() + L" to be followed by an expression in parentheses, but got " + lexer::TokenKindString(p->currentTokenKind());
+            p->errors.push_back(ParserError(message));
+            _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
+            if (_panic) {
+                if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                exit(1);
+            }
+            alreadyGotError = true;
+            if (p->currentTokenKind() == lexer::SEMICOLON) {
+                p->advance();  // consume ';'
+                return new ast::TypeOfExpr(expr);
+            }
+        }
+        p->advance();  // consume '('
+        delete expr;
+        expr = parse_expr(p, unary);
+        if (!alreadyGotError) {
+            p->expect(lexer::CLOSE_PAREN);
+        }
+        return new ast::TypeOfExpr(expr);
+    }
 }

@@ -29,6 +29,6 @@ namespace ast {
         virtual ~Type() = default;
         virtual void type() = 0;
         virtual void Dump(int indent = 0, wostream& wcout_ = _wcout) const = 0;
-        virtual wstring GetName() const = 0;
+        virtual wstring GetName(int indent = 0) const = 0;
     };
 }

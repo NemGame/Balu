@@ -111,6 +111,23 @@ namespace ast {
         }
         wstring kind() const { return L"VarDeclStmt"; }
     };
+    // typeof varName = typeName;
+    struct TypeChangeStmt : public Stmt {
+        wstring VariableName;
+        Expr* NewExpr;
+        void stmt() override {}
+        TypeChangeStmt(const wstring& n, Expr* e) : VariableName(n), NewExpr(e) {}
+        ~TypeChangeStmt() {
+            delete NewExpr;
+        }
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
+            wcout_ << wstring(indent * 2, L' ') << L"TypeChangeStmt: " << VariableName << endl;
+            if (NewExpr) {
+                NewExpr->Dump(indent + 1, wcout_);
+            }
+        }
+        wstring kind() const { return L"TypeChangeStmt"; }
+    };
     struct MethodParameter {
         wstring Name;
         Type* ParamType;

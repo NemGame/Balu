@@ -643,6 +643,44 @@ namespace parser {
             parameters
         );
     }
+    ast::Stmt* parse_type_change_stmt(Parser* p) {
+        if (_verbose) _wcout << L"Parsing type change statement at " << p->position() << endl;
+        p->advance();  // consume 'typeof'
+        // Get varname
+        wstring varName;
+        if (p->currentTokenKind() == lexer::IDENTIFIER) {
+            varName = p->advance().value;
+        } else {
+            wstring message = L"Expected variable name after 'typeof' keyword at " + p->position() + L", but got " + lexer::TokenKindString(p->currentTokenKind());
+            p->errors.push_back(ParserError(message));
+            _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
+            if (_panic) {
+                if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                exit(1);
+            }
+            p->advanceUntil(lexer::SEMICOLON);
+            p->advance();  // consume ';'
+            return nullptr;
+        }
+
+        // Assignment
+        if (p->currentTokenKind() != lexer::ASSIGNMENT) {
+            wstring message = L"Expected assignment operator '=' after variable name '" + varName + L"' in type change statement at " + p->position() + L", but got " + lexer::TokenKindString(p->currentTokenKind());
+            p->errors.push_back(ParserError(message));
+            _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
+            if (_panic) {
+                if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                exit(1);
+            }
+            p->advanceUntil(lexer::SEMICOLON);
+            p->advance();  // consume ';'
+            return nullptr;
+        }
+        p->advance();  // consume '='
+        ast::Expr* newTypeExpr = parse_expr(p, assignment);
+        p->expect(lexer::SEMICOLON);
+        return new ast::TypeChangeStmt(varName, newTypeExpr);
+    }
     ast::Stmt* parse_if_stmt(Parser* p) {
         if (_verbose) _wcout << L"Parsing if statement at " << p->position() << endl;
         p->expect(lexer::IF, lexer::ELIF);
