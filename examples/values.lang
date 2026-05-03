@@ -1,7 +1,7 @@
 string x = "wasd";  // String literal
 char x = 'w';       // Character literal
 number x = 1;       // Decimal literal
-byte x = 1b;        // Binary literal
+byte x = 1b;        // Byte literal
 
 number binaryNumber = 0b1;  // Binary representation of a decimal literal
 byte binaryByte = 0b1b;   // Binary representation of a byte literal
