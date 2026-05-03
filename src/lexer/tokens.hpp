@@ -5,15 +5,21 @@
 namespace lexer {    
     enum TokenKind {
         EOF_TOKEN = 0,
-        NUMBER,       // long double
+        NUMBER,       // Auto-size, like vector, but for numbers (byte(, short, int, long, float, double <- TODO: implement))
         STRING,       // e.g., "hello", "world", etc.
         CHAR,         // e.g., 'a', 'b', etc.
         BOOL,         // e.g., true, false
-        BYTE,         // 0-255
-        ANY,          // Any type
+        BYTE,         // 0-255 ; ends in 'b', e.g., 255b
+        ANY,          // Any type, may change in runtime ; keyword
         AUTO,         // Type inferred from context
         VOID,         // Void type
-        NULL_TYPE,    // Null type
+        NULL_,        // Null type
+
+        NUMBER_KW,  // number keyword
+        STRING_KW,  // string keyword
+        CHAR_KW,    // char keyword
+        BOOL_KW,    // bool keyword
+        BYTE_KW,    // byte keyword
 
         IDENTIFIER,    // e.g., variable names, function names, etc.
         RULE,          // #rule
@@ -121,7 +127,7 @@ namespace lexer {
         EVAL,           // eval
     };
     vector<TokenKind> TokenTypes = {
-        NUMBER, STRING, CHAR, BOOL, BYTE, ANY, AUTO, VOID, NULL_TYPE
+        NUMBER_KW, STRING_KW, CHAR_KW, BOOL_KW, BYTE_KW, ANY, AUTO, VOID, NULL_
     };
 
     wstring TokenKindString(TokenKind kind);
@@ -163,15 +169,15 @@ namespace lexer {
         {L"eval", EVAL},
         {L"return", RETURN},
         
-        {L"string", STRING},
-        {L"char", CHAR},
-        {L"number", NUMBER},
-        {L"byte", BYTE},
-        {L"bool", BOOL},
+        {L"string", STRING_KW},
+        {L"char", CHAR_KW},
+        {L"number", NUMBER_KW},
+        {L"byte", BYTE_KW},
+        {L"bool", BOOL_KW},
         {L"auto", AUTO},
         {L"any", ANY},
         {L"void", VOID},
-        {L"null", NULL_TYPE},
+        {L"null", NULL_},
 
         {L"#rule", RULE},
     };
@@ -182,7 +188,7 @@ namespace lexer {
         unsigned long long column;
         void Debug(wostream& wcout_ = _wcout, bool endWithNewLine = true) const { // Change ostream to wostream, cout to wcout
             wcout_ << L"[" << line << L":" << column << L"] ";
-            if (isOneOfMany(NUMBER, STRING, CHAR, BOOL, BYTE, ANY, AUTO, IDENTIFIER, RULE, FSTRING)) {
+            if (isOneOfMany(NUMBER, STRING, CHAR, BOOL, BYTE, IDENTIFIER, RULE, FSTRING, NULL_)) {
                 wcout_ << TokenKindString(kind) << L" (" << value << L")";
             } else {
                 wcout_ << TokenKindString(kind) << L" ()";
@@ -227,7 +233,13 @@ namespace lexer {
             case ANY: return L"ANY";
             case AUTO: return L"AUTO";
             case VOID: return L"VOID";
-            case NULL_TYPE: return L"NULL_TYPE";
+            case NULL_: return L"NULL_TYPE";
+
+            case NUMBER_KW: return L"NUMBER_KW";
+            case STRING_KW: return L"STRING_KW";
+            case CHAR_KW: return L"CHAR_KW";
+            case BOOL_KW: return L"BOOL_KW";
+            case BYTE_KW: return L"BYTE_KW";
 
             case IDENTIFIER: return L"IDENTIFIER";
             case RULE: return L"RULE";

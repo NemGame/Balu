@@ -110,7 +110,7 @@ namespace parser {
                 parser->advance();
                 return new ast::BooleanExpr(value);
             }
-            case lexer::NULL_TYPE: {
+            case lexer::NULL_: {
                 parser->advance();
                 return new ast::NullExpr();
             }

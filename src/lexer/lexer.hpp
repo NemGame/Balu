@@ -100,6 +100,85 @@ namespace lexer {
         l->advanceN(value.length());
     };
 
+    // 0b01 - binary
+    regexHandler binaryNumberHandler = [](Lexer* l, const wregex& regexp) {
+        wsmatch match;
+        const wstring remaining = l->remainder();
+        regex_search(remaining, match, regexp);
+        bool isByte = false;
+        wstring value = match.str(0); // Remove the "0b" prefix
+        if (value.back() == L'b') {
+            isByte = true;
+            value.pop_back();
+        }
+        // Turn to binary number
+        unsigned long long numberValue = 0;
+        for (char c : value.substr(2)) {
+            numberValue <<= 1; // Shift left by 1 (multiply by 2)
+            if (c == L'1') {
+                numberValue |= 1; // Set the last bit if it's '1'
+            }
+        }
+        l->push(NewToken(isByte ? BYTE : NUMBER, to_wstring(numberValue), l->line, l->column));
+        l->advanceN(value.length()); 
+        if (isByte) l->advanceN(1); // Advance past the trailing 'b' if it's a byte literal
+    };
+
+    // 010 - octal
+    regexHandler octalNumberHandler = [](Lexer* l, const wregex& regexp) {
+        wsmatch match;
+        const wstring remaining = l->remainder();
+        regex_search(remaining, match, regexp);
+        bool isByte = false;
+        wstring value = match.str(0); // Remove the "0" prefix
+        if (value.back() == L'b') {
+            isByte = true;
+            value.pop_back();
+        }
+        // Turn to octal number
+        unsigned long long numberValue = 0;
+        for (char c : value.substr(1)) {
+            numberValue <<= 3; // Shift left by 3 (multiply by 8)
+            if (c >= L'0' && c <= L'7') {
+                numberValue |= (c - L'0'); // Add the digit value
+            }
+        }
+        l->push(NewToken(isByte ? BYTE : NUMBER, to_wstring(numberValue), l->line, l->column));
+        l->advanceN(value.length());
+        if (isByte) l->advanceN(1); // Advance past the trailing 'b' if it's a byte literal
+    };
+
+    // 0x1 - hexadecimal
+    regexHandler hexNumberHandler = [](Lexer* l, const wregex& regexp) {
+        wsmatch match;
+        const wstring remaining = l->remainder();
+        regex_search(remaining, match, regexp);
+        wstring value = match.str(0); // Remove the "0x" prefix
+        // Turn to hexadecimal number
+        unsigned long long numberValue = 0;
+        for (char c : value.substr(2)) {
+            numberValue <<= 4; // Shift left by 4 (multiply by 16)
+            if (c >= L'0' && c <= L'9') {
+                numberValue |= (c - L'0'); // Add the digit value
+            } else if (c >= L'a' && c <= L'f') {
+                numberValue |= (c - L'a' + 10); // Add the digit value
+            } else if (c >= L'A' && c <= L'F') {
+                numberValue |= (c - L'A' + 10); // Add the digit value
+            }
+        }
+        l->push(NewToken(NUMBER, to_wstring(numberValue), l->line, l->column));
+        l->advanceN(value.length());
+    };
+
+    regexHandler byteHandler = [](Lexer* l, const wregex& regexp) {
+        wsmatch match;
+        const wstring remaining = l->remainder();
+        regex_search(remaining, match, regexp);
+        wstring value = match.str(0);
+        l->push(NewToken(NULL_, value.substr(0, value.length() - 1), l->line, l->column)); // Remove the trailing 'b'
+        l->advanceN(value.length());
+    };
+
     regexHandler symbolHandler = [](Lexer* l, const wregex& regexp) {
         wsmatch match;
         const wstring remaining = l->remainder();
@@ -213,6 +292,10 @@ namespace lexer {
                 {wregex(L"^false"), defaultHandler(BOOL, L"false")},
                 {wregex(L"^[\\$f]\"[^\"]*\""), fstringHandler},
                 {wregex(L"^[a-zA-Z_\\u0080-\\uFFFF\\$][a-zA-Z0-9_\\u0080-\\uFFFF\\$]*"), symbolHandler},
+                {wregex(L"^0b[0-1]+b?"), binaryNumberHandler},
+                {wregex(L"^0[0-7]+b?"), octalNumberHandler},
+                {wregex(L"^0x[0-9a-fA-F]+"), hexNumberHandler},
+                {wregex(L"^[0-9]+b"), byteHandler},
                 {wregex(L"^[0-9]+(\\.[0-9]+)?"), numberHandler},
                 {wregex(L"^\"[^\"]*\""), stringHandler},
                 {wregex(L"^\'[^\']*\'"), characterHandler},

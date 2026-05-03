@@ -1,0 +1,13 @@
+string x = "wasd";  // String literal
+char x = 'w';       // Character literal
+number x = 1;       // Decimal literal
+byte x = 1b;        // Binary literal
+
+number binaryNumber = 0b1;  // Binary representation of a decimal literal
+byte binaryByte = 0b1b;   // Binary representation of a byte literal
+
+number octalNumber = 01;   // Octal representation of a decimal literal
+byte octalByte = 01b;    // Octal representation of a byte literal
+
+number hexadecimalNumber = 0x1;  // Hexadecimal representation of a decimal literal
+// No Hexadecimal-byte, 0x1b is a valid hexadecimal literal
