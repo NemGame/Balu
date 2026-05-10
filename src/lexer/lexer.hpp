@@ -91,13 +91,39 @@ namespace lexer {
     }
 
     
+    // If ends in '@', it MUST be precise, like 120e120@ must use a fuck ton of bytes, so
+    // 120e120 == 120e120 + 1
+    // BUT
+    // 120e120@ <1 120e120@ + 1
     regexHandler numberHandler = [](Lexer* l, const wregex& regexp) {
         wsmatch match;
         const wstring remaining = l->remainder();
         regex_search(remaining, match, regexp);
         wstring value = match.str(0);
-        l->push(NewToken(NUMBER, value, l->line, l->column));
-        l->advanceN(value.length());
+        // Remove underscores from the number for easier parsing later
+        long double numberOfUnderscores = count(value.begin(), value.end(), L'_');
+        value.erase(remove(value.begin(), value.end(), L'_'), value.end());
+        // Check if 'e'
+        if (value.find(L'e') != wstring::npos) {
+            // Split the number into the base and the exponent parts
+            size_t ePos = value.find(L'e');
+            wstring basePart = value.substr(0, ePos);
+            wstring exponentPart = value.substr(ePos + 1);
+
+            // Remove any underscores from the exponent part as well
+            exponentPart.erase(remove(exponentPart.begin(), exponentPart.end(), L'_'), exponentPart.end());
+
+            // Reconstruct the number in a standard format for easier parsing later
+            value = basePart + L"e" + exponentPart;
+        }
+        TokenKind kind = NUMBER;
+        if (value.back() == L'@') {
+            value.pop_back();
+            kind = PNUMBER;
+        }
+        l->push(NewToken(kind, value, l->line, l->column));
+        l->advanceN(value.length() + numberOfUnderscores);
+        if (kind == PNUMBER) l->advanceN(1); // Advance past the trailing '@' if it's a precise number literal
     };
 
     // 0b01 - binary
@@ -114,6 +140,7 @@ namespace lexer {
         // Turn to binary number
         unsigned long long numberValue = 0;
         for (char c : value.substr(2)) {
+            if (c == L'_') continue; // Skip underscores
             numberValue <<= 1; // Shift left by 1 (multiply by 2)
             if (c == L'1') {
                 numberValue |= 1; // Set the last bit if it's '1'
@@ -138,6 +165,7 @@ namespace lexer {
         // Turn to octal number
         unsigned long long numberValue = 0;
         for (char c : value.substr(1)) {
+            if (c == L'_') continue; // Skip underscores
             numberValue <<= 3; // Shift left by 3 (multiply by 8)
             if (c >= L'0' && c <= L'7') {
                 numberValue |= (c - L'0'); // Add the digit value
@@ -157,6 +185,7 @@ namespace lexer {
         // Turn to hexadecimal number
         unsigned long long numberValue = 0;
         for (char c : value.substr(2)) {
+            if (c == L'_') continue; // Skip underscores
             numberValue <<= 4; // Shift left by 4 (multiply by 16)
             if (c >= L'0' && c <= L'9') {
                 numberValue |= (c - L'0'); // Add the digit value
@@ -175,6 +204,7 @@ namespace lexer {
         const wstring remaining = l->remainder();
         regex_search(remaining, match, regexp);
         wstring value = match.str(0);
+        value.erase(remove(value.begin(), value.end(), L'_'), value.end());
         l->push(NewToken(NULL_, value.substr(0, value.length() - 1), l->line, l->column)); // Remove the trailing 'b'
         l->advanceN(value.length());
     };
@@ -259,12 +289,14 @@ namespace lexer {
         unsigned long long line = l->line;
         unsigned long long col = l->column;
         if (value.length() != 1) {
-            wstring message = L"Invalid character literal at " + l->position() + L": " + match.str(0) + L". Character literals must contain exactly one character.";
-            _wcout << (_debug ? L"[Lexer] " : L"") << message << endl;
-            l->errors.push_back(Error(message, line, col));
-            if (_panic) {
-                if (_debug) _wcout << L"[Lexer] Panicing" << endl;
-                exit(1);
+            if (_allowLexerErrors) {
+                wstring message = L"Invalid character literal at " + l->position() + L": " + match.str(0) + L". Character literals must contain exactly one character.";
+                _wcout << (_debug ? L"[Lexer] " : L"") << message << endl;
+                l->errors.push_back(Error(message, line, col));
+                if (_panic) {
+                    if (_debug) _wcout << L"[Lexer] Panicing" << endl;
+                    exit(1);
+                }
             }
             l->advanceN(match.str(0).length()); // Advance past the invalid character literal
             value = value.substr(0, 1); // Default to the first character if multiple are found
@@ -292,11 +324,11 @@ namespace lexer {
                 {wregex(L"^false"), defaultHandler(BOOL, L"false")},
                 {wregex(L"^[\\$f]\"[^\"]*\""), fstringHandler},
                 {wregex(L"^[a-zA-Z_\\u0080-\\uFFFF\\$][a-zA-Z0-9_\\u0080-\\uFFFF\\$]*"), symbolHandler},
-                {wregex(L"^0b[0-1]+b?"), binaryNumberHandler},
-                {wregex(L"^0[0-7]+b?"), octalNumberHandler},
-                {wregex(L"^0x[0-9a-fA-F]+"), hexNumberHandler},
-                {wregex(L"^[0-9]+b"), byteHandler},
-                {wregex(L"^[0-9]+(\\.[0-9]+)?"), numberHandler},
+                {wregex(L"^0b[0-1_]+b?"), binaryNumberHandler},
+                {wregex(L"^0[0-7_]+b?"), octalNumberHandler},
+                {wregex(L"^0x[0-9a-fA-F_]+"), hexNumberHandler},
+                {wregex(L"^[0-9][0-9_]*b"), byteHandler},
+                {wregex(L"^[0-9][0-9_]*(\\.[0-9_]*)?(e[0-9_+]+)?@?"), numberHandler},
                 {wregex(L"^\"[^\"]*\""), stringHandler},
                 {wregex(L"^\'[^\']*\'"), characterHandler},
                 {wregex(L"^//.*"), skipHandler},

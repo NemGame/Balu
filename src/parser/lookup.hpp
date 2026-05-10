@@ -46,6 +46,7 @@ namespace parser {
 
         // Literals and Symbols
         nud(lexer::NUMBER, parse_primary_expr);
+        nud(lexer::PNUMBER, parse_primary_expr);
         nud(lexer::BYTE, parse_primary_expr);
         nud(lexer::STRING, parse_primary_expr);
         nud(lexer::FSTRING, parse_primary_expr);

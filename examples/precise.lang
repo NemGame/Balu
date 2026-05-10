@@ -1,0 +1,7 @@
+number x = 1@;
+number y = 1e10@;
+
+byte z = 0b_1_1_0_0b;
+byte w = 0_7_7b;
+
+number c = 1_000_000_000@;

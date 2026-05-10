@@ -4,16 +4,24 @@ namespace ast {
     // Literal expressions
     struct NumberExpr : public Expr {
         long double value;
-        NumberExpr(long double v) : value(v) {}
+        wstring preciseValue;  // May be used instead of value if the number is precise (ends with '@' in the source)
+        NumberExpr(long double v) : value(v), preciseValue(L"") {}
+        NumberExpr(wstring p) : value(0), preciseValue(p) {}
         void expr() override {}
         void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
             wcout_ << GetName(indent) << endl;
         }
+        bool isPrecise() const {
+            return !preciseValue.empty();
+        }
         wstring GetName(int indent = 0) const override {
+            if (isPrecise()) {
+                return wstring(indent * 2, L' ') + L"NumberExpr@: " + preciseValue;
+            }
             return wstring(indent * 2, L' ') + L"NumberExpr: " + to_wstring(value);
         }
         wstring GetValue() const override {
-            return to_wstring(value);
+            return isPrecise() ? preciseValue : to_wstring(value);
         }
     };
     struct ByteExpr : public Expr {

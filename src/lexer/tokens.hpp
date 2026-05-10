@@ -24,6 +24,7 @@ namespace lexer {
         IDENTIFIER,    // e.g., variable names, function names, etc.
         RULE,          // #rule
         FSTRING,       // Format string, e.g., $"Hello {name}"
+        PNUMBER,       // Precise number, ends with '@', e.g., 120e120@
 
         OPEN_BRACKET,  // [
         CLOSE_BRACKET, // ]
@@ -188,7 +189,7 @@ namespace lexer {
         unsigned long long column;
         void Debug(wostream& wcout_ = _wcout, bool endWithNewLine = true) const { // Change ostream to wostream, cout to wcout
             wcout_ << L"[" << line << L":" << column << L"] ";
-            if (isOneOfMany(NUMBER, STRING, CHAR, BOOL, BYTE, IDENTIFIER, RULE, FSTRING, NULL_)) {
+            if (isOneOfMany(NUMBER, STRING, CHAR, BOOL, BYTE, IDENTIFIER, RULE, FSTRING, PNUMBER, NULL_)) {
                 wcout_ << TokenKindString(kind) << L" (" << value << L")";
             } else {
                 wcout_ << TokenKindString(kind) << L" ()";
@@ -244,6 +245,7 @@ namespace lexer {
             case IDENTIFIER: return L"IDENTIFIER";
             case RULE: return L"RULE";
             case FSTRING: return L"FSTRING";
+            case PNUMBER: return L"PNUMBER";
 
             case OPEN_BRACKET: return L"OPEN_BRACKET";
             case CLOSE_BRACKET: return L"CLOSE_BRACKET";

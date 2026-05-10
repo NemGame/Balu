@@ -78,6 +78,9 @@ namespace parser {
                 parser->advance();
                 return new ast::NumberExpr(value);
             }
+            case lexer::PNUMBER: {
+                return new ast::NumberExpr(parser->advance().value);
+            }
             case lexer::BYTE: {
                 unsigned char value = 0;
                 try {
