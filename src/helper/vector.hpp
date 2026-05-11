@@ -28,3 +28,13 @@ vector<wstring> wstringToVector(const wstring& str, wchar_t delimiter=L',') {
     result.push_back(str.substr(start)); // Add the last segment
     return result;
 }
+wstring vectorToWstring(const vector<wstring>& vec, wchar_t delimiter=L',') {
+    wstring result;
+    for (size_t i = 0; i < vec.size(); ++i) {
+        result += vec[i];
+        if (i < vec.size() - 1) {
+            result += delimiter;
+        }
+    }
+    return result;
+}

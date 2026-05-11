@@ -108,6 +108,7 @@ void DisplayHelp(const wstring& programName) {
     _wcout << L"  -ast=value\t\t\t\t  Specify the AST output filename (e.g., -ast=\"ast.txt\")" << endl;
     _wcout << L"  -st=value\t\t\t\t  Specify the symbol table output filename (e.g., -st=\"st.txt\")" << endl;
     _wcout << L"  -stdout=value\t\t\t\t  Specify the STDOUT output filename (e.g., -stdout=\"output.txt\")" << endl;
+    _wcout << L"  -decompile=value\t\t\t  [WIP] Decompiled back from AST structure (e.g., -decompile=\"decompiled.balu\")" << endl;
 }
 
 #pragma endregion
@@ -161,6 +162,7 @@ int main(int argc, char* argv[]) {
     wstring ASToutfilename = L"";
     wstring SToutfilename = L"";
     wstring STDOUTfilename = _feedbackMode ? L"stdout" : L"";
+    wstring astDecompilerFilename = L"";
     for (const auto& pair : *keyValuePairs) {
         if (pair.name == L"filename" || pair.name == L"fn") {
             inputfilename = pair.value;
@@ -179,6 +181,9 @@ int main(int argc, char* argv[]) {
         } else if (pair.name == L"stdout") {
             STDOUTfilename = pair.value;
             if (_verbose) _wcout << L"Got STDOUT filename from key-value pair: " << STDOUTfilename << endl;
+        } else if (pair.name == L"decompile") {
+            astDecompilerFilename = pair.value;
+            if (_verbose) _wcout << L"Got AST decompiler output filename from key-value pair: " << astDecompilerFilename << endl;
         }
     }
     #pragma endregion
@@ -307,6 +312,25 @@ int main(int argc, char* argv[]) {
         _wcout << L"[AST] Error during parsing: " << e.what() << endl;
         return 1;
     }
+
+    #pragma region AST Decompiler
+
+    if (!astDecompilerFilename.empty()) {
+        string narrowASTDecompilerFilename(astDecompilerFilename.begin(), astDecompilerFilename.end());
+        ofstream astDecompilerFile(narrowASTDecompilerFilename.c_str());
+        if (astDecompilerFile.is_open()) {
+            _wcout << L"[AST Decompiler] Writing AST to file..." << endl;
+            wstringstream ss;
+            wstring decompiled = ast::decompiler::Decompile(ast, inputfilename);
+            astDecompilerFile << wstringToUTF8(decompiled);
+            astDecompilerFile.close();
+            _wcout << L"[AST Decompiler] Successfully wrote decompiled AST to " << astDecompilerFilename << endl;
+        } else {
+            _wcout << L"[AST Decompiler] Error: Unable to open AST decompiler output file." << endl;
+        }
+    }
+
+    #pragma endregion
 
     if (!ASToutfilename.empty()) {
         string narrowASToutFilename(ASToutfilename.begin(), ASToutfilename.end());
