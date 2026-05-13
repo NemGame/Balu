@@ -25,13 +25,13 @@ namespace ast::decompiler {
         return wstring(indent * 4, L' ') + DecompileExpression(stmt->expression, indent);
     }
     wstring DecompileVarDeclStmt(ast::VarDeclStmt* stmt, int indent = 0) {
-        wstring result = wstring(indent * 4, L' ') + stmt->VariableName;
+        wstring result = wstring(indent * 4, L' ');
         if (!stmt->isConstant) {
-            result = L"let " + result;
+            result += L"let ";
         } else {
-            result = L"const " + result;
+            result += L"const ";
         }
-        result += stmt->ExplicitType ? L": " + stmt->ExplicitType->GetName() : L"";
+        result += stmt->VariableName + (stmt->ExplicitType ? L": " + stmt->ExplicitType->GetName() : L"");
         if (stmt->AssignedValue) {
             result += L" = " + DecompileExpression(stmt->AssignedValue, indent);
         }
@@ -60,22 +60,38 @@ namespace ast::decompiler {
         } else if (auto s = dynamic_cast<ast::RuleExpr*>(expr)) {
             return L"#" + vectorToWstring(s->value, L' ');
         } else if (auto s = dynamic_cast<ast::IdentifierExpr*>(expr)) {
-            return wstring(indent * 4, L' ') + s->value;
+            return s->value;
         } else if (auto s = dynamic_cast<ast::StringExpr*>(expr)) {
-            return wstring(indent * 4, L' ') + L"\"" + s->value + L"\"";
+            return L"\"" + s->value + L"\"";
         } else if (auto s = dynamic_cast<ast::CharExpr*>(expr)) {
-            return wstring(indent * 4, L' ') + L"'" + wstring(1, s->value) + L"'";
+            return L"'" + wstring(1, s->value) + L"'";
         } else if (auto s = dynamic_cast<ast::ByteExpr*>(expr)) {
-            return wstring(indent * 4, L' ') + to_wstring(s->value) + L"b";
+            return to_wstring(s->value) + L"b";
         } else if (auto s = dynamic_cast<ast::BooleanExpr*>(expr)) {
-            return wstring(indent * 4, L' ') + (s->value ? L"true" : L"false");
+            return s->value ? L"true" : L"false";
         } else if (auto s = dynamic_cast<ast::NullExpr*>(expr)) {
-            return wstring(indent * 4, L' ') + L"null";
+            return L"null";
         } else if (auto s = dynamic_cast<ast::PrefixExpr*>(expr)) {
-            return wstring(indent * 4, L' ') + s->Operator.value + DecompileExpression(s->RightExpr, indent);
+            return s->Operator.value + DecompileExpression(s->RightExpr, indent);
         } else if (auto s = dynamic_cast<ast::TypeExpr*>(expr)) {
             return s->value->GetName();
-        } else {
+        } else if (auto s = dynamic_cast<ast::SymbolExpr*>(expr)) {
+            return s->value;
+        } else if (auto s = dynamic_cast<ast::ReturnExpr*>(expr)) {
+            return L"return " + DecompileExpression(s->Value, indent);
+        } else if (auto s = dynamic_cast<ast::FunctionCallExpr*>(expr)) {
+            wstring result = s->FunctionName + L"(";
+            for (size_t i = 0; i < s->Arguments.size(); ++i) {
+                const auto& arg = s->Arguments[i];
+                result += DecompileExpression(arg, indent);
+                if (i < s->Arguments.size() - 1) {
+                    result += L", ";
+                }
+            }
+            result += L")";
+            return result;
+        }
+        else {
             return L"<unknown expr>";
         }
     }
@@ -90,7 +106,29 @@ namespace ast::decompiler {
             return DecompileTypeChangeStmt(s, indent);
         } else if (auto s = dynamic_cast<ast::IfStmt*>(stmt)) {
             return DecompileIfStmt(s, indent);
-        } else {
+        } else if (auto s = dynamic_cast<ast::WhileStmt*>(stmt)) {
+            wstring result = wstring(indent * 4, L' ') + L"while (" + DecompileExpression(s->Condition, indent) + L") " + DecompileStatement(s->Body, indent);
+            return result;
+        } else if (auto s = dynamic_cast<ast::FuncDeclStmt*>(stmt)) {
+            wstring result = wstring(indent * 4, L' ') + (s->Lining == FLInline ? L"inline " : (s->Lining == FLOutline ? L"outline " : L"")) + L"fn " + s->FunctionName + L"(";
+            for (size_t i = 0; i < s->Parameters.size(); ++i) {
+                const auto& param = s->Parameters[i];
+                if (param->isConstant) {
+                    result += L"const ";
+                }
+                result += param->Name + L": " + param->ParamType->GetName() + (param->DefaultValue ? L" = " + DecompileExpression(param->DefaultValue, 0) : L"");
+                if (i < s->Parameters.size() - 1) {
+                    result += L", ";
+                }
+            }
+            result += L")";
+            if (s->ReturnType) {
+                result += L": " + s->ReturnType->GetName();
+            }
+            result += L" " + DecompileStatement(s->Body, indent);
+            return result;
+        }
+        else {
             return L"<unknown stmt>";
         }
     }

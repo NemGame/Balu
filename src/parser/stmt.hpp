@@ -487,9 +487,9 @@ namespace parser {
             reverseUnorderedMap(methods)   // Methods
         );
     }
-    unordered_map<wstring, ast::MethodParameter*> parse_func_parameters(Parser* p, wstring funcName) {
+    vector<ast::MethodParameter*> parse_func_parameters(Parser* p, wstring funcName) {
         p->expect(lexer::OPEN_PAREN);  // consume '('
-        unordered_map<wstring, ast::MethodParameter*> parameters;
+        vector<ast::MethodParameter*> parameters;
         const wstring defaultParameterType = L"auto";
         while (p->hasTokens() && p->currentTokenKind() != lexer::CLOSE_PAREN)
         {
@@ -502,7 +502,7 @@ namespace parser {
                 p->advance();  // consume 'const'
             }
 
-            if (p->currentTokenKind() == lexer::IDENTIFIER || p->currentToken().isType()) {
+            if (p->currentToken().isTypeName()) {
                 if (p->nextTokenKind() == lexer::IDENTIFIER) {
                     paramType = parse_type(p, default_bp);
                     if (paramType == nullptr) paramType = new ast::SymbolType(defaultParameterType);
@@ -516,7 +516,7 @@ namespace parser {
                     if (_debug) _wcout << L"[Parser] Panicing" << endl;
                     exit(1);
                 }
-                p->advanceUntil(lexer::CLOSE_PAREN, lexer::COMMA);
+                p->advanceUntil(lexer::CLOSE_PAREN, lexer::COMMA, lexer::SEMICOLON);
                 continue;
             }
 
@@ -535,12 +535,16 @@ namespace parser {
                 } else paramType = parse_type(p, default_bp);
                 if (paramType == nullptr) paramType = new ast::SymbolType(defaultParameterType);
             }
-            parameters[paramName] = new ast::MethodParameter(
+            if (p->currentTokenKind() == lexer::ASSIGNMENT) {
+                p->advance();  // consume '='
+                defaultValue = parse_expr(p, assignment);
+            }
+            parameters.push_back(new ast::MethodParameter(
                 paramName, 
                 paramType != nullptr ? paramType : new ast::SymbolType(defaultParameterType), 
-                defaultValue != nullptr ? defaultValue : new ast::NullExpr(), 
+                defaultValue, 
                 isConstant
-            );
+            ));
             if (p->currentTokenKind() == lexer::COLON) {
                 p->advance();  // consume ':'
                 if (paramType != nullptr) {
@@ -553,7 +557,7 @@ namespace parser {
                         exit(1);
                     }
                     p->advance();  // consume the type
-                } else parameters[paramName]->ParamType = parse_type(p, default_bp);
+                } else parameters.back()->ParamType = parse_type(p, default_bp);
             }
             if (p->currentToken().isOneOfMany(lexer::COMMA, lexer::SEMICOLON)) p->advance();
             else if (p->currentTokenKind() != lexer::CLOSE_PAREN) {
@@ -616,7 +620,7 @@ namespace parser {
             p->expect(lexer::SEMICOLON);
             return nullptr;
         }
-        unordered_map<wstring, ast::MethodParameter*> parameters = parse_func_parameters(p, funcName);
+        vector<ast::MethodParameter*> parameters = parse_func_parameters(p, funcName);
 
         ast::Type* returnType = nullptr;
         if (p->currentTokenKind() == lexer::COLON) {
