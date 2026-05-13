@@ -40,6 +40,13 @@ namespace parser {
         // Declared using the let or const keyword, otherwise it's either a mut, or a typename declaration
         bool letConst = p->currentTokenKind() == lexer::LET || p->currentTokenKind() == lexer::CONST;
 
+        // Keyword alone, skip
+        if (p->currentToken().isTypeName() && p->nextTokenKind() == lexer::SEMICOLON) {
+            p->advance();
+            p->advance();
+            return nullptr;
+        }
+
         bool isConstant;
         ast::Type* explicitType = nullptr;
         ast::Expr* assignedValue = nullptr;
@@ -677,7 +684,28 @@ namespace parser {
             return nullptr;
         }
         p->advance();  // consume '='
-        ast::Expr* newTypeExpr = parse_expr(p, assignment);
+        ast::Expr* newTypeExpr = nullptr;
+        if (p->currentTokenKind() == lexer::TYPEOF) {
+            p->advance();  // consume 'typeof'
+            p->expect(lexer::OPEN_PAREN);
+            newTypeExpr = parse_expr(p, default_bp);
+            p->expect(lexer::CLOSE_PAREN);
+        } else {
+            if (p->currentToken().isTypeName()) {
+                newTypeExpr = new ast::TypeExpr(parse_type(p, default_bp));
+            } else {
+                wstring message = L"Expected type expression after '=' in type change statement for variable '" + varName + L"' at " + p->position() + L", but got " + lexer::TokenKindString(p->currentTokenKind());
+                p->errors.push_back(ParserError(message));
+                _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
+                if (_panic) {
+                    if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                    exit(1);
+                }
+                p->advanceUntil(lexer::SEMICOLON);
+                p->advance();  // consume ';'
+                return nullptr;
+            }
+        }
         p->expect(lexer::SEMICOLON);
         return new ast::TypeChangeStmt(varName, newTypeExpr);
     }
@@ -768,5 +796,11 @@ namespace parser {
         }
         if (p->currentTokenKind() == lexer::SEMICOLON) p->advance();  // Optional semicolon after while statement
         return new ast::WhileStmt(condition, body, elseBranch);
+    }
+    ast::Stmt* skip_stmt(Parser* p) {
+        p->advance();  // consume the token that indicates the start of the statement
+        p->advanceUntil(lexer::SEMICOLON);  // Skip until the end of the statement
+        if (p->currentTokenKind() == lexer::SEMICOLON) p->advance();  // consume ';'
+        return nullptr;
     }
 }

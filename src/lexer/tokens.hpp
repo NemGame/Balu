@@ -208,6 +208,9 @@ namespace lexer {
         bool isAccessModifier() const {
             return isOneOfMany(PRIVATE, PROTECTED, PUBLIC, INTERNAL);
         }
+        bool isTypeName() const {
+            return isOneOfMany(STRING_KW, CHAR_KW, NUMBER_KW, BOOL_KW, BYTE_KW, ANY, AUTO, VOID, IDENTIFIER);
+        }
         bool isType() const {
             for (TokenKind tokenType : TokenTypes) {
                 if (this->kind == tokenType) return true;

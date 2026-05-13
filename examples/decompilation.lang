@@ -1,0 +1,15 @@
+if {
+    8 * 3 + 12 * 5;
+}
+number x = 10@;
+typeof x = string;
+#rule;
+x;
+'c';
+8b;
+2;
+true;
+null;
+-2;
+byte y = 8b;
+number z = 2;

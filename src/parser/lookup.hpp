@@ -90,5 +90,8 @@ namespace parser {
         stmt(lexer::ANY, parse_var_decl_stmt);
         stmt(lexer::VOID, parse_var_decl_stmt);
         stmt(lexer::IDENTIFIER, parse_var_decl_stmt);
+
+        // stmt(lexer::NUMBER, skip_stmt);
+        // stmt(lexer::BYTE, skip_stmt);
     }
 }

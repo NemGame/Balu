@@ -205,7 +205,7 @@ namespace lexer {
         regex_search(remaining, match, regexp);
         wstring value = match.str(0);
         value.erase(remove(value.begin(), value.end(), L'_'), value.end());
-        l->push(NewToken(NULL_, value.substr(0, value.length() - 1), l->line, l->column)); // Remove the trailing 'b'
+        l->push(NewToken(BYTE, value.substr(0, value.length() - 1), l->line, l->column)); // Remove the trailing 'b'
         l->advanceN(value.length());
     };
 

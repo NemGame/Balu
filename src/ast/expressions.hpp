@@ -108,6 +108,23 @@ namespace ast {
         }
     };
     using IdentifierExpr = SymbolExpr;
+    struct TypeExpr : public Expr {
+        Type* value;
+        TypeExpr(Type* v) : value(v) {}
+        ~TypeExpr() {
+            delete value;
+        }
+        void expr() override {}
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
+            wcout_ << GetName(indent) << endl;
+        }
+        wstring GetName(int indent = 0) const override {
+            return wstring(indent * 2, L' ') + L"TypeExpr: " + value->GetName();
+        }
+        wstring GetValue() const override {
+            return value->GetName();
+        }
+    };
     struct FunctionCallExpr : public Expr {
         wstring FunctionName;
         vector<Expr*> Arguments;
