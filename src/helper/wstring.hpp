@@ -23,3 +23,11 @@ wstring UTF8ToWstring(const string& str) {
     MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), &wstrTo[0], size_needed);
     return wstrTo;
 }
+
+const wstring strip_left(const wstring& str, wchar_t charToStrip) {
+    size_t start = 0;
+    while (start < str.size() && str[start] == charToStrip) {
+        start++;
+    }
+    return str.substr(start);
+}

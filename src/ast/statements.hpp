@@ -133,13 +133,14 @@ namespace ast {
         Type* ParamType;
         ast::Expr* DefaultValue;
         bool isConstant;
-        MethodParameter(const wstring& n, Type* t, ast::Expr* d, bool c) : Name(n), ParamType(t), DefaultValue(d), isConstant(c) {}
+        bool isAlias;
+        MethodParameter(const wstring& n, Type* t, ast::Expr* d, bool c, bool a) : Name(n), ParamType(t), DefaultValue(d), isConstant(c), isAlias(a) {}
         ~MethodParameter() {
             delete ParamType;
             delete DefaultValue;
         }
         void Dump(int indent = 0, wostream& wcout_ = _wcout) const {
-            wcout_ << wstring(indent * 2, L' ') << L"MethodParameter: " << Name << (isConstant ? L" (const)" : L"") << endl;
+            wcout_ << wstring(indent * 2, L' ') << L"MethodParameter: " << Name << (isConstant ? L" (const)" : L"") << (isAlias ? L" (alias)" : L"") << endl;
             if (ParamType) {
                 ParamType->Dump(indent + 1, wcout_);
             }
@@ -305,7 +306,7 @@ namespace ast {
             for (auto& p : Parameters) delete p;
         }
         void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
-            wcout_ << wstring(indent * 2, L' ') << L"FunctionStmt: " << FunctionName << (Lining == FLInline ? L" (inline)" : (Lining == FLOutline ? L" (outline)" : L"")) << endl;
+            wcout_ << wstring(indent * 2, L' ') << L"FuncDeclStmtcls: " << FunctionName << (Lining == FLInline ? L" (inline)" : (Lining == FLOutline ? L" (outline)" : L"")) << endl;
             if (ReturnType) {
                 ReturnType->Dump(indent + 1, wcout_);
             }

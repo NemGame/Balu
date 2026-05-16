@@ -41,9 +41,9 @@ namespace ast::decompiler {
         return wstring(indent * 4, L' ') + L"typeof " + stmt->VariableName + L" = " + DecompileExpression(stmt->NewExpr, indent);
     }
     wstring DecompileIfStmt(ast::IfStmt* stmt, int indent = 0) {
-        wstring result = wstring(indent * 4, L' ') + L"if (" + DecompileExpression(stmt->Condition, indent) + L") " + DecompileStatement(stmt->ThenBranch, indent);
+        wstring result = wstring(indent * 4, L' ') + L"if (" + DecompileExpression(stmt->Condition, 0) + L") " + strip_left(DecompileStatement(stmt->ThenBranch, indent), L' ');
         if (stmt->ElseBranch) {
-            result += L" else " + DecompileStatement(stmt->ElseBranch, indent);
+            result += L" else " + strip_left(DecompileStatement(stmt->ElseBranch, indent), L' ');
         }
         return result;
     }
@@ -90,6 +90,9 @@ namespace ast::decompiler {
             }
             result += L")";
             return result;
+        } else if (auto s = dynamic_cast<ast::AssignmentExpr*>(expr)) {
+            wstring result = DecompileExpression(s->Assignee, indent) + L" " + s->Operator.value + L" " + DecompileExpression(s->Value, indent);
+            return result;
         }
         else {
             return L"<unknown expr>";
@@ -107,7 +110,10 @@ namespace ast::decompiler {
         } else if (auto s = dynamic_cast<ast::IfStmt*>(stmt)) {
             return DecompileIfStmt(s, indent);
         } else if (auto s = dynamic_cast<ast::WhileStmt*>(stmt)) {
-            wstring result = wstring(indent * 4, L' ') + L"while (" + DecompileExpression(s->Condition, indent) + L") " + DecompileStatement(s->Body, indent);
+            wstring result = wstring(indent * 4, L' ') + L"while (" + DecompileExpression(s->Condition, 0) + L") " + strip_left(DecompileStatement(s->Body, indent), L' ');
+            if (s->ElseBranch) {
+                result += L" else " + DecompileStatement(s->ElseBranch, indent);
+            }
             return result;
         } else if (auto s = dynamic_cast<ast::FuncDeclStmt*>(stmt)) {
             wstring result = wstring(indent * 4, L' ') + (s->Lining == FLInline ? L"inline " : (s->Lining == FLOutline ? L"outline " : L"")) + L"fn " + s->FunctionName + L"(";
@@ -116,7 +122,16 @@ namespace ast::decompiler {
                 if (param->isConstant) {
                     result += L"const ";
                 }
-                result += param->Name + L": " + param->ParamType->GetName() + (param->DefaultValue ? L" = " + DecompileExpression(param->DefaultValue, 0) : L"");
+                if (param->isAlias) {
+                    result += L"alias ";
+                }
+                result += param->Name;
+                if (!param->isAlias) {
+                    result += L": " + param->ParamType->GetName();
+                }
+                if (param->DefaultValue) {
+                    result += L" = " + DecompileExpression(param->DefaultValue, 0);
+                }
                 if (i < s->Parameters.size() - 1) {
                     result += L", ";
                 }
@@ -127,6 +142,8 @@ namespace ast::decompiler {
             }
             result += L" " + DecompileStatement(s->Body, indent);
             return result;
+        } else if (auto s = dynamic_cast<ast::AliasDeclStmt*>(stmt)) {
+            return wstring(indent * 4, L' ') + L"alias " + s->AliasName + L" = " + DecompileExpression(s->AliasedValue, 0);
         }
         else {
             return L"<unknown stmt>";

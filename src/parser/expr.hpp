@@ -150,7 +150,7 @@ namespace parser {
     ast::Expr* parse_assignment_expr(Parser* parser, ast::Expr* left, binding_power bp) {
         if (_verbose) _wcout << L"[Parser] Parsing assignment expression at " << parser->position() << endl;
         lexer::Token op = parser->advance();
-        ast::Expr* right = parse_expr(parser, bp);  // Right-associative
+        ast::Expr* right = parse_expr(parser, static_cast<binding_power>(bp - 1));  // Right-associative
         return new ast::AssignmentExpr(left, op, right);
     }
 

@@ -2,8 +2,30 @@
 
 namespace parser {
     ast::Type* parse_type(Parser* parser, binding_power bp);
+    bool is_assignment_operator(lexer::TokenKind kind) {
+        return kind == lexer::ASSIGNMENT ||
+               kind == lexer::PLUS_EQUALS ||
+               kind == lexer::MINUS_EQUALS ||
+               kind == lexer::STAR_EQUALS ||
+               kind == lexer::SLASH_EQUALS ||
+               kind == lexer::PERCENT_EQUALS;
+    }
     ast::Stmt* parse_stmt(Parser* p) {
         if (_verbose) _wcout << L"Parsing statement at " << p->position() << endl;
+
+        // Identifier-led assignments (e.g. x = 2;) are expression statements,
+        // not declarations. Handle them before stmt lookup routes IDENTIFIER to var decl.
+        if (p->currentTokenKind() == lexer::IDENTIFIER && is_assignment_operator(p->nextTokenKind())) {
+            ast::Expr* expr = parse_expr(p, default_bp);
+            if (expr == nullptr) {
+                p->advanceUntil(lexer::SEMICOLON);
+                p->expect(lexer::SEMICOLON);
+                return nullptr;
+            }
+            p->expect(lexer::SEMICOLON);
+            return new ast::ExpressionStmt(expr);
+        }
+
         bool exists = stmt_lu[p->currentTokenKind()] != nullptr;
         if (exists) {
             return stmt_lu[p->currentTokenKind()](p);
@@ -39,7 +61,7 @@ namespace parser {
         if (_verbose) _wcout << L"Parsing variable declaration statement at " << p->position() << endl;
         // Declared using the let or const keyword, otherwise it's either a mut, or a typename declaration
         bool letConst = p->currentTokenKind() == lexer::LET || p->currentTokenKind() == lexer::CONST;
-
+        
         // Keyword alone, skip
         if (p->currentToken().isTypeName() && p->nextTokenKind() == lexer::SEMICOLON) {
             p->advance();
@@ -57,16 +79,16 @@ namespace parser {
             isConstant = p->currentTokenKind() != lexer::MUT;  // If it's not 'mut', then it's a constant declaration
             if (!isConstant) p->advance(); // consume 'mut' if it exists
 
-            // Check if we are looking at a type or just the variable name.
-            // We parse a type if:
-            // 1. It's a known keyword type (NUMBER, STRING, etc.)
-            // 2. It's a prefix modifier (*, [)
-            // 3. It's an identifier followed by a modifier or another identifier (the variable name)
-            lexer::TokenKind nextKind = p->tokens.size() > p->pos + 1 ? p->tokens[p->pos + 1].kind : lexer::EOF_TOKEN;
-            if (p->currentTokenKind() != lexer::IDENTIFIER || 
-                (nextKind == lexer::IDENTIFIER || nextKind == lexer::STAR || nextKind == lexer::OPEN_BRACKET)) 
-                explicitType = parse_type(p, default_bp);
         }
+        // Check if we are looking at a type or just the variable name.
+        // We parse a type if:
+        // 1. It's a known keyword type (NUMBER, STRING, etc.)
+        // 2. It's a prefix modifier (*, [)
+        // 3. It's an identifier followed by a modifier or another identifier (the variable name)
+        lexer::TokenKind nextKind = p->tokens.size() > p->pos + 1 ? p->tokens[p->pos + 1].kind : lexer::EOF_TOKEN;
+        if (p->currentTokenKind() != lexer::IDENTIFIER || 
+            (nextKind == lexer::IDENTIFIER || nextKind == lexer::STAR || nextKind == lexer::OPEN_BRACKET)) 
+            explicitType = parse_type(p, default_bp);
 
         wstring varName = p->expectError(lexer::IDENTIFIER, Error(L"Expected variable name after declaration with " + (letConst ? (isConstant ? wstring(L"'const'") : wstring(L"'let'")) : (isConstant ? wstring(L"typename") : wstring(L"'mut'"))) + L", but got " + lexer::TokenKindString(p->currentTokenKind()) + L" at " + p->position())).value;
         if (p->currentTokenKind() == lexer::COLON) {
@@ -360,9 +382,10 @@ namespace parser {
                         isConstant = true;
                         p->advance();  // consume 'const'
                     }
-
+                    bool isAlias = p->currentTokenKind() == lexer::ALIAS;
+                    if (isAlias) p->advance();
                     if (p->currentTokenKind() == lexer::IDENTIFIER || p->currentToken().isType()) {
-                        if (p->nextTokenKind() == lexer::IDENTIFIER) {
+                        if (p->nextTokenKind() == lexer::IDENTIFIER && !isAlias) {
                             paramType = parse_type(p, default_bp);
                             if (paramType == nullptr) paramType = new ast::SymbolType(L"auto");
                         }
@@ -381,9 +404,9 @@ namespace parser {
 
                     if (p->currentTokenKind() == lexer::COLON) {
                         p->advance();  // consume ':'
-                        if (paramType != nullptr) {
+                        if (paramType != nullptr || isAlias) {
                             ast::Type* newParamType = parse_type(p, default_bp);
-                            wstring message = L"Method parameter '" + paramName + L"' in method '" + propertyName + L"' declaration at " + p->position() + L" cannot have an explicit type as it was already specified as '" + paramType->GetName() + L"'";
+                            wstring message = L"Method parameter '" + paramName + L"' in method '" + propertyName + L"' declaration at " + p->position() + L" cannot have an explicit type as it was already specified as '" + (paramType == nullptr ? L"alias" : paramType->GetName()) + L"'";
                             p->errors.push_back(ParserError(message));
                             _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
                             if (_panic) {
@@ -418,7 +441,8 @@ namespace parser {
                         paramName, 
                         paramType, 
                         defaultValue, 
-                        isConstant
+                        isConstant,
+                        isAlias
                     );
                     if (p->currentTokenKind() == lexer::COMMA) p->advance();
                 }
@@ -501,9 +525,10 @@ namespace parser {
                 isConstant = true;
                 p->advance();  // consume 'const'
             }
-
+            bool isAlias = p->currentTokenKind() == lexer::ALIAS;
+            if (isAlias) p->advance();
             if (p->currentToken().isTypeName()) {
-                if (p->nextTokenKind() == lexer::IDENTIFIER) {
+                if (p->nextTokenKind() == lexer::IDENTIFIER && !isAlias) {
                     paramType = parse_type(p, default_bp);
                     if (paramType == nullptr) paramType = new ast::SymbolType(defaultParameterType);
                 }
@@ -522,9 +547,9 @@ namespace parser {
 
             if (p->currentTokenKind() == lexer::COLON) {
                 p->advance();  // consume ':'
-                if (paramType != nullptr) {
+                if (paramType != nullptr || isAlias) {
                     ast::Type* newParamType = parse_type(p, default_bp);
-                    wstring message = L"Function parameter '" + paramName + L"' in function '" + funcName + L"' declaration at " + p->position() + L" cannot have an explicit type as it was already specified as '" + paramType->GetName() + L"'";
+                    wstring message = L"Function parameter '" + paramName + L"' in function '" + funcName + L"' declaration at " + p->position() + L" cannot have an explicit type as it was already specified as '" + (paramType == nullptr ? L"alias" : paramType->GetName()) + L"'";
                     p->errors.push_back(ParserError(message));
                     _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
                     if (_panic) {
@@ -543,7 +568,8 @@ namespace parser {
                 paramName, 
                 paramType != nullptr ? paramType : new ast::SymbolType(defaultParameterType), 
                 defaultValue, 
-                isConstant
+                isConstant,
+                isAlias
             ));
             if (p->currentTokenKind() == lexer::COLON) {
                 p->advance();  // consume ':'

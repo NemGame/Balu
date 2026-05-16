@@ -23,6 +23,25 @@ number z = 2;
 inline fn FUCK(int ye, const string x = "3") {
     byte c = 3 * 4b;
     let fuckery = "3" * 4 + 3;
-    if (x == 3) {}
+    if (x == 3) {
+        x = 2 * 5;
+    }
     return fuckery;
+}
+outline fn bruh(alias ye = 2, x = 3, any j = 4, c, z) {
+    let any yooo = ye + 2;
+    ye = 23;
+}
+fn baseball(): string {
+    return "huh?";
+}
+alias aX = x;
+while {
+
+} else if {
+
+} elif {
+
+} else {
+    
 }

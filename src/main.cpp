@@ -114,8 +114,8 @@ void DisplayHelp(const wstring& programName) {
 #pragma endregion
 
 int main(int argc, char* argv[]) {
-    _setmode(_fileno(stdout), _O_U16TEXT);
-    _setmode(_fileno(stdin), _O_U16TEXT);
+    _setmode(0, _O_U16TEXT);
+    _setmode(1, _O_U16TEXT);
 
     int count = 0;
     const vector<wstring> args = GetCommandLineArgs(count);
