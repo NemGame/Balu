@@ -313,7 +313,7 @@ namespace lexer {
         l->push(NewToken(RULE, value.substr(1), l->line, l->column)); // Remove the "#" prefix
         l->advanceN(value.length());
     };
-
+    
     Lexer createLexer(const wstring& source) {
         return Lexer {
             0,

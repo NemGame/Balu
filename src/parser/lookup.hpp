@@ -63,6 +63,8 @@ namespace parser {
         nud(lexer::RULE, parse_primary_expr);
         nud(lexer::RETURN, parse_return_expr);
 
+        nud(lexer::BREAK, parse_break_expr);
+        
         nud(lexer::TYPEOF, parse_typeof_expr);
 
         // Statements

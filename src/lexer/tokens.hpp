@@ -1,6 +1,6 @@
 #pragma once
 
-// TODO: Add keyword to jump out of the current block for if and simple blocks, 'jup'?
+// TODO: Add keyword to jump out of the current block for if and simple blocks, 'jup'? 'localbreak'?
 
 namespace lexer {    
     enum TokenKind {
@@ -119,6 +119,7 @@ namespace lexer {
         WHILE,          // while
         FOR,            // for
         RETURN,         // return
+        BREAK,          // break; 'break' jumps out of the current loop or switch; 'break(n)' jumps out of n levels of loops/switches; 'break .' jumps out of the current block (if, else, while, for, etc.) but not function bodies; 'break . n' jumps out of n levels of blocks (if, else, while, for, etc.) but not function bodies; 'break *' jumps out of all levels of blocks but not function bodies; 'break all' jumps out of all levels of blocks but not function bodies; 'break fn' jumps out of the current function body
 
         // Reflection and evaluation
         TYPEOF,         // typeof
@@ -169,7 +170,8 @@ namespace lexer {
         {L"out", OUT},
         {L"eval", EVAL},
         {L"return", RETURN},
-        
+        {L"break", BREAK},
+
         {L"string", STRING_KW},
         {L"char", CHAR_KW},
         {L"number", NUMBER_KW},
@@ -329,6 +331,7 @@ namespace lexer {
             case WHILE: return L"WHILE";
             case FOR: return L"FOR";
             case RETURN: return L"RETURN";
+            case BREAK: return L"BREAK";
 
             case TYPEOF: return L"TYPEOF";
             case NAMEOF: return L"NAMEOF";

@@ -246,6 +246,49 @@ namespace parser {
         ast::Expr* returnValue = parse_expr(p, default_bp);
         return new ast::ReturnExpr(returnValue);
     }
+    ast::Expr* parse_break_expr(Parser* p) {
+        if (_verbose) _wcout << L"Parsing break statement at " << p->position() << endl;
+
+        p->advance();  // consume 'break'
+
+        if (p->currentTokenKind() == lexer::SEMICOLON) {
+            return new ast::BreakExpr(ast::BreakPower::Default);
+        }
+
+        if (p->currentTokenKind() == lexer::DOT) {
+            p->advance();  // consume '.'
+            if (p->currentTokenKind() == lexer::NUMBER) {
+                int levels = stoi(p->advance().value);
+                return new ast::BreakExpr(ast::BreakPower::Block, levels);
+            } else {
+                return new ast::BreakExpr(ast::BreakPower::Block);
+            }
+        }
+
+        if (p->currentTokenKind() == lexer::NUMBER) {
+            int levels = stoi(p->advance().value);
+            return new ast::BreakExpr(ast::BreakPower::Default, levels);
+        }
+
+        if (p->currentTokenKind() == lexer::FN) {
+            p->advance();  // consume 'fn'
+            return new ast::BreakExpr(ast::BreakPower::Function);
+        }
+
+        if (p->currentTokenKind() == lexer::STAR) {
+            p->advance();  // consume '*'
+            return new ast::BreakExpr(ast::BreakPower::All);
+        }
+
+        wstring message = L"Unexpected token after 'break' at " + p->position() + L": " + p->currentToken().value + L" (" + lexer::TokenKindString(p->currentTokenKind()) + L")";
+        p->errors.push_back(ParserError(message, p->currentToken().line, p->currentToken().column));
+        _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
+        if (_panic) {
+            if (_debug) _wcout << L"[Parser] Panicing" << endl;
+            exit(1);
+        }
+        return new ast::BreakExpr(ast::BreakPower::Default);
+    }
     ast::Expr* parse_typeof_expr(Parser* p) {
         if (_verbose) _wcout << L"Parsing typeof expression at " << p->position() << endl;
         p->expect(lexer::TYPEOF);  // consume 'typeof'
@@ -253,7 +296,7 @@ namespace parser {
         bool alreadyGotError = false;
         if (p->currentTokenKind() != lexer::OPEN_PAREN) {
             wstring message = L"Expected 'typeof' expression at " + p->position() + L" to be followed by an expression in parentheses, but got " + lexer::TokenKindString(p->currentTokenKind());
-            p->errors.push_back(ParserError(message));
+            p->errors.push_back(ParserError(message, p->currentToken().line, p->currentToken().column));
             _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
             if (_panic) {
                 if (_debug) _wcout << L"[Parser] Panicing" << endl;

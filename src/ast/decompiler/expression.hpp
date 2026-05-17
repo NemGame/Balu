@@ -93,6 +93,19 @@ namespace ast::decompiler {
         } else if (auto s = dynamic_cast<ast::AssignmentExpr*>(expr)) {
             wstring result = DecompileExpression(s->Assignee, indent) + L" " + s->Operator.value + L" " + DecompileExpression(s->Value, indent);
             return result;
+        } else if (auto s = dynamic_cast<ast::BreakExpr*>(expr)) {
+            wstring result = L"break";
+            if (s->Power == ast::BreakPower::Function) {
+                result += L" fn";
+            } else if (s->Power == ast::BreakPower::All) {
+                result += L" *";
+            } else if (s->Power == ast::BreakPower::Block) {
+                result += L" .";
+            }
+            if (s->levels > 1) {
+                result += L" " + to_wstring(s->levels);
+            }
+            return result;
         }
         else {
             return L"<unknown expr>";

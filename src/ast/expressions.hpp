@@ -347,6 +347,37 @@ namespace ast {
             return str;
         }
     };
+    enum class BreakPower {
+        Function = 0,
+        All,  // All, except functions
+        LoopSwitch,
+        Block,
+        Default = LoopSwitch
+    };
+    wstring BreakPowerString(BreakPower power) {
+        switch (power) {
+            case BreakPower::Function: return L"function";
+            case BreakPower::LoopSwitch: return L"loop/switch";
+            case BreakPower::All: return L"all";
+            case BreakPower::Block: return L"block";
+            default: return L"unknown";
+        }
+    }
+    struct BreakExpr : public Expr {
+        BreakPower Power;
+        unsigned long long levels;
+        BreakExpr(BreakPower p, unsigned long long l = 1) : Power(p), levels(l) {}
+        void expr() override {}
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
+            wcout_ << GetName(indent) << endl;
+        }
+        wstring GetName(int indent = 0) const override {
+            return wstring(indent * 2, L' ') + L"BreakExpr: " + BreakPowerString(Power) + L" ; " + to_wstring(levels);
+        }
+        wstring GetValue() const override {
+            return L"break (" + BreakPowerString(Power) + L")";
+        }
+    };
     struct TypeOfExpr : public Expr {
         Expr* QueriedExpr;
         TypeOfExpr(Expr* queriedType) : QueriedExpr(queriedType) {}

@@ -1,0 +1,26 @@
+if (x) {
+    break .;
+}
+while {
+    break;
+}
+if (x) {
+    if (x) {
+        break .2;
+    }
+}
+while {
+    while {
+        break 2;
+    }
+}
+outline fn X() {
+    break fn;
+}
+outline fn X2() {
+    if {
+        while {
+            break *;
+        }
+    }
+}
