@@ -4,4 +4,5 @@
 #include "types.hpp"
 #include "expressions.hpp"
 #include "statements.hpp"
+#include "optimizer/init.hpp"
 #include "decompiler/init.hpp"

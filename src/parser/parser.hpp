@@ -26,9 +26,12 @@ namespace parser {
                 Body.push_back(stmt);
             }
         }
-        
-        return ast::BlockStmt{
-            Body,
-        };
+
+        ast::BlockStmt block = ast::BlockStmt(Body);
+        if (_allowOptimization) {
+            ast::Stmt* root = &block;
+            ast::optimizer::Optimize(root);
+        }
+        return block;
     }
 }

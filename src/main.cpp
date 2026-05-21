@@ -99,6 +99,8 @@ void DisplayHelp(const wstring& programName) {
     _wcout << L"  --no-panic, /no-panic, -np, /np\t  Forbid panicing on errors" << endl;
     _wcout << L"  --no-lexer-errors, /no-lexer-errors,\t  Forbid caring about lexer errors" << endl;
     _wcout << L"  -nle, /nle" << endl;
+    _wcout << L"  --no-optimizations, /no-optimizations\t  Disable optimizations" << endl;
+    _wcout << L"  -no-opt, /no-opt" << endl;
     _wcout << L"  --debug, /debug, -d, /d\t\t  Enable debug output" << endl;
     _wcout << L"  --log-globals\t\t\t\t  Log global variables" << endl;
     _wcout << L"  --show, /show, -s, /s\t\t\t  Show the command line arguments (after parsing them)" << endl;
@@ -143,13 +145,17 @@ int main(int argc, char* argv[]) {
     _panic =  _feedbackMode ? false : !vectorContains(*flags, vector<wstring>{L"--no-panic", L"/no-panic", L"-np", L"/np"});
     _debug = _feedbackMode ? true : vectorContains(*flags, vector<wstring>{L"--debug", L"/debug", L"-d", L"/d"});
     _allowLexerErrors = _feedbackMode ? true : !vectorContains(*flags, vector<wstring>{L"--no-lexer-errors", L"/no-lexer-errors", L"-nle", L"/nle"});
-
+    _allowOptimization = _feedbackMode ? true : !vectorContains(*flags, vector<wstring>{L"--no-optimizations", L"/no-optimizations", L"-no-opt", L"/no-opt"});
     if (vectorContains(*flags, vector<wstring>{L"--log-globals"})) {
         _wcout << L"Global Variables:" << endl;
         _wcout << L"_verbose: " << (_verbose ? L"true" : L"false") << endl;
         _wcout << L"_showWarnings: " << (_showWarnings ? L"true" : L"false") << endl;
         _wcout << L"_panic: " << (_panic ? L"true" : L"false") << endl;
         _wcout << L"_allowLexerErrors: " << (_allowLexerErrors ? L"true" : L"false") << endl;
+        _wcout << L"_allowOptimization: " << (_allowOptimization ? L"true" : L"false") << endl;
+        _wcout << L"_debug: " << (_debug ? L"true" : L"false") << endl;
+        _wcout << L"_provideHelp: " << (_provideHelp ? L"true" : L"false") << endl;
+        _wcout << L"_feedbackMode: " << (_feedbackMode ? L"true" : L"false") << endl;
     }
 
     if (_verbose) _wcout << L"Verbose mode enabled." << endl;
