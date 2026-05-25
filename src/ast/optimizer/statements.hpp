@@ -66,4 +66,11 @@ namespace ast::optimizer {
             stmt->Condition = new ast::BinaryExpr(stmt->Condition, innerWhile->Condition, lexer::NewToken(lexer::AND, L"&&"));
         }
     }
+    void OptimizeVarDeclStmt(ast::Stmt*& baseStmt) {
+        ast::VarDeclStmt* stmt = dynamic_cast<ast::VarDeclStmt*>(baseStmt);
+        if (!stmt) {
+            return;
+        }
+        Optimize(stmt->AssignedValue);
+    }
 }

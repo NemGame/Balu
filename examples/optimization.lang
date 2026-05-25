@@ -28,3 +28,9 @@ if {
 } else {
     
 }
+const x0: number = -(-2);
+const x1: number = +(-2);
+const x2: number = -(+2);
+const x3: number = !(!2);
+const x4: number = !!!2;
+const x5: number = !!!!2;

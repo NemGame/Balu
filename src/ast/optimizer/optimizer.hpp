@@ -18,6 +18,19 @@ namespace ast::optimizer {
             OptimizeIfStmt(block);
         } else if (dynamic_cast<ast::WhileStmt*>(block)) {
             OptimizeWhileStmt(block);
+        } else if (dynamic_cast<ast::VarDeclStmt*>(block)) {
+            OptimizeVarDeclStmt(block);
+        } else if (dynamic_cast<ast::ExpressionStmt*>(block)) {
+            ast::ExpressionStmt* exprStmt = dynamic_cast<ast::ExpressionStmt*>(block);
+            Optimize(exprStmt->expression);
+        }
+    }
+    void Optimize(ast::Expr*& expr) {
+        if (!expr) {
+            return;
+        }
+        if (auto prefixExpr = dynamic_cast<ast::PrefixExpr*>(expr)) {
+            OptimizePrefixExpr(expr);
         }
     }
 }

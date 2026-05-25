@@ -59,6 +59,8 @@ namespace parser {
         nud(lexer::IDENTIFIER, parse_primary_expr);
         nud(lexer::OPEN_PAREN, parse_grouping_expr);
         nud(lexer::DASH, parse_prefix_expr);
+        nud(lexer::PLUS, parse_prefix_expr);
+        nud(lexer::NOT, parse_prefix_expr);
 
         nud(lexer::RULE, parse_primary_expr);
         nud(lexer::RETURN, parse_return_expr);
