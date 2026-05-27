@@ -23,6 +23,58 @@ namespace ast {
         wstring GetValue() const override {
             return isPrecise() ? preciseValue : to_wstring(value);
         }
+        void Add(NumberExpr* other) {
+            if (isPrecise() || other->isPrecise()) {
+                const wstring selfValue = isPrecise() ? preciseValue : to_wstring(value);
+                const wstring otherValue = other->isPrecise() ? other->preciseValue : to_wstring(other->value);
+
+                const wstring selfBinary = NumberToBinary(selfValue);
+                const wstring otherBinary = NumberToBinary(otherValue);
+
+                const wstring resultBinary = BinaryAdd(selfBinary, otherBinary);
+
+                preciseValue = BinaryToDecimalWstring(resultBinary);
+                value = 0;
+            } else {
+                value += other->value;
+                preciseValue.clear(); // Clear the precise value if we lose precision
+            }
+        }
+        void Multiply(NumberExpr* other) {
+            if (isPrecise() || other->isPrecise()) {
+                const wstring selfValue = isPrecise() ? preciseValue : to_wstring(value);
+                const wstring otherValue = other->isPrecise() ? other->preciseValue : to_wstring(other->value);
+
+                const wstring selfBinary = NumberToBinary(selfValue);
+                const wstring otherBinary = NumberToBinary(otherValue);
+
+                const wstring resultBinary = BinaryMultiply(selfBinary, otherBinary);
+
+                preciseValue = BinaryToDecimalWstring(resultBinary);
+                value = 0;
+            } else {
+                value *= other->value;
+                preciseValue.clear(); // Clear the precise value if we lose precision
+            }
+        }
+        inline NumberExpr operator +( const NumberExpr& other ) const {
+            NumberExpr result = *this;
+            result.Add(const_cast<NumberExpr*>(&other));
+            return result;
+        }
+        inline NumberExpr& operator +=( const NumberExpr& other ) {
+            Add(const_cast<NumberExpr*>(&other));
+            return *this;
+        }
+        inline NumberExpr operator *( const NumberExpr& other ) const {
+            NumberExpr result = *this;
+            result.Multiply(const_cast<NumberExpr*>(&other));
+            return result;
+        }
+        inline NumberExpr& operator *=( const NumberExpr& other ) {
+            Multiply(const_cast<NumberExpr*>(&other));
+            return *this;
+        }
     };
     struct ByteExpr : public Expr {
         unsigned char value;

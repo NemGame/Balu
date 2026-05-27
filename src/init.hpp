@@ -10,6 +10,8 @@
 #include <sstream>
 #include <unordered_map>
 #include <map>
+#include <bitset>
+#include <algorithm>
 
 using namespace std;
 

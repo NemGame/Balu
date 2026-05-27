@@ -34,3 +34,11 @@ const x2: number = -(+2);
 const x3: number = !(!2);
 const x4: number = !!!2;
 const x5: number = !!!!2;
+
+const x6: number = 2 + 2;
+const x7: number = 2@ + 2;
+const x8: number = 2 + 2@;
+const x9: number = 2 * 2;
+const x10: number = 2@ * 42;
+const x11: number = 2 * 3@;
+const x11: number = 2 * 18446744073709551615@;  // 2 * ULLONG_MAX
