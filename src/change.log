@@ -1,0 +1,12 @@
+Fixed a bug with optimizing PrefixExpr:
+    - There was no lookup for what the operator's value should be (so only kind was set), thus when decompiling, it defaulted to "+"
+Added `Clone()` to every Stmt, Expr, Type -> Easier to optimize branches
+Optimized if statements:
+    - Constant definition: convert to block statement accoring to the always running branch
+Optimized BinaryExpr:
+    - Literal folding added for equality between `number` and `number`
+Added `Equals(NumberExpr)` to `NumberExpr`
+Optimized block statements:
+    - Empty block statements are removed
+Fixed a bug with block statements:
+    - Now they can be declared (it wasn't in the lookup)

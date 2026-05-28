@@ -6,6 +6,11 @@ namespace ast::optimizer {
             return;
         }
         if (auto blockStmt = dynamic_cast<ast::BlockStmt*>(block)) {
+            if (blockStmt->statements.empty()) {
+                delete block;
+                block = nullptr;
+                return;
+            }
             vector<ast::Stmt*> optimizedBody;
             for (ast::Stmt*& stmt : blockStmt->statements) {
                 Optimize(stmt);

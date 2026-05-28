@@ -73,6 +73,11 @@ namespace ast {
         static BlockStmt Null() { return BlockStmt({}); }
         static BlockStmt* NullPtr() { return new BlockStmt({}); }
         wstring kind() const { return L"BlockStmt"; }
+        Stmt* Clone() const override {
+            vector<Stmt*> clonedStatements;
+            for (Stmt* stmt : statements) clonedStatements.push_back(stmt ? stmt->Clone() : nullptr);
+            return new BlockStmt(clonedStatements);
+        }
     };
     struct ExpressionStmt : public Stmt {
         Expr* expression;
@@ -88,6 +93,9 @@ namespace ast {
             }
         }
         wstring kind() const { return L"ExpressionStmt"; }
+        Stmt* Clone() const override {
+            return new ExpressionStmt(expression ? expression->Clone() : nullptr);
+        }
     };
     struct VarDeclStmt : public Stmt {
         wstring VariableName;
@@ -110,6 +118,9 @@ namespace ast {
             }
         }
         wstring kind() const { return L"VarDeclStmt"; }
+        Stmt* Clone() const override {
+            return new VarDeclStmt(VariableName, isConstant, AssignedValue ? AssignedValue->Clone() : nullptr, ExplicitType ? ExplicitType->Clone() : nullptr);
+        }
     };
     // typeof varName = typeName;
     struct TypeChangeStmt : public Stmt {
@@ -127,6 +138,9 @@ namespace ast {
             }
         }
         wstring kind() const { return L"TypeChangeStmt"; }
+        Stmt* Clone() const override {
+            return new TypeChangeStmt(VariableName, NewExpr ? NewExpr->Clone() : nullptr);
+        }
     };
     struct MethodParameter {
         wstring Name;
@@ -147,6 +161,9 @@ namespace ast {
             if (DefaultValue) {
                 DefaultValue->Dump(indent + 1, wcout_);
             }
+        }
+        MethodParameter* Clone() const {
+            return new MethodParameter(Name, ParamType ? ParamType->Clone() : nullptr, DefaultValue ? DefaultValue->Clone() : nullptr, isConstant, isAlias);
         }
     };
     struct StructProperty {
@@ -169,6 +186,9 @@ namespace ast {
             if (AssignedValue) {
                 AssignedValue->Dump(indent + 1, wcout_);
             }
+        }
+        StructProperty* Clone() const {
+            return new StructProperty(Property, Type ? Type->Clone() : nullptr, AssignedValue ? AssignedValue->Clone() : nullptr, isStatic, Access, isConstant);
         }
     };
     struct StructMethod {  // TODO: implement (add fn type) ; Replace with FuncDeclStmt
@@ -198,6 +218,11 @@ namespace ast {
                 Body->Dump(indent + 1, wcout_);
             }
         }
+        StructMethod* Clone() const {
+            unordered_map<wstring, MethodParameter*> clonedParams;
+            for (const auto& p : Parameters) clonedParams[p.first] = p.second ? p.second->Clone() : nullptr;
+            return new StructMethod(MethodName, ReturnType ? ReturnType->Clone() : nullptr, Body ? Body->Clone() : nullptr, isStatic, Access, clonedParams, isConstant);
+        }
     };
     struct StructDeclStmt : public Stmt {
         wstring StructName;
@@ -219,6 +244,13 @@ namespace ast {
             }
         }
         wstring kind() const { return L"StructDeclStmt"; }
+        Stmt* Clone() const override {
+            unordered_map<wstring, StructProperty*> clonedProperties;
+            for (const auto& p : Properties) clonedProperties[p.first] = p.second->Clone();
+            unordered_map<wstring, StructMethod*> clonedMethods;
+            for (const auto& m : Methods) clonedMethods[m.first] = m.second->Clone();
+            return new StructDeclStmt(StructName, clonedProperties, clonedMethods);
+        }
     };
     struct AliasDeclStmt : public Stmt {
         wstring AliasName;
@@ -235,6 +267,9 @@ namespace ast {
             }
         }
         wstring kind() const { return L"AliasDeclStmt"; }
+        Stmt* Clone() const override {
+            return new AliasDeclStmt(AliasName, AliasedValue ? AliasedValue->Clone() : nullptr);
+        }
     };
     struct IfStmt : public Stmt {
         ast::Expr* Condition;
@@ -263,6 +298,9 @@ namespace ast {
             }
         }
         wstring kind() const { return L"IfStmt"; }
+        Stmt* Clone() const override {
+            return new IfStmt(Condition ? Condition->Clone() : nullptr, ThenBranch ? ThenBranch->Clone() : nullptr, ElseBranch ? ElseBranch->Clone() : nullptr);
+        }
     };
     struct WhileStmt : public Stmt {
         ast::Expr* Condition;
@@ -291,6 +329,9 @@ namespace ast {
             }
         }
         wstring kind() const { return L"WhileStmt"; }
+        Stmt* Clone() const override {
+            return new WhileStmt(Condition ? Condition->Clone() : nullptr, Body ? Body->Clone() : nullptr, ElseBranch ? ElseBranch->Clone() : nullptr);
+        }
     };
     struct FuncDeclStmt : public Stmt {
         wstring FunctionName;
@@ -319,5 +360,10 @@ namespace ast {
             }
         }
         wstring kind() const { return L"FunctionStmt"; }
+        Stmt* Clone() const override {
+            vector<MethodParameter*> clonedParams;
+            for (auto& p : Parameters) clonedParams.push_back(p ? p->Clone() : nullptr);
+            return new FuncDeclStmt(FunctionName, ReturnType ? ReturnType->Clone() : nullptr, Body ? Body->Clone() : nullptr, Lining, clonedParams);
+        }
     };
 }

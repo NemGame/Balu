@@ -8,6 +8,12 @@ namespace ast::optimizer {
         {{lexer::PLUS, lexer::DASH}, lexer::DASH},
         {{lexer::NOT, lexer::NOT}, lexer::PLUS},  // Skip double negation
     };
+    const map<lexer::TokenKind, wstring> OperatorToString = {
+        {lexer::PLUS, L"+"},
+        {lexer::DASH, L"-"},
+        {lexer::NOT, L"!"},
+        {lexer::BITWISE_NOT, L"~"},
+    };
     const vector<const type_info*> TypeLiterals = {&typeid(ast::NumberExpr), &typeid(ast::NullExpr), &typeid(ast::BooleanExpr), &typeid(ast::ByteExpr), &typeid(ast::StringExpr), &typeid(ast::CharExpr)};
     const vector<const type_info*> NumberLiterals = {&typeid(ast::NumberExpr), &typeid(ast::ByteExpr), &typeid(ast::CharExpr)};
     bool isLiteral(Expr* e) {
@@ -34,6 +40,7 @@ namespace ast::optimizer {
             if (it != OperatorLookup.end()) {
                 // Fold nested prefix operators into a single one.
                 expr->Operator.kind = it->second;
+                expr->Operator.value = OperatorToString.at(it->second);
                 expr->RightExpr = rightPrefix->RightExpr;
                 rightPrefix->RightExpr = nullptr;
                 delete rightPrefix;
@@ -69,6 +76,11 @@ namespace ast::optimizer {
                     leftNum->Add(dynamic_cast<ast::NumberExpr*>(expr->right));
                 } else if (expr->op.kind == lexer::STAR) {
                     leftNum->Multiply(dynamic_cast<ast::NumberExpr*>(expr->right));
+                } else if (expr->op.kind == lexer::EQUALS) {  // ==
+                    bool value = leftNum->Equals(dynamic_cast<ast::NumberExpr*>(expr->right));
+                    delete baseExpr;
+                    baseExpr = new ast::BooleanExpr(value);
+                    return;
                 } else {
                     return; // Unsupported operator for merging literals
                 }

@@ -11,6 +11,9 @@ namespace ast {
         wstring GetName(int indent = 0) const {
             return name;
         }
+        Type* Clone() const override {
+            return new SymbolType(name);
+        }
     };
     struct ArrayType : public Type {
         Type* Underlying;  // T[]
@@ -25,6 +28,9 @@ namespace ast {
         }
         wstring GetName(int indent = 0) const override {
             return Underlying->GetName(indent) + L"[]";
+        }
+        Type* Clone() const override {
+            return new ArrayType(Underlying ? Underlying->Clone() : nullptr);
         }
     };
 }

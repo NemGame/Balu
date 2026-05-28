@@ -81,6 +81,7 @@ namespace parser {
         stmt(lexer::INLINE, parse_func_decl_stmt);
         stmt(lexer::OUTLINE, parse_func_decl_stmt);
         stmt(lexer::FN, parse_func_decl_stmt);
+        stmt(lexer::OPEN_CURLY, parse_block_stmt);
 
         stmt(lexer::TYPEOF, parse_type_change_stmt);
 

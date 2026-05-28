@@ -20,6 +20,25 @@ namespace ast::optimizer {
         };
         
         Optimize(stmt->Condition);
+        if (auto booleanExpr = dynamic_cast<ast::BooleanExpr*>(stmt->Condition)) {
+            if (booleanExpr->value) {
+                // Convert to block statement and ignore else branch
+
+                // Copy then branch to avoid deleting it when we delete the if statement
+                ast::Stmt* copiedThenBranch = stmt->ThenBranch->Clone();
+                delete stmt;
+                baseStmt = copiedThenBranch;
+                Optimize(baseStmt);
+                return;
+            } else {
+                // Copy else branch to avoid deleting it when we delete the if statement
+                ast::Stmt* copiedElseBranch = stmt->ElseBranch->Clone();
+                delete stmt;
+                baseStmt = copiedElseBranch;
+                Optimize(baseStmt);
+                return;
+            }
+        }
         
         if (isEmptyBranch(stmt->ThenBranch) && isEmptyBranch(stmt->ElseBranch)) {
             // If both branches are empty, we can remove the entire if statement

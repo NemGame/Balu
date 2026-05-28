@@ -23,10 +23,16 @@ namespace ast {
         wstring GetValue() const override {
             return isPrecise() ? preciseValue : to_wstring(value);
         }
+        Expr* Clone() const override {
+            if (isPrecise()) {
+                return new NumberExpr(preciseValue);
+            }
+            return new NumberExpr(value);
+        }
         void Add(NumberExpr* other) {
             if (isPrecise() || other->isPrecise()) {
-                const wstring selfValue = isPrecise() ? preciseValue : to_wstring(value);
-                const wstring otherValue = other->isPrecise() ? other->preciseValue : to_wstring(other->value);
+                const wstring selfValue = GetValue();
+                const wstring otherValue = other->GetValue();
 
                 const wstring selfBinary = NumberToBinary(selfValue);
                 const wstring otherBinary = NumberToBinary(otherValue);
@@ -42,8 +48,8 @@ namespace ast {
         }
         void Multiply(NumberExpr* other) {
             if (isPrecise() || other->isPrecise()) {
-                const wstring selfValue = isPrecise() ? preciseValue : to_wstring(value);
-                const wstring otherValue = other->isPrecise() ? other->preciseValue : to_wstring(other->value);
+                const wstring selfValue = GetValue();
+                const wstring otherValue = other->GetValue();
 
                 const wstring selfBinary = NumberToBinary(selfValue);
                 const wstring otherBinary = NumberToBinary(otherValue);
@@ -56,6 +62,11 @@ namespace ast {
                 value *= other->value;
                 preciseValue.clear(); // Clear the precise value if we lose precision
             }
+        }
+        bool Equals(NumberExpr* other) const {
+            wstring selfValue = GetValue();
+            wstring otherValue = other->GetValue();
+            return selfValue == otherValue;
         }
         inline NumberExpr operator +( const NumberExpr& other ) const {
             NumberExpr result = *this;
@@ -89,6 +100,9 @@ namespace ast {
         wstring GetName(int indent = 0) const override {
             return wstring(indent * 2, L' ') + L"ByteExpr: " + to_wstring(value);
         }
+        Expr* Clone() const override {
+            return new ByteExpr(value);
+        }
     };
     struct StringExpr : public Expr {
         wstring value;
@@ -104,6 +118,9 @@ namespace ast {
         wstring GetValue() const override {
             return value;
         }
+        Expr* Clone() const override {
+            return new StringExpr(value, isFormatString);
+        }
     };
     struct CharExpr : public Expr {
         wchar_t value;
@@ -117,6 +134,9 @@ namespace ast {
         }
         wstring GetValue() const override {
             return wstring(1, value);
+        }
+        Expr* Clone() const override {
+            return new CharExpr(value);
         }
     };
     struct BooleanExpr : public Expr {
@@ -132,6 +152,9 @@ namespace ast {
         wstring GetValue() const override {
             return value ? L"true" : L"false";
         }
+        Expr* Clone() const override {
+            return new BooleanExpr(value);
+        }
     };
     struct NullExpr : public Expr {
         void expr() override {}
@@ -143,6 +166,9 @@ namespace ast {
         }
         wstring GetValue() const override {
             return L"null";
+        }
+        Expr* Clone() const override {
+            return new NullExpr();
         }
     };
     struct SymbolExpr : public Expr {
@@ -157,6 +183,9 @@ namespace ast {
         }
         wstring GetValue() const override {
             return value;
+        }
+        Expr* Clone() const override {
+            return new SymbolExpr(value);
         }
     };
     using IdentifierExpr = SymbolExpr;
@@ -175,6 +204,9 @@ namespace ast {
         }
         wstring GetValue() const override {
             return value->GetName();
+        }
+        Expr* Clone() const override {
+            return new TypeExpr(value ? value->Clone() : nullptr);
         }
     };
     struct FunctionCallExpr : public Expr {
@@ -208,6 +240,13 @@ namespace ast {
             str += L")";
             return str;
         }
+        Expr* Clone() const override {
+            vector<Expr*> clonedArgs;
+            for (const auto& arg : Arguments) {
+                clonedArgs.push_back(arg->Clone());
+            }
+            return new FunctionCallExpr(FunctionName, clonedArgs);
+        }
     };
     struct RuleExpr : public Expr {
         vector<wstring> value;
@@ -239,6 +278,9 @@ namespace ast {
             result += L"]";
             return result;
         }
+        Expr* Clone() const override {
+            return new RuleExpr(value);
+        }
     };
     // Complex expressions
 
@@ -266,6 +308,9 @@ namespace ast {
             wstring str = left->GetValue() + L" " + lexer::TokenKindString(op.kind) + L" " + right->GetValue();
             return str;
         }
+        Expr* Clone() const override {
+            return new BinaryExpr(left ? left->Clone() : nullptr, right ? right->Clone() : nullptr, op);
+        }
     };
     struct PrefixExpr : public Expr {
         lexer::Token Operator;
@@ -287,6 +332,9 @@ namespace ast {
             wstring str = lexer::TokenKindString(Operator.kind) + L" " + RightExpr->GetValue();
             return str;
         }
+        Expr* Clone() const override {
+            return new PrefixExpr(RightExpr ? RightExpr->Clone() : nullptr, Operator);
+        }
     };
     // a = a + 5;
     // a += 5;
@@ -301,6 +349,9 @@ namespace ast {
             delete Value;
         }
         void expr() override {}
+        Expr* Clone() const override {
+            return new AssignmentExpr(Assignee ? Assignee->Clone() : nullptr, Operator, Value ? Value->Clone() : nullptr);
+        }
         void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
             wcout_ << GetName(indent) << endl;
         }
@@ -344,6 +395,13 @@ namespace ast {
             }
             return str;
         }
+        Expr* Clone() const override {
+            unordered_map<wstring, Expr*> clonedProps;
+            for (const auto& prop : Properties) {
+                clonedProps[prop.first] = prop.second ? prop.second->Clone() : nullptr;
+            }
+            return new StructInstantiationExpr(StructName, clonedProps);
+        }
     };
     struct ArrayInstantiationExpr : public Expr {
         Type* UnderlyingType;
@@ -377,6 +435,13 @@ namespace ast {
             }
             return str;
         }
+        Expr* Clone() const override {
+            vector<Expr*> clonedContents;
+            for (Expr* expr : Contents) {
+                clonedContents.push_back(expr ? expr->Clone() : nullptr);
+            }
+            return new ArrayInstantiationExpr(UnderlyingType ? UnderlyingType->Clone() : nullptr, clonedContents);
+        }
     };
     struct ReturnExpr : public Expr {
         Expr* Value;
@@ -397,6 +462,9 @@ namespace ast {
             wstring str = L"ReturnExpr";
             if (Value) str += L": " + Value->GetValue();
             return str;
+        }
+        Expr* Clone() const override {
+            return new ReturnExpr(Value ? Value->Clone() : nullptr);
         }
     };
     enum class BreakPower {
@@ -429,6 +497,9 @@ namespace ast {
         wstring GetValue() const override {
             return L"break (" + BreakPowerString(Power) + L")";
         }
+        Expr* Clone() const override {
+            return new BreakExpr(Power, levels);
+        }
     };
     struct TypeOfExpr : public Expr {
         Expr* QueriedExpr;
@@ -449,6 +520,9 @@ namespace ast {
             wstring str = L"TypeOfExpr";
             if (QueriedExpr) str += L": " + QueriedExpr->GetValue();
             return str;
+        }
+        Expr* Clone() const override {
+            return new TypeOfExpr(QueriedExpr ? QueriedExpr->Clone() : nullptr);
         }
     };
 }

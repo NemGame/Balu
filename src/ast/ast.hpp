@@ -13,6 +13,7 @@ namespace ast {
         virtual void stmt() = 0;
         virtual void Dump(int indent = 0, wostream& wcout_ = _wcout) const = 0;
         virtual wstring kind() const = 0;
+        virtual Stmt* Clone() const = 0;
     };
 
     interface Expr {
@@ -22,6 +23,7 @@ namespace ast {
         virtual void Dump(int indent = 0, wostream& wcout_ = _wcout) const = 0;
         virtual wstring GetName(int indent = 0) const = 0;
         virtual wstring GetValue() const = 0;
+        virtual Expr* Clone() const = 0;
     };
 
     interface Type {
@@ -30,5 +32,6 @@ namespace ast {
         virtual void type() = 0;
         virtual void Dump(int indent = 0, wostream& wcout_ = _wcout) const = 0;
         virtual wstring GetName(int indent = 0) const = 0;
+        virtual Type* Clone() const = 0;
     };
 }
