@@ -44,3 +44,8 @@ const x11: number = 2 * 3@;
 const x11: number = 2 * 18446744073709551615@;  // 2 * ULLONG_MAX
 
 const btr: number = 5 * 2;
+const btr: number = 2 * 20000000000000000000000000000000000000000000@;
+
+if (5 + 2 == 3 * 4) {
+    x = 2;
+}

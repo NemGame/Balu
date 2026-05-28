@@ -18,7 +18,9 @@ namespace ast::optimizer {
 
             return false;
         };
-
+        
+        Optimize(stmt->Condition);
+        
         if (isEmptyBranch(stmt->ThenBranch) && isEmptyBranch(stmt->ElseBranch)) {
             // If both branches are empty, we can remove the entire if statement
             delete stmt;
