@@ -64,6 +64,7 @@ const wstring NumberToBinary(wstring decimal_str) {
     return binary_result;
 }
 
+#pragma region Binary math
 const wstring BinaryAdd(const wstring& a, const wstring& b) {
     wstring result;
     int carry = 0;
@@ -102,6 +103,46 @@ const wstring BinaryMultiply(const wstring& a, const wstring& b) {
     }
     return result;
 }
+const wstring BinaryAnd(const wstring& a, const wstring& b) {
+    wstring result;
+    int maxLength = max(a.size(), b.size());
+
+    for (int i = 0; i < maxLength; ++i) {
+        int bitA = (i < a.size()) ? a[a.size() - 1 - i] - L'0' : 0;
+        int bitB = (i < b.size()) ? b[b.size() - 1 - i] - L'0' : 0;
+        result += (bitA & bitB) ? L'1' : L'0';
+    }
+
+    std::reverse(result.begin(), result.end());
+    return result;
+}
+const wstring BinaryOr(const wstring& a, const wstring& b) {
+    wstring result;
+    int maxLength = max(a.size(), b.size());
+
+    for (int i = 0; i < maxLength; ++i) {
+        int bitA = (i < a.size()) ? a[a.size() - 1 - i] - L'0' : 0;
+        int bitB = (i < b.size()) ? b[b.size() - 1 - i] - L'0' : 0;
+        result += (bitA | bitB) ? L'1' : L'0';
+    }
+
+    std::reverse(result.begin(), result.end());
+    return result;
+}
+const wstring BinaryXor(const wstring& a, const wstring& b) {
+    wstring result;
+    int maxLength = max(a.size(), b.size());
+
+    for (int i = 0; i < maxLength; ++i) {
+        int bitA = (i < a.size()) ? a[a.size() - 1 - i] - L'0' : 0;
+        int bitB = (i < b.size()) ? b[b.size() - 1 - i] - L'0' : 0;
+        result += (bitA ^ bitB) ? L'1' : L'0';
+    }
+
+    std::reverse(result.begin(), result.end());
+    return result;
+}
+#pragma endregion
 
 const wstring DecimalAdd(const wstring& a, const wstring& b) {
     wstring result;

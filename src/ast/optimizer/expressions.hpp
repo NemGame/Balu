@@ -108,6 +108,12 @@ namespace ast::optimizer {
                     return;
                 } else if (expr->op.kind == lexer::DASH) {  // -
                     leftNum->Minus(dynamic_cast<ast::NumberExpr*>(expr->right));
+                } else if (expr->op.kind == lexer::BITWISE_AND) {  // &
+                    leftNum->BitwiseAnd(dynamic_cast<ast::NumberExpr*>(expr->right));
+                } else if (expr->op.kind == lexer::BITWISE_OR) {  // |
+                    leftNum->BitwiseOr(dynamic_cast<ast::NumberExpr*>(expr->right));
+                } else if (expr->op.kind == lexer::BITWISE_XOR) {  // ^
+                    leftNum->BitwiseXor(dynamic_cast<ast::NumberExpr*>(expr->right));
                 } else {
                     return; // Unsupported operator for merging literals
                 }

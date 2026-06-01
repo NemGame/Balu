@@ -10,9 +10,22 @@ namespace lexer {
     struct Lexer;
 
     // type regexHandler func (lex* lexer, regex *regexp.Regexp) in GO -> C++
-    #define regexHandler function<void(Lexer* l, const wregex& regexp)> // Regex handler type
+    #define regexHandler function<void(Lexer* l, const Pattern& pattern)> // Regex handler type
+    struct Pattern {
+        wregex regexPattern;
+        wstring wstringPattern;
+        bool useRegex;
+        Pattern(const wregex& regexPattern) : regexPattern(regexPattern), wstringPattern(L""), useRegex(true) {}
+        Pattern(const wstring& wstringPattern) : regexPattern(wregex(L"")), wstringPattern(wstringPattern), useRegex(false) {}
+        bool isRegex() const {
+            return useRegex;
+        }
+        bool isWString() const {
+            return !wstringPattern.empty();
+        }
+    };
     struct RegexPattern {
-        wregex pattern;
+        Pattern pattern;
         regexHandler handler;
     };
 
@@ -58,16 +71,21 @@ namespace lexer {
     Lexer createLexer(const wstring& source);
 
     vector<Token> Tokenize(const wstring& source) {
+        if (_verbose) _wcout << L"[Lexer] Starting tokenization" << endl;
         Lexer lex = createLexer(source);
 
         while (!lex.at_eof())
         {
             bool matched = false;
             const wstring remaining = lex.remainder();
-            for (const RegexPattern& pattern : lex.patterns) {
+            for (const RegexPattern& rpattern : lex.patterns) {
                 wsmatch match;
-                if (regex_search(remaining, match, pattern.pattern)) {
-                    pattern.handler(&lex, pattern.pattern);
+                if (rpattern.pattern.isRegex() && regex_search(remaining, match, rpattern.pattern.regexPattern)) {
+                    rpattern.handler(&lex, rpattern.pattern);
+                    matched = true;
+                    break;
+                } else if (rpattern.pattern.isWString() && remaining.find(rpattern.pattern.wstringPattern) == 0) {
+                    rpattern.handler(&lex, rpattern.pattern);
                     matched = true;
                     break;
                 }
@@ -77,6 +95,7 @@ namespace lexer {
                 if (_showWarnings) _wcout << L"Warning: Unmatched character: " << lex.at() << L" at " << lex.position() << endl;
                 lex.advanceN(1);
             }
+            if (_verbose) _wcout << L"[Lexer] Current position: " << lex.position() << L", Tokens so far: " << lex.tokens.size() << endl;
         }
 
         lex.push(NewToken(EOF_TOKEN, L"EOF", lex.line, lex.column));
@@ -84,7 +103,7 @@ namespace lexer {
     }
 
     regexHandler defaultHandler(TokenKind kind, const wstring& value = L"") {
-        return [kind, value](Lexer* l, const wregex& regexp) {
+        return [kind, value](Lexer* l, const Pattern& pattern) {
             l->push(NewToken(kind, value, l->line, l->column));
             l->advanceN(value.length());
         };
@@ -169,10 +188,10 @@ namespace lexer {
     // 120e120 == 120e120 + 1
     // BUT
     // 120e120@ <1 120e120@ + 1
-    regexHandler numberHandler = [](Lexer* l, const wregex& regexp) {
+    regexHandler numberHandler = [](Lexer* l, const Pattern& pattern) {
         wsmatch match;
         const wstring remaining = l->remainder();
-        regex_search(remaining, match, regexp);
+        regex_search(remaining, match, pattern.regexPattern);
         const wstring matchedValue = match.str(0);
         wstring value = matchedValue;
         // Remove underscores from the number for easier parsing later.
@@ -200,10 +219,10 @@ namespace lexer {
     };
 
     // 0b01 - binary
-    regexHandler binaryNumberHandler = [](Lexer* l, const wregex& regexp) {
+    regexHandler binaryNumberHandler = [](Lexer* l, const Pattern& pattern) {
         wsmatch match;
         const wstring remaining = l->remainder();
-        regex_search(remaining, match, regexp);
+        regex_search(remaining, match, pattern.regexPattern);
         bool isByte = false;
         wstring value = match.str(0); // Remove the "0b" prefix
         if (value.back() == L'b') {
@@ -231,10 +250,10 @@ namespace lexer {
     };
 
     // 010 - octal
-    regexHandler octalNumberHandler = [](Lexer* l, const wregex& regexp) {
+    regexHandler octalNumberHandler = [](Lexer* l, const Pattern& pattern) {
         wsmatch match;
         const wstring remaining = l->remainder();
-        regex_search(remaining, match, regexp);
+        regex_search(remaining, match, pattern.regexPattern);
         bool isByte = false;
         wstring value = match.str(0); // Remove the "0" prefix
         if (value.back() == L'b') {
@@ -262,10 +281,10 @@ namespace lexer {
     };
 
     // 0x1 - hexadecimal
-    regexHandler hexNumberHandler = [](Lexer* l, const wregex& regexp) {
+    regexHandler hexNumberHandler = [](Lexer* l, const Pattern& pattern) {
         wsmatch match;
         const wstring remaining = l->remainder();
-        regex_search(remaining, match, regexp);
+        regex_search(remaining, match, pattern.regexPattern);
         wstring value = match.str(0); // Remove the "0x" prefix
         bool isPrecise = false;
         if (value.back() == L'@') {
@@ -290,10 +309,10 @@ namespace lexer {
         if (isPrecise) l->advanceN(1); // Advance past the trailing '@' if it's a precise number literal
     };
 
-    regexHandler byteHandler = [](Lexer* l, const wregex& regexp) {
+    regexHandler byteHandler = [](Lexer* l, const Pattern& pattern) {
         wsmatch match;
         const wstring remaining = l->remainder();
-        regex_search(remaining, match, regexp);
+        regex_search(remaining, match, pattern.regexPattern);
         wstring value = match.str(0);
         value.erase(remove(value.begin(), value.end(), L'_'), value.end());
         bool isPrecise = false;
@@ -316,10 +335,10 @@ namespace lexer {
         if (isPrecise) l->advanceN(1); // Advance past the trailing '@' if it's a precise number literal
     };
 
-    regexHandler symbolHandler = [](Lexer* l, const wregex& regexp) {
+    regexHandler symbolHandler = [](Lexer* l, const Pattern& pattern) {
         wsmatch match;
         const wstring remaining = l->remainder();
-        regex_search(remaining, match, regexp);
+        regex_search(remaining, match, pattern.regexPattern);
         wstring value = match.str(0);
         unsigned long long line = l->line;
         unsigned long long col = l->column;
@@ -332,18 +351,18 @@ namespace lexer {
         l->advanceN(value.length());
     };
 
-    regexHandler skipHandler = [](Lexer* l, const wregex& regexp) {
+    regexHandler skipHandler = [](Lexer* l, const Pattern& pattern) {
         wsmatch match;
         const wstring remaining = l->remainder();
-        regex_search(remaining, match, regexp);
+        regex_search(remaining, match, pattern.regexPattern);
         wstring value = match.str(0);
         l->advanceN(value.length());
     };
 
-    regexHandler multilineSkipHandler = [](Lexer* l, const wregex& regexp) {
+    regexHandler multilineSkipHandler = [](Lexer* l, const Pattern& pattern) {
         wsmatch match;
         const wstring remaining = l->remainder();
-        regex_search(remaining, match, regexp);
+        regex_search(remaining, match, pattern.regexPattern);
         wstring value = match.str(0);
         l->advanceN(value.length());
 
@@ -361,37 +380,37 @@ namespace lexer {
         }
     };
 
-    regexHandler semicolonHandler = [](Lexer* l, const wregex& regexp) {
+    regexHandler semicolonHandler = [](Lexer* l, const Pattern& pattern) {
         wsmatch match;
         const wstring remaining = l->remainder();
-        regex_search(remaining, match, regexp);
+        regex_search(remaining, match, pattern.regexPattern);
         wstring value = match.str(0);
         l->push(NewToken(SEMICOLON, L";", l->line, l->column));
         l->advanceN(value.length()); // Advance past the semicolon
     };
 
-    regexHandler stringHandler = [](Lexer* l, const wregex& regexp) {
+    regexHandler stringHandler = [](Lexer* l, const Pattern& pattern) {
         wsmatch match;
         const wstring remaining = l->remainder();
-        regex_search(remaining, match, regexp);
+        regex_search(remaining, match, pattern.regexPattern);
         wstring value = match.str(0).substr(1, match.str(0).length() - 2); // Remove the surrounding quotes
         l->push(NewToken(STRING, value, l->line, l->column));
         l->advanceN(value.length() + 2); // Advance past the string including the quotes
     };
     
-    regexHandler fstringHandler = [](Lexer* l, const wregex& regexp) {
+    regexHandler fstringHandler = [](Lexer* l, const Pattern& pattern) {
         wsmatch match;
         const wstring remaining = l->remainder();
-        regex_search(remaining, match, regexp);
+        regex_search(remaining, match, pattern.regexPattern);
         wstring value = match.str(0).substr(2, match.str(0).length() - 3); // Remove the $" and " surrounding the format string
         l->push(NewToken(FSTRING, value, l->line, l->column));
         l->advanceN(value.length() + 3); // Advance past the string including the $" and " surrounding the format string
     };
 
-    regexHandler characterHandler = [](Lexer* l, const wregex& regexp) {
+    regexHandler characterHandler = [](Lexer* l, const Pattern& pattern) {
         wsmatch match;
         const wstring remaining = l->remainder();
-        regex_search(remaining, match, regexp);
+        regex_search(remaining, match, pattern.regexPattern);
         wstring value = match.str(0).substr(1, match.str(0).length() - 2); // Extract the character(s) between the single quotes
         unsigned long long line = l->line;
         unsigned long long col = l->column;
@@ -411,10 +430,10 @@ namespace lexer {
         l->push(NewToken(CHAR, value, line, col));
     };
 
-    regexHandler ruleHandler = [](Lexer* l, const wregex& regexp) {
+    regexHandler ruleHandler = [](Lexer* l, const Pattern& pattern) {
         wsmatch match;
         const wstring remaining = l->remainder();
-        regex_search(remaining, match, regexp);
+        regex_search(remaining, match, pattern.regexPattern);
         wstring value = match.str(0);
         if (_verbose) _wcout << L"Found rule: " << value << endl;
         l->push(NewToken(RULE, value.substr(1), l->line, l->column)); // Remove the "#" prefix
@@ -427,86 +446,86 @@ namespace lexer {
             source,
             vector<Token>(0),
             {
-                {wregex(L"^true"), defaultHandler(BOOL, L"true")},
-                {wregex(L"^false"), defaultHandler(BOOL, L"false")},
-                {wregex(L"^[\\$f]\"[^\"]*\""), fstringHandler},
-                {wregex(L"^[a-zA-Z_\\u0080-\\uFFFF\\$][a-zA-Z0-9_\\u0080-\\uFFFF\\$]*"), symbolHandler},
-                {wregex(L"^0b[0-1_]+b?@?"), binaryNumberHandler},
-                {wregex(L"^0[0-7_]+b?@?"), octalNumberHandler},
-                {wregex(L"^0x[0-9a-fA-F_]+@?"), hexNumberHandler},
-                {wregex(L"^[0-9][0-9_]*b@?"), byteHandler},
-                {wregex(L"^[0-9][0-9_]*(\\.[0-9_]*)?(e[0-9_+]+)?@?"), numberHandler},
-                {wregex(L"^\"[^\"]*\""), stringHandler},
-                {wregex(L"^\'[^\']*\'"), characterHandler},
-                {wregex(L"^//.*"), skipHandler},
-                {wregex(L"^/\\*"), multilineSkipHandler},
-                {wregex(L"^;+"), semicolonHandler},
-                {wregex(L"^\\s+"), skipHandler},
-                {wregex(L"^#[^;\n\\s]*"), ruleHandler},
-                {wregex(L"^%:[^;\n\\s]*"), ruleHandler},
-                {wregex(L"^\\?\\?=[^;\n\\s]*"), ruleHandler},
+                {Pattern(L"true"), defaultHandler(BOOL, L"true")},
+                {Pattern(L"false"), defaultHandler(BOOL, L"false")},
+                {Pattern(wregex(L"^[\\$f]\"[^\"]*\"")), fstringHandler},
+                {Pattern(wregex(L"^[a-zA-Z_\\u0080-\\uFFFF\\$][a-zA-Z0-9_\\u0080-\\uFFFF\\$]*")), symbolHandler},
+                {Pattern(wregex(L"^0b[0-1_]+b?@?")), binaryNumberHandler},
+                {Pattern(wregex(L"^0[0-7_]+b?@?")), octalNumberHandler},
+                {Pattern(wregex(L"^0x[0-9a-fA-F_]+@?")), hexNumberHandler},
+                {Pattern(wregex(L"^[0-9][0-9_]*b@?")), byteHandler},
+                {Pattern(wregex(L"^[0-9][0-9_]*(\\.[0-9_]*)?(e[0-9_+]+)?@?")), numberHandler},
+                {Pattern(wregex(L"^\"[^\"]*\"")), stringHandler},
+                {Pattern(wregex(L"^\'[^\']*\'")), characterHandler},
+                {Pattern(wregex(L"^//.*")), skipHandler},
+                {Pattern(wregex(L"^/\\*")), multilineSkipHandler},
+                {Pattern(wregex(L"^;+")), semicolonHandler},
+                {Pattern(wregex(L"^\\s+")), skipHandler},
+                {Pattern(wregex(L"^#[^;\n\\s]*")), ruleHandler},
+                {Pattern(wregex(L"^%:[^;\n\\s]*")), ruleHandler},
+                {Pattern(wregex(L"^\\?\\?=[^;\n\\s]*")), ruleHandler},
 
-                {wregex(L"^\\["), defaultHandler(OPEN_BRACKET, L"[")},
-                {wregex(L"^\\]"), defaultHandler(CLOSE_BRACKET, L"]")},
-                {wregex(L"^\\{"), defaultHandler(OPEN_CURLY, L"{")},
-                {wregex(L"^\\}"), defaultHandler(CLOSE_CURLY, L"}")},
-                {wregex(L"^\\("), defaultHandler(OPEN_PAREN, L"(")},
-                {wregex(L"^\\)"), defaultHandler(CLOSE_PAREN, L")")},
-                {wregex(L"^=="), defaultHandler(EQUALS, L"==")},
-                {wregex(L"^!="), defaultHandler(NOT_EQUALS, L"!=")},
-                {wregex(L"^=>"), defaultHandler(ARROW, L"=>")},
-                {wregex(L"^="), defaultHandler(ASSIGNMENT, L"=")},
-                {wregex(L"^!"), defaultHandler(NOT, L"!")},
-                {wregex(L"^>>>="), defaultHandler(BITWISE_RIGHT_ROTATE_EQUALS, L">>>=")},
-                {wregex(L"^<<<="), defaultHandler(BITWISE_LEFT_ROTATE_EQUALS, L"<<<=")},
-                {wregex(L"^<<<"), defaultHandler(BITWISE_LEFT_ROTATE, L"<<<")},
-                {wregex(L"^>>>"), defaultHandler(BITWISE_RIGHT_ROTATE, L">>>")},
-                {wregex(L"^>>="), defaultHandler(BITWISE_RIGHT_EQUALS, L">>=")},
-                {wregex(L"^<<="), defaultHandler(BITWISE_LEFT_EQUALS, L"<<=")},
-                {wregex(L"^<<"), defaultHandler(BITWISE_LEFT, L"<<")},
-                {wregex(L"^>>"), defaultHandler(BITWISE_RIGHT, L">>")},
-                {wregex(L"^\\?\\?-"), defaultHandler(BITWISE_NOT, L"\?\?-")},
-                {wregex(L"^\\?\\?'"), defaultHandler(BITWISE_XOR, L"\?\?'")},
-                {wregex(L"^\\?\\?!"), defaultHandler(BITWISE_OR, L"\?\?!")}, 
-                {wregex(L"^\\?\\?<"), defaultHandler(OPEN_CURLY, L"\?\?<")},
-                {wregex(L"^\\?\\?>"), defaultHandler(CLOSE_CURLY, L"\?\?>")},
-                {wregex(L"^\\?\\?\\("), defaultHandler(OPEN_BRACKET, L"\?\?(")},
-                {wregex(L"^\\?\\?\\)"), defaultHandler(CLOSE_BRACKET, L"\?\?)")},
-                {wregex(L"^<="), defaultHandler(LESS_EQUALS, L"<=")},
-                {wregex(L"^<%"), defaultHandler(OPEN_CURLY, L"<%")},
-                {wregex(L"^<:"), defaultHandler(OPEN_BRACKET, L"<:")},
-                {wregex(L"^<"), defaultHandler(LESS, L"<")},
-                {wregex(L"^>="), defaultHandler(GREATER_EQUALS, L">=")},
-                {wregex(L"^%>"), defaultHandler(CLOSE_CURLY, L"%>")},
-                {wregex(L"^:>"), defaultHandler(CLOSE_BRACKET, L":>")},
-                {wregex(L"^>"), defaultHandler(GREATER, L">")},
-                {wregex(L"^\\|\\|"), defaultHandler(OR, L"||")},
-                {wregex(L"^&&"), defaultHandler(AND, L"&&")},
-                {wregex(L"^\\.\\."), defaultHandler(DOT_DOT, L"..")},
-                {wregex(L"^\\."), defaultHandler(DOT, L".")},
-                {wregex(L"^:"), defaultHandler(COLON, L":")},
-                {wregex(L"^\\?"), defaultHandler(QUESTION, L"?")},
-                {wregex(L"^,"), defaultHandler(COMMA, L",")},
-                {wregex(L"^\\+\\+"), defaultHandler(PLUS_PLUS, L"++")},
-                {wregex(L"^--"), defaultHandler(MINUS_MINUS, L"--")},
-                {wregex(L"^\\+="), defaultHandler(PLUS_EQUALS, L"+=")},
-                {wregex(L"^-="), defaultHandler(MINUS_EQUALS, L"-=")},
-                {wregex(L"^/="), defaultHandler(SLASH_EQUALS, L"/=")},
-                {wregex(L"^\\*="), defaultHandler(STAR_EQUALS, L"*=")},
-                {wregex(L"^%="), defaultHandler(PERCENT_EQUALS, L"%=")},
-                {wregex(L"^\\+"), defaultHandler(PLUS, L"+")},
-                {wregex(L"^-"), defaultHandler(DASH, L"-")},
-                {wregex(L"^/"), defaultHandler(SLASH, L"/")},
-                {wregex(L"^\\*"), defaultHandler(STAR, L"*")},
-                {wregex(L"^%"), defaultHandler(PERCENT, L"%")},
-                {wregex(L"^\\|="), defaultHandler(BITWISE_OR_EQUALS, L"|=")},
-                {wregex(L"^\\|"), defaultHandler(BITWISE_OR, L"|")},
-                {wregex(L"^&="), defaultHandler(BITWISE_AND_EQUALS, L"&=")},
-                {wregex(L"^&"), defaultHandler(BITWISE_AND, L"&")},
-                {wregex(L"^\\^="), defaultHandler(BITWISE_XOR_EQUALS, L"^=")},
-                {wregex(L"^\\^"), defaultHandler(BITWISE_XOR, L"^")},
-                {wregex(L"^~="), defaultHandler(BITWISE_NOT_EQUALS, L"~=")},
-                {wregex(L"^~"), defaultHandler(BITWISE_NOT, L"~")},
+                {Pattern(L"["), defaultHandler(OPEN_BRACKET, L"[")},
+                {Pattern(L"]"), defaultHandler(CLOSE_BRACKET, L"]")},
+                {Pattern(L"{"), defaultHandler(OPEN_CURLY, L"{")},
+                {Pattern(L"}"), defaultHandler(CLOSE_CURLY, L"}")},
+                {Pattern(L"("), defaultHandler(OPEN_PAREN, L"(")},
+                {Pattern(L")"), defaultHandler(CLOSE_PAREN, L")")},
+                {Pattern(L"=="), defaultHandler(EQUALS, L"==")},
+                {Pattern(L"!="), defaultHandler(NOT_EQUALS, L"!=")},
+                {Pattern(L"=>"), defaultHandler(ARROW, L"=>")},
+                {Pattern(L"="), defaultHandler(ASSIGNMENT, L"=")},
+                {Pattern(L"!"), defaultHandler(NOT, L"!")},
+                {Pattern(L">>>="), defaultHandler(BITWISE_RIGHT_ROTATE_EQUALS, L">>>=")},
+                {Pattern(L"<<<="), defaultHandler(BITWISE_LEFT_ROTATE_EQUALS, L"<<<=")},
+                {Pattern(L"<<<"), defaultHandler(BITWISE_LEFT_ROTATE, L"<<<")},
+                {Pattern(L">>>"), defaultHandler(BITWISE_RIGHT_ROTATE, L">>>")},
+                {Pattern(L">>="), defaultHandler(BITWISE_RIGHT_EQUALS, L">>=")},
+                {Pattern(L"<<="), defaultHandler(BITWISE_LEFT_EQUALS, L"<<=")},
+                {Pattern(L"<<"), defaultHandler(BITWISE_LEFT, L"<<")},
+                {Pattern(L">>"), defaultHandler(BITWISE_RIGHT, L">>")},
+                // {Pattern(L"??-"), defaultHandler(BITWISE_NOT, L"??-")},
+                // {Pattern(L"??'"), defaultHandler(BITWISE_XOR, L"??'")},
+                // {Pattern(L"??!"), defaultHandler(BITWISE_OR, L"??!")}, 
+                // {Pattern(L"??<"), defaultHandler(OPEN_CURLY, L"??<")},
+                // {Pattern(L"??>"), defaultHandler(CLOSE_CURLY, L"??>")},
+                // {Pattern(L"??("), defaultHandler(OPEN_BRACKET, L"??(")},
+                // {Pattern(L"??)"), defaultHandler(CLOSE_BRACKET, L"??)")},
+                {Pattern(L"<="), defaultHandler(LESS_EQUALS, L"<=")},
+                // {Pattern(L"<%"), defaultHandler(OPEN_CURLY, L"<%")},
+                // {Pattern(L"<:"), defaultHandler(OPEN_BRACKET, L"<:")},
+                {Pattern(L"<"), defaultHandler(LESS, L"<")},
+                {Pattern(L">="), defaultHandler(GREATER_EQUALS, L">=")},
+                // {Pattern(L"%>"), defaultHandler(CLOSE_CURLY, L"%>")},
+                // {Pattern(L":>"), defaultHandler(CLOSE_BRACKET, L":>")},
+                {Pattern(L">"), defaultHandler(GREATER, L">")},
+                {Pattern(L"||"), defaultHandler(OR, L"||")},
+                {Pattern(L"&&"), defaultHandler(AND, L"&&")},
+                {Pattern(L".."), defaultHandler(DOT_DOT, L"..")},
+                {Pattern(L"."), defaultHandler(DOT, L".")},
+                {Pattern(L":"), defaultHandler(COLON, L":")},
+                {Pattern(L"?"), defaultHandler(QUESTION, L"?")},
+                {Pattern(L","), defaultHandler(COMMA, L",")},
+                {Pattern(L"++"), defaultHandler(PLUS_PLUS, L"++")},
+                {Pattern(L"--"), defaultHandler(MINUS_MINUS, L"--")},
+                {Pattern(L"+="), defaultHandler(PLUS_EQUALS, L"+=")},
+                {Pattern(L"-="), defaultHandler(MINUS_EQUALS, L"-=")},
+                {Pattern(L"/="), defaultHandler(SLASH_EQUALS, L"/=")},
+                {Pattern(L"*="), defaultHandler(STAR_EQUALS, L"*=")},
+                {Pattern(L"%="), defaultHandler(PERCENT_EQUALS, L"%=")},
+                {Pattern(L"+"), defaultHandler(PLUS, L"+")},
+                {Pattern(L"-"), defaultHandler(DASH, L"-")},
+                {Pattern(L"/"), defaultHandler(SLASH, L"/")},
+                {Pattern(L"*"), defaultHandler(STAR, L"*")},
+                {Pattern(L"%"), defaultHandler(PERCENT, L"%")},
+                {Pattern(L"|="), defaultHandler(BITWISE_OR_EQUALS, L"|=")},
+                {Pattern(L"|"), defaultHandler(BITWISE_OR, L"|")},
+                {Pattern(L"&="), defaultHandler(BITWISE_AND_EQUALS, L"&=")},
+                {Pattern(L"&"), defaultHandler(BITWISE_AND, L"&")},
+                {Pattern(L"^="), defaultHandler(BITWISE_XOR_EQUALS, L"^=")},
+                {Pattern(L"^"), defaultHandler(BITWISE_XOR, L"^")},
+                {Pattern(L"~="), defaultHandler(BITWISE_NOT_EQUALS, L"~=")},
+                {Pattern(L"~"), defaultHandler(BITWISE_NOT, L"~")},
             },
             vector<Error>(0),
             1, // line

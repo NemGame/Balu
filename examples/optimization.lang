@@ -88,3 +88,15 @@ if (x == 2) {}
 else {
     x = 3;
 }
+
+const _0 = 2 ^ 2;  // Should be 0
+const _5 = 2 ^ 7;  // Should be 5
+
+const _0 = 8 & 1;  // Should be 0
+const _0 = 8 & 2;  // Should be 0
+const _0 = 8 & 4;  // Should be 0
+const _8 = 8 & 24;  // Should be 8
+
+const _3 = 1 | 2;  // Should be 3
+const _5 = 1 | 4;  // Should be 5
+const _6 = 2 | 4;  // Should be 6

@@ -82,6 +82,58 @@ namespace ast {
                 preciseValue.clear(); // Clear the precise value if we lose precision
             }
         }
+
+        void BitwiseAnd(NumberExpr* other) {
+            if (isPrecise() || other->isPrecise()) {
+                const wstring selfValue = GetValue();
+                const wstring otherValue = other->GetValue();
+
+                const wstring selfBinary = NumberToBinary(selfValue);
+                const wstring otherBinary = NumberToBinary(otherValue);
+
+                const wstring resultBinary = BinaryAnd(selfBinary, otherBinary);
+
+                preciseValue = BinaryToDecimalWstring(resultBinary);
+                value = 0;
+            } else {
+                value = static_cast<long double>(static_cast<unsigned long long>(value) & static_cast<unsigned long long>(other->value));
+                preciseValue.clear(); // Clear the precise value if we lose precision
+            }
+        }
+        void BitwiseOr(NumberExpr* other) {
+            if (isPrecise() || other->isPrecise()) {
+                const wstring selfValue = GetValue();
+                const wstring otherValue = other->GetValue();
+
+                const wstring selfBinary = NumberToBinary(selfValue);
+                const wstring otherBinary = NumberToBinary(otherValue);
+
+                const wstring resultBinary = BinaryOr(selfBinary, otherBinary);
+
+                preciseValue = BinaryToDecimalWstring(resultBinary);
+                value = 0;
+            } else {
+                value = static_cast<long double>(static_cast<unsigned long long>(value) | static_cast<unsigned long long>(other->value));
+                preciseValue.clear(); // Clear the precise value if we lose precision
+            }
+        }
+        void BitwiseXor(NumberExpr* other) {
+            if (isPrecise() || other->isPrecise()) {
+                const wstring selfValue = GetValue();
+                const wstring otherValue = other->GetValue();
+
+                const wstring selfBinary = NumberToBinary(selfValue);
+                const wstring otherBinary = NumberToBinary(otherValue);
+
+                const wstring resultBinary = BinaryXor(selfBinary, otherBinary);
+
+                preciseValue = BinaryToDecimalWstring(resultBinary);
+                value = 0;
+            } else {
+                value = static_cast<long double>(static_cast<unsigned long long>(value) ^ static_cast<unsigned long long>(other->value));
+                preciseValue.clear(); // Clear the precise value if we lose precision
+            }
+        }
         bool Equals(NumberExpr* other) const {
             wstring selfValue = GetValue();
             wstring otherValue = other->GetValue();
