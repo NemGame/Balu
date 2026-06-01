@@ -81,6 +81,33 @@ namespace ast::optimizer {
                     delete baseExpr;
                     baseExpr = new ast::BooleanExpr(value);
                     return;
+                } else if (expr->op.kind == lexer::NOT_EQUALS) {  // !=
+                    bool value = !leftNum->Equals(dynamic_cast<ast::NumberExpr*>(expr->right));
+                    delete baseExpr;
+                    baseExpr = new ast::BooleanExpr(value);
+                    return;
+                } else if (expr->op.kind == lexer::LESS) {  // <
+                    bool value = leftNum->isLessthan(dynamic_cast<ast::NumberExpr*>(expr->right));
+                    delete baseExpr;
+                    baseExpr = new ast::BooleanExpr(value);
+                    return;
+                } else if (expr->op.kind == lexer::GREATER) {  // >
+                    bool value = leftNum->isGreaterThan(dynamic_cast<ast::NumberExpr*>(expr->right));
+                    delete baseExpr;
+                    baseExpr = new ast::BooleanExpr(value);
+                    return;
+                } else if (expr->op.kind == lexer::LESS_EQUALS) {  // <=
+                    bool value = leftNum->isLessThanOrEqual(dynamic_cast<ast::NumberExpr*>(expr->right));
+                    delete baseExpr;
+                    baseExpr = new ast::BooleanExpr(value);
+                    return;
+                } else if (expr->op.kind == lexer::GREATER_EQUALS) {  // >=
+                    bool value = leftNum->isGreaterThanOrEqual(dynamic_cast<ast::NumberExpr*>(expr->right));
+                    delete baseExpr;
+                    baseExpr = new ast::BooleanExpr(value);
+                    return;
+                } else if (expr->op.kind == lexer::DASH) {  // -
+                    leftNum->Minus(dynamic_cast<ast::NumberExpr*>(expr->right));
                 } else {
                     return; // Unsupported operator for merging literals
                 }
@@ -90,6 +117,24 @@ namespace ast::optimizer {
                 baseExpr = leftNum;
                 delete expr;
             }
+        }
+    }
+    ast::Type* ExpressionToType(ast::Expr* expr) {
+        // NumberExpr -> Number, StringExpr -> String, etc.
+        if (typeid(*expr) == typeid(ast::NumberExpr)) {
+            return new ast::SymbolType(L"number");
+        } else if (typeid(*expr) == typeid(ast::StringExpr)) {
+            return new ast::SymbolType(L"string");
+        } else if (typeid(*expr) == typeid(ast::CharExpr)) {
+            return new ast::SymbolType(L"char");
+        } else if (typeid(*expr) == typeid(ast::BooleanExpr)) {
+            return new ast::SymbolType(L"boolean");
+        } else if (typeid(*expr) == typeid(ast::ByteExpr)) {
+            return new ast::SymbolType(L"byte");
+        } else if (typeid(*expr) == typeid(ast::NullExpr)) {
+            return new ast::SymbolType(L"null");
+        } else {
+            return nullptr; // Not a literal expression that can be converted to a type.
         }
     }
 }

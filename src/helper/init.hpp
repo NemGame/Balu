@@ -4,3 +4,4 @@
 #include "wstring.hpp"
 #include "vector.hpp"
 #include "path.hpp"
+#include "map.hpp"

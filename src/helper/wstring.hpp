@@ -85,6 +85,14 @@ const wstring BinaryAdd(const wstring& a, const wstring& b) {
     return result;
 }
 
+const wstring BinaryNot(const wstring& binary_str) {
+    wstring result = binary_str;
+    for (wchar_t& c : result) {
+        c = (c == L'0') ? L'1' : L'0';
+    }
+    return result;
+}
+
 const wstring BinaryMultiply(const wstring& a, const wstring& b) {
     wstring result = L"0";
     for (size_t i = 0; i < b.size(); ++i) {

@@ -46,6 +46,25 @@ namespace ast {
                 preciseValue.clear(); // Clear the precise value if we lose precision
             }
         }
+        void Minus(NumberExpr* other) {
+            if (isPrecise() || other->isPrecise()) {
+                const wstring selfValue = GetValue();
+                const wstring otherValue = other->GetValue();
+
+                const wstring selfBinary = NumberToBinary(selfValue);
+                const wstring otherBinary = NumberToBinary(otherValue);
+
+                // To subtract, we can add the two's complement of the second number
+                wstring otherTwosComplement = BinaryAdd(BinaryNot(otherBinary), L"1");
+                const wstring resultBinary = BinaryAdd(selfBinary, otherTwosComplement);
+
+                preciseValue = BinaryToDecimalWstring(resultBinary);
+                value = 0;
+            } else {
+                value -= other->value;
+                preciseValue.clear(); // Clear the precise value if we lose precision
+            }
+        }
         void Multiply(NumberExpr* other) {
             if (isPrecise() || other->isPrecise()) {
                 const wstring selfValue = GetValue();
@@ -68,23 +87,47 @@ namespace ast {
             wstring otherValue = other->GetValue();
             return selfValue == otherValue;
         }
-        inline NumberExpr operator +( const NumberExpr& other ) const {
-            NumberExpr result = *this;
-            result.Add(const_cast<NumberExpr*>(&other));
-            return result;
+        bool isLessthan(NumberExpr* other) const {
+            if (isPrecise() || other->isPrecise()) {
+                const wstring selfValue = GetValue();
+                const wstring otherValue = other->GetValue();
+
+                const wstring selfBinary = NumberToBinary(selfValue);
+                const wstring otherBinary = NumberToBinary(otherValue);
+
+                // Pad the shorter binary with leading zeros
+                size_t maxLength = max(selfBinary.size(), otherBinary.size());
+                wstring paddedSelfBinary = wstring(maxLength - selfBinary.size(), L'0') + selfBinary;
+                wstring paddedOtherBinary = wstring(maxLength - otherBinary.size(), L'0') + otherBinary;
+
+                return paddedSelfBinary < paddedOtherBinary; // Lexicographical comparison works for binary strings
+            } else {
+                return value < other->value;
+            }
         }
-        inline NumberExpr& operator +=( const NumberExpr& other ) {
-            Add(const_cast<NumberExpr*>(&other));
-            return *this;
+        bool isGreaterThan(NumberExpr* other) const {
+            if (isPrecise() || other->isPrecise()) {
+                const wstring selfValue = GetValue();
+                const wstring otherValue = other->GetValue();
+
+                const wstring selfBinary = NumberToBinary(selfValue);
+                const wstring otherBinary = NumberToBinary(otherValue);
+
+                // Pad the shorter binary with leading zeros
+                size_t maxLength = max(selfBinary.size(), otherBinary.size());
+                wstring paddedSelfBinary = wstring(maxLength - selfBinary.size(), L'0') + selfBinary;
+                wstring paddedOtherBinary = wstring(maxLength - otherBinary.size(), L'0') + otherBinary;
+
+                return paddedSelfBinary > paddedOtherBinary; // Lexicographical comparison works for binary strings
+            } else {
+                return value > other->value;
+            }
         }
-        inline NumberExpr operator *( const NumberExpr& other ) const {
-            NumberExpr result = *this;
-            result.Multiply(const_cast<NumberExpr*>(&other));
-            return result;
+        bool isLessThanOrEqual(NumberExpr* other) const {
+            return isLessthan(other) || Equals(other);
         }
-        inline NumberExpr& operator *=( const NumberExpr& other ) {
-            Multiply(const_cast<NumberExpr*>(&other));
-            return *this;
+        bool isGreaterThanOrEqual(NumberExpr* other) const {
+            return isGreaterThan(other) || Equals(other);
         }
     };
     struct ByteExpr : public Expr {

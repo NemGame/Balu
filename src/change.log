@@ -1,2 +1,7 @@
-Optimized block statements:
-    - Now singularly nested blocks are merged into one
+Fixed variable declaration:
+    - Now you can't create variable names the same as keywords
+        - No panic: const number = 2; -> const _number = 2;
+Optimized variable declaration: [ast]
+    - Now the optimizer sets the type of the variable to the literal's type if the variable's type is "auto"
+Added function "ast::optimizer::ExpressionToType(ast::Expr*)"
+Added literal folding for Number-Number (<, <=, >, >=, !=, -)

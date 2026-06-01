@@ -91,6 +91,80 @@ namespace lexer {
     }
 
     
+    bool tryParseUnsigned(const wstring& text, unsigned long long& out) {
+        if (text.empty()) {
+            return false;
+        }
+        unsigned long long value = 0;
+        for (wchar_t c : text) {
+            if (c < L'0' || c > L'9') {
+                return false;
+            }
+            unsigned long long digit = static_cast<unsigned long long>(c - L'0');
+            const unsigned long long maxBeforeMul = ULLONG_MAX / 10ULL;
+            if (value > maxBeforeMul || (value == maxBeforeMul && digit > (ULLONG_MAX % 10ULL))) {
+                return false;
+            }
+            value = value * 10ULL + digit;
+        }
+        out = value;
+        return true;
+    }
+
+    // Expands decimal scientific notation to plain decimal text (e.g. 10e3 -> 10000).
+    bool expandScientificNotation(wstring& value) {
+        const size_t ePos = value.find(L'e');
+        if (ePos == wstring::npos) {
+            return true;
+        }
+
+        wstring basePart = value.substr(0, ePos);
+        wstring exponentPart = value.substr(ePos + 1);
+        if (basePart.empty() || exponentPart.empty()) {
+            return false;
+        }
+
+        if (exponentPart[0] == L'+') {
+            exponentPart = exponentPart.substr(1);
+        }
+
+        unsigned long long exponent = 0;
+        if (!tryParseUnsigned(exponentPart, exponent)) {
+            return false;
+        }
+
+        const size_t dotPos = basePart.find(L'.');
+        wstring digitsOnly = basePart;
+        size_t fractionalDigits = 0;
+
+        if (dotPos != wstring::npos) {
+            digitsOnly.erase(dotPos, 1);
+            fractionalDigits = basePart.length() - dotPos - 1;
+        }
+
+        if (digitsOnly.empty()) {
+            return false;
+        }
+
+        // Strip leading zeros but keep at least one digit.
+        size_t firstNonZero = digitsOnly.find_first_not_of(L'0');
+        if (firstNonZero == wstring::npos) {
+            digitsOnly = L"0";
+        } else if (firstNonZero > 0) {
+            digitsOnly = digitsOnly.substr(firstNonZero);
+        }
+
+        if (exponent >= fractionalDigits) {
+            digitsOnly.append(static_cast<size_t>(exponent - fractionalDigits), L'0');
+            value = digitsOnly;
+            return true;
+        }
+
+        const size_t decimalPos = digitsOnly.length() - static_cast<size_t>(fractionalDigits - exponent);
+        value = digitsOnly.substr(0, decimalPos) + L"." + digitsOnly.substr(decimalPos);
+        return true;
+    }
+
     // If ends in '@', it MUST be precise, like 120e120@ must use a fuck ton of bytes, so
     // 120e120 == 120e120 + 1
     // BUT
@@ -99,31 +173,30 @@ namespace lexer {
         wsmatch match;
         const wstring remaining = l->remainder();
         regex_search(remaining, match, regexp);
-        wstring value = match.str(0);
-        // Remove underscores from the number for easier parsing later
-        long double numberOfUnderscores = count(value.begin(), value.end(), L'_');
+        const wstring matchedValue = match.str(0);
+        wstring value = matchedValue;
+        // Remove underscores from the number for easier parsing later.
         value.erase(remove(value.begin(), value.end(), L'_'), value.end());
-        // Check if 'e'
-        if (value.find(L'e') != wstring::npos) {
-            // Split the number into the base and the exponent parts
-            size_t ePos = value.find(L'e');
-            wstring basePart = value.substr(0, ePos);
-            wstring exponentPart = value.substr(ePos + 1);
-
-            // Remove any underscores from the exponent part as well
-            exponentPart.erase(remove(exponentPart.begin(), exponentPart.end(), L'_'), exponentPart.end());
-
-            // Reconstruct the number in a standard format for easier parsing later
-            value = basePart + L"e" + exponentPart;
-        }
         TokenKind kind = NUMBER;
         if (value.back() == L'@') {
             value.pop_back();
             kind = PNUMBER;
+
+            // Preserve precise literals as exact decimal text for AST/decompiler and big-number ops.
+            if (!expandScientificNotation(value)) {
+                if (_allowLexerErrors) {
+                    wstring message = L"Invalid precise number literal at " + l->position() + L": " + match.str(0);
+                    _wcout << (_debug ? L"[Lexer] " : L"") << message << endl;
+                    l->errors.push_back(Error(message, l->line, l->column));
+                    if (_panic) {
+                        if (_debug) _wcout << L"[Lexer] Panicing" << endl;
+                        exit(1);
+                    }
+                }
+            }
         }
         l->push(NewToken(kind, value, l->line, l->column));
-        l->advanceN(value.length() + numberOfUnderscores);
-        if (kind == PNUMBER) l->advanceN(1); // Advance past the trailing '@' if it's a precise number literal
+        l->advanceN(static_cast<int>(matchedValue.length()));
     };
 
     // 0b01 - binary
@@ -137,6 +210,11 @@ namespace lexer {
             isByte = true;
             value.pop_back();
         }
+        bool isPrecise = false;
+        if (value.back() == L'@') {
+            isPrecise = true;
+            value.pop_back();
+        }
         // Turn to binary number
         unsigned long long numberValue = 0;
         for (char c : value.substr(2)) {
@@ -146,9 +224,10 @@ namespace lexer {
                 numberValue |= 1; // Set the last bit if it's '1'
             }
         }
-        l->push(NewToken(isByte ? BYTE : NUMBER, to_wstring(numberValue), l->line, l->column));
+        l->push(NewToken(isByte ? BYTE : (isPrecise ? PNUMBER : NUMBER), to_wstring(numberValue), l->line, l->column));
         l->advanceN(value.length()); 
         if (isByte) l->advanceN(1); // Advance past the trailing 'b' if it's a byte literal
+        if (isPrecise) l->advanceN(1); // Advance past the trailing '@' if it's a precise number literal
     };
 
     // 010 - octal
@@ -162,6 +241,11 @@ namespace lexer {
             isByte = true;
             value.pop_back();
         }
+        bool isPrecise = false;
+        if (value.back() == L'@') {
+            isPrecise = true;
+            value.pop_back();
+        }
         // Turn to octal number
         unsigned long long numberValue = 0;
         for (char c : value.substr(1)) {
@@ -171,9 +255,10 @@ namespace lexer {
                 numberValue |= (c - L'0'); // Add the digit value
             }
         }
-        l->push(NewToken(isByte ? BYTE : NUMBER, to_wstring(numberValue), l->line, l->column));
+        l->push(NewToken(isByte ? BYTE : (isPrecise ? PNUMBER : NUMBER), to_wstring(numberValue), l->line, l->column));
         l->advanceN(value.length());
         if (isByte) l->advanceN(1); // Advance past the trailing 'b' if it's a byte literal
+        if (isPrecise) l->advanceN(1); // Advance past the trailing '@' if it's a precise number literal
     };
 
     // 0x1 - hexadecimal
@@ -182,6 +267,11 @@ namespace lexer {
         const wstring remaining = l->remainder();
         regex_search(remaining, match, regexp);
         wstring value = match.str(0); // Remove the "0x" prefix
+        bool isPrecise = false;
+        if (value.back() == L'@') {
+            isPrecise = true;
+            value.pop_back();
+        }
         // Turn to hexadecimal number
         unsigned long long numberValue = 0;
         for (char c : value.substr(2)) {
@@ -195,8 +285,9 @@ namespace lexer {
                 numberValue |= (c - L'A' + 10); // Add the digit value
             }
         }
-        l->push(NewToken(NUMBER, to_wstring(numberValue), l->line, l->column));
+        l->push(NewToken(isPrecise ? PNUMBER : NUMBER, to_wstring(numberValue), l->line, l->column));
         l->advanceN(value.length());
+        if (isPrecise) l->advanceN(1); // Advance past the trailing '@' if it's a precise number literal
     };
 
     regexHandler byteHandler = [](Lexer* l, const wregex& regexp) {
@@ -205,8 +296,24 @@ namespace lexer {
         regex_search(remaining, match, regexp);
         wstring value = match.str(0);
         value.erase(remove(value.begin(), value.end(), L'_'), value.end());
-        l->push(NewToken(BYTE, value.substr(0, value.length() - 1), l->line, l->column)); // Remove the trailing 'b'
+        bool isPrecise = false;
+        if (value.back() == L'@') {
+            isPrecise = true;
+            value.pop_back();
+            if (_allowLexerErrors) {
+                const wstring bRemoved = value.back() == L'b' ? value.substr(0, value.length() - 1) : value;
+                const wstring message = L"Invalid byte literal at " + l->position() + L": " + match.str(0) + L" | Byte literals cannot be precise. Did you mean to use a precise number literal (e.g., " + bRemoved + L"@) instead?";
+                _wcout << (_debug ? L"[Lexer] " : L"") << message << endl;
+                l->errors.push_back(Error(message, l->line, l->column));
+                if (_panic) {
+                    if (_debug) _wcout << L"[Lexer] Panicing" << endl;
+                    exit(1);
+                }
+            }
+        }
+        l->push(NewToken(isPrecise ? PNUMBER : BYTE, value.substr(0, value.length() - 1), l->line, l->column)); // Remove the trailing 'b'
         l->advanceN(value.length());
+        if (isPrecise) l->advanceN(1); // Advance past the trailing '@' if it's a precise number literal
     };
 
     regexHandler symbolHandler = [](Lexer* l, const wregex& regexp) {
@@ -324,10 +431,10 @@ namespace lexer {
                 {wregex(L"^false"), defaultHandler(BOOL, L"false")},
                 {wregex(L"^[\\$f]\"[^\"]*\""), fstringHandler},
                 {wregex(L"^[a-zA-Z_\\u0080-\\uFFFF\\$][a-zA-Z0-9_\\u0080-\\uFFFF\\$]*"), symbolHandler},
-                {wregex(L"^0b[0-1_]+b?"), binaryNumberHandler},
-                {wregex(L"^0[0-7_]+b?"), octalNumberHandler},
-                {wregex(L"^0x[0-9a-fA-F_]+"), hexNumberHandler},
-                {wregex(L"^[0-9][0-9_]*b"), byteHandler},
+                {wregex(L"^0b[0-1_]+b?@?"), binaryNumberHandler},
+                {wregex(L"^0[0-7_]+b?@?"), octalNumberHandler},
+                {wregex(L"^0x[0-9a-fA-F_]+@?"), hexNumberHandler},
+                {wregex(L"^[0-9][0-9_]*b@?"), byteHandler},
                 {wregex(L"^[0-9][0-9_]*(\\.[0-9_]*)?(e[0-9_+]+)?@?"), numberHandler},
                 {wregex(L"^\"[^\"]*\""), stringHandler},
                 {wregex(L"^\'[^\']*\'"), characterHandler},

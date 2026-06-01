@@ -50,6 +50,10 @@ namespace ast::optimizer {
             Optimize(binaryExpr->left);
             Optimize(binaryExpr->right);
             MergeLiterals(expr);
+        } else if (auto assignmentExpr = dynamic_cast<ast::AssignmentExpr*>(expr)) {
+            Optimize(assignmentExpr->Assignee);
+            Optimize(assignmentExpr->Value);
+            MergeLiterals(expr);
         }
     }
 }

@@ -91,6 +91,18 @@ namespace parser {
             explicitType = parse_type(p, default_bp);
 
         wstring varName = p->expectError(lexer::IDENTIFIER, Error(L"Expected variable name after declaration with " + (letConst ? (isConstant ? wstring(L"'const'") : wstring(L"'let'")) : (isConstant ? wstring(L"typename") : wstring(L"'mut'"))) + L", but got " + lexer::TokenKindString(p->currentTokenKind()) + L" at " + p->position())).value;
+
+        if (mapContainsKey(lexer::reserved_lu, varName)) {
+            wstring message = L"Variable name '" + varName + L"' at " + p->position() + L" cannot be a reserved keyword";
+            p->errors.push_back(ParserError(message));
+            _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
+            if (_panic) {
+                if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                exit(1);
+            }
+            varName = L'_' + varName;  // Prepend an underscore to make it a valid identifier
+        }
+
         if (p->currentTokenKind() == lexer::COLON) {
             p->advance();  // consume ':'
             if (explicitType != nullptr) {
