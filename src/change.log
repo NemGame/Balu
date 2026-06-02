@@ -1,3 +1,2 @@
-Changed char and string to char8/16/32 and string8/16/32; char defaults to char32; string defaults to string32
-Fixed struct instantiation
-Fixed array instantiation
+Added alias for PrefixExpr (UnaryExpr)
+Added some IR stuff and made _IRGlobals

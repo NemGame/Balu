@@ -433,6 +433,7 @@ namespace ast {
             return new PrefixExpr(RightExpr ? RightExpr->Clone() : nullptr, Operator);
         }
     };
+    using UnaryExpr = PrefixExpr;
     // a = a + 5;
     // a += 5;
     // foo.bar += 10;

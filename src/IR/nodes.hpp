@@ -12,6 +12,7 @@ namespace IR {
         DIV,          // Pop two values, divide them, and push the result
         MOD,          // Pop two values, modulo them, and push the result
         NEGATE,       // Pop one value, negate it, and push the result
+        JUMP_IF_TRUE, // Pop one value; if it's true, jump to a given instruction index
         JUMP_IF_FALSE,// Pop one value; if it's false, jump to a given instruction index
         JUMP,         // Unconditionally jump to a given instruction index
         CALL_FUNC,    // Call a function with a given number of arguments
@@ -21,5 +22,11 @@ namespace IR {
         Opcode opcode;
         vector<string> operands; // Operands can be variable names, constant values, or instruction indices (for jumps)
         Instruction(Opcode opcode, const vector<string>& operands = {}) : opcode(opcode), operands(operands) {}
+    };
+    struct Node {
+        Instruction instruction;
+        Node* next; // Pointer to the next instruction in the sequence
+        Node* prev; // Pointer to the previous instruction in the sequence
+        Node(const Instruction& instruction) : instruction(instruction), next(nullptr), prev(nullptr) {}
     };
 }
