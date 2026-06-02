@@ -37,7 +37,11 @@ namespace parser {
         nud_lu[kind] = nud_fn;
     }
     void stmt(lexer::TokenKind kind, stmt_handler stmt_fn) {
-        bp_lu[kind] = default_bp;
+        // Do not clobber precedence for tokens that also participate in expressions
+        // (e.g. OPEN_CURLY is both block-start and struct-instantiation operator).
+        if (bp_lu.find(kind) == bp_lu.end()) {
+            bp_lu[kind] = default_bp;
+        }
         stmt_lu[kind] = stmt_fn;
     }
 }

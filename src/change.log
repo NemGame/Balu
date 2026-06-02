@@ -1,3 +1,3 @@
-Reworked lexer parser to accept regex patterns and strings, so it's a lot faster (1.5x - 5x)
-Added literal folding for Number-Number (&, |, ^)
-Removed Digraphs and Trigraphs for now
+Changed char and string to char8/16/32 and string8/16/32; char defaults to char32; string defaults to string32
+Fixed struct instantiation
+Fixed array instantiation

@@ -202,36 +202,38 @@ namespace ast {
     struct StringExpr : public Expr {
         wstring value;
         bool isFormatString;
-        StringExpr(const wstring& v, bool isFormat = false) : value(v), isFormatString(isFormat) {}
+        char byteSize;
+        StringExpr(const wstring& v, char size = 4, bool isFormat = false) : value(v), isFormatString(isFormat), byteSize(size) {}
         void expr() override {}
         void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
             wcout_ << GetName(indent) << endl;
         }
         wstring GetName(int indent = 0) const override {
-            return wstring(indent * 2, L' ') + (isFormatString ? L"F-" : L"") + L"StringExpr: \"" + value + L"\"";
+            return wstring(indent * 2, L' ') + (isFormatString ? L"F-" : L"") + L"StringExpr" + to_wstring(byteSize * 8) + L": \"" + value + L"\"";
         }
         wstring GetValue() const override {
             return value;
         }
         Expr* Clone() const override {
-            return new StringExpr(value, isFormatString);
+            return new StringExpr(value, byteSize, isFormatString);
         }
     };
     struct CharExpr : public Expr {
         wchar_t value;
-        CharExpr(wchar_t v) : value(v) {}
+        char byteSize; // 1 for char8, 2 for char16, 4 for char32
+        CharExpr(wchar_t v, char size) : value(v), byteSize(size) {}
         void expr() override {}
         void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
-            wcout_ << wstring(indent * 2, L' ') << L"CharExpr: '" << value << L"'" << endl;
+            wcout_ << GetName(indent) << endl;
         }
         wstring GetName(int indent = 0) const override {
-            return wstring(indent * 2, L' ') + L"CharExpr: '" + value + L"'";
+            return wstring(indent * 2, L' ') + L"CharExpr" + to_wstring(byteSize * 8) + L": '" + value + L"'";
         }
         wstring GetValue() const override {
             return wstring(1, value);
         }
         Expr* Clone() const override {
-            return new CharExpr(value);
+            return new CharExpr(value, byteSize);
         }
     };
     struct BooleanExpr : public Expr {

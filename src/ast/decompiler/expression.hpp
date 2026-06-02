@@ -62,9 +62,9 @@ namespace ast::decompiler {
         } else if (auto s = dynamic_cast<ast::IdentifierExpr*>(expr)) {
             return s->value;
         } else if (auto s = dynamic_cast<ast::StringExpr*>(expr)) {
-            return L"\"" + s->value + L"\"";
+            return to_wstring(s->byteSize * 8) + L"\"" + s->value + L"\"";
         } else if (auto s = dynamic_cast<ast::CharExpr*>(expr)) {
-            return L"'" + wstring(1, s->value) + L"'";
+            return to_wstring(s->byteSize * 8) + L"'" + wstring(1, s->value) + L"'";
         } else if (auto s = dynamic_cast<ast::ByteExpr*>(expr)) {
             return to_wstring(s->value) + L"b";
         } else if (auto s = dynamic_cast<ast::BooleanExpr*>(expr)) {

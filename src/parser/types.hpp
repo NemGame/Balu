@@ -68,7 +68,16 @@ namespace parser {
         return left;
     }
     ast::Type* parse_symbol_type(Parser* parser) {
-        return new ast::SymbolType(parser->advance().value);
+        lexer::Token token = parser->advance();
+
+        if (token.kind == lexer::CHAR32_KW && token.value == L"char") {
+            return new ast::SymbolType(L"char32");
+        }
+        if (token.kind == lexer::STRING32_KW && token.value == L"string") {
+            return new ast::SymbolType(L"string32");
+        }
+
+        return new ast::SymbolType(token.value);
     }
     ast::Type* parse_array_type(Parser* parser) {
         parser->expect(lexer::OPEN_BRACKET); // consume '['
@@ -84,16 +93,21 @@ namespace parser {
     void createTokenTypeLookups() {
         type_nud(lexer::IDENTIFIER, parse_symbol_type);
         type_nud(lexer::OPEN_BRACKET, parse_array_type);  // []T
-
-        type_nud(lexer::STRING_KW, parse_symbol_type);
+        
         type_nud(lexer::BYTE_KW, parse_symbol_type);
-        type_nud(lexer::CHAR_KW, parse_symbol_type);
         type_nud(lexer::NUMBER_KW, parse_symbol_type);
         type_nud(lexer::BOOL_KW, parse_symbol_type);
         type_nud(lexer::AUTO, parse_symbol_type);
         type_nud(lexer::ANY, parse_symbol_type);
         type_nud(lexer::VOID, parse_symbol_type);
         type_nud(lexer::NULL_, parse_symbol_type);
+
+        type_nud(lexer::CHAR8_KW, parse_symbol_type);
+        type_nud(lexer::CHAR16_KW, parse_symbol_type);
+        type_nud(lexer::CHAR32_KW, parse_symbol_type);
+        type_nud(lexer::STRING8_KW, parse_symbol_type);
+        type_nud(lexer::STRING16_KW, parse_symbol_type);
+        type_nud(lexer::STRING32_KW, parse_symbol_type);
 
         type_led(lexer::OPEN_BRACKET, call, parse_postfix_array_type); // T[] (Higher precedence)
     }

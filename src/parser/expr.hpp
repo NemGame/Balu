@@ -7,6 +7,41 @@
 namespace parser {
     // Forward declarations
     ast::Type* parse_type(Parser* parser, binding_power bp);
+    ast::Expr* parse_expr(Parser* parser, binding_power bp);
+
+    bool is_postfix_array_instantiation_start(Parser* parser) {
+        if (!parser->currentToken().mightBeType()) {
+            return false;
+        }
+
+        size_t i = parser->pos + 1;
+        bool sawArraySuffix = false;
+
+        while (i + 1 < parser->tokens.size() &&
+               parser->tokens[i].kind == lexer::OPEN_BRACKET &&
+               parser->tokens[i + 1].kind == lexer::CLOSE_BRACKET) {
+            sawArraySuffix = true;
+            i += 2;
+        }
+
+        return sawArraySuffix && i < parser->tokens.size() && parser->tokens[i].kind == lexer::OPEN_CURLY;
+    }
+
+    ast::Expr* parse_array_initializer_with_type(Parser* parser, ast::Type* underlyingType) {
+        vector<ast::Expr*> contents;
+
+        parser->expect(lexer::OPEN_CURLY);
+
+        while (parser->hasTokens() && parser->currentTokenKind() != lexer::CLOSE_CURLY) {
+            contents.push_back(parse_expr(parser, default_bp));
+            if (parser->currentTokenKind() != lexer::CLOSE_CURLY) {
+                parser->expect(lexer::COMMA);
+            }
+        }
+
+        parser->expect(lexer::CLOSE_CURLY);
+        return new ast::ArrayInstantiationExpr(underlyingType, contents);
+    }
 
     ast::Expr* parse_expr(Parser* parser, binding_power bp) {
         if (_verbose) _wcout << L"[Parser] Parsing expression at " << parser->position() << endl;
@@ -59,6 +94,12 @@ namespace parser {
 
     ast::Expr* parse_primary_expr(Parser* parser) {
         if (_verbose) _wcout << L"[Parser] Parsing primary expression at " << parser->position() << endl;
+
+        if (is_postfix_array_instantiation_start(parser)) {
+            ast::Type* underlyingType = parse_type(parser, default_bp);
+            return parse_array_initializer_with_type(parser, underlyingType);
+        }
+
         switch (parser->currentTokenKind()) {
             case lexer::NUMBER: {
                 long double value = 0;
@@ -99,14 +140,20 @@ namespace parser {
                 parser->advance();
                 return new ast::ByteExpr(value);
             }
-            case lexer::STRING: {
-                return new ast::StringExpr(parser->advance().value);
-            }
+            case lexer::STRING32: { return new ast::StringExpr(parser->advance().value, 4); }
+            case lexer::STRING16: { return new ast::StringExpr(parser->advance().value, 2); }
+            case lexer::STRING8: { return new ast::StringExpr(parser->advance().value, 1); }
             case lexer::FSTRING: {
-                return new ast::StringExpr(parser->advance().value, true);
+                return new ast::StringExpr(parser->advance().value, 4, true);
             }
-            case lexer::CHAR: {
-                return new ast::CharExpr(parser->advance().value[0]);
+            case lexer::CHAR32: {
+                return new ast::CharExpr(parser->advance().value[0], 4);
+            }
+            case lexer::CHAR8: {
+                return new ast::CharExpr(parser->advance().value[0], 1);
+            }
+            case lexer::CHAR16: {
+                return new ast::CharExpr(parser->advance().value[0], 2);
             }
             case lexer::BOOL: {
                 bool value = parser->currentToken().value == L"true";
@@ -202,24 +249,11 @@ namespace parser {
         return new ast::StructInstantiationExpr(structName, reverseUnorderedMap(fieldValues));
     }
     ast::Expr* parse_array_instantiation_expr(Parser* parser) {
-        vector<ast::Expr*> contents;
-
         parser->expect(lexer::OPEN_BRACKET);
         parser->expect(lexer::CLOSE_BRACKET);
         
         ast::Type* underlyingType = parse_type(parser, unary);
-
-        parser->expect(lexer::OPEN_CURLY);
-
-        while (parser->hasTokens() && parser->currentTokenKind() != lexer::CLOSE_CURLY) {
-            contents.push_back(parse_expr(parser, default_bp));
-            if (parser->currentTokenKind() != lexer::CLOSE_CURLY) {
-                parser->expect(lexer::COMMA);
-            }
-        }
-
-        parser->expect(lexer::CLOSE_CURLY);
-        return new ast::ArrayInstantiationExpr(underlyingType, contents);
+        return parse_array_initializer_with_type(parser, underlyingType);
     }
     ast::Expr* parse_function_call_expr(Parser* parser, ast::Expr* left, binding_power bp) {
         if (_verbose) _wcout << L"[Parser] Parsing function call expression at " << parser->position() << endl;

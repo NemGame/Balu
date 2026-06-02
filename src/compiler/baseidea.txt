@@ -1,4 +1,8 @@
-AST -> Compiler:
--> BASM (Balu-Assembly): -> Assembly-like language
--> Assembly (based on chosen architecture): CPU's language
--> Machine Code: Binary code (for given architecture)
+AST -> IR -> Assembly Code:
+- AST -> IR
+- IR -> Chosen architechture (e.g. winx64, linux86, winx86-16)
+
+Architectures in mind:
+- OS: Windows, Linux
+- Bit: 16bit (x86-16), 32bit (x86, x86-32), 64bit(x64, x86-64)
+- CPU: Intel, AMD

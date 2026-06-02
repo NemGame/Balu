@@ -130,11 +130,21 @@ namespace ast::optimizer {
         if (typeid(*expr) == typeid(ast::NumberExpr)) {
             return new ast::SymbolType(L"number");
         } else if (typeid(*expr) == typeid(ast::StringExpr)) {
-            return new ast::SymbolType(L"string");
+            switch (dynamic_cast<ast::StringExpr*>(expr)->byteSize) {
+                case 1: return new ast::SymbolType(L"string8");
+                case 2: return new ast::SymbolType(L"string16");
+                case 4: return new ast::SymbolType(L"string32");
+                default: return new ast::SymbolType(L"string32"); // Fallback for unknown byte sizes
+            }
         } else if (typeid(*expr) == typeid(ast::CharExpr)) {
-            return new ast::SymbolType(L"char");
+            switch (dynamic_cast<ast::CharExpr*>(expr)->byteSize) {
+                case 1: return new ast::SymbolType(L"char8");
+                case 2: return new ast::SymbolType(L"char16");
+                case 4: return new ast::SymbolType(L"char32");
+                default: return new ast::SymbolType(L"char32"); // Fallback for unknown byte sizes
+            }
         } else if (typeid(*expr) == typeid(ast::BooleanExpr)) {
-            return new ast::SymbolType(L"boolean");
+            return new ast::SymbolType(L"bool");
         } else if (typeid(*expr) == typeid(ast::ByteExpr)) {
             return new ast::SymbolType(L"byte");
         } else if (typeid(*expr) == typeid(ast::NullExpr)) {

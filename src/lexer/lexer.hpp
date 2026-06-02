@@ -393,9 +393,26 @@ namespace lexer {
         wsmatch match;
         const wstring remaining = l->remainder();
         regex_search(remaining, match, pattern.regexPattern);
-        wstring value = match.str(0).substr(1, match.str(0).length() - 2); // Remove the surrounding quotes
-        l->push(NewToken(STRING, value, l->line, l->column));
-        l->advanceN(value.length() + 2); // Advance past the string including the quotes
+        wstring value = match.str(0);
+        char size = 0; // Default to char32/utf-32
+        if (value[0] == L'8') size = 1; // char8/utf-8
+        else if (value[0] == L'1' && value[1] == L'6') size = 2; // char16/utf-16
+        else if (value[0] == L'3' && value[1] == L'2') size = 4; // char32/utf-32
+        else if (value[0] != L'"') {
+            if (_allowLexerErrors) {
+                wstring message = L"Invalid string literal prefix at " + l->position() + L": " + value.substr(0, 2);
+                _wcout << (_debug ? L"[Lexer] " : L"") << message << endl;
+                l->errors.push_back(Error(message, l->line, l->column));
+                if (_panic) {
+                    if (_debug) _wcout << L"[Lexer] Panicing" << endl;
+                    exit(1);
+                }
+            }
+        }
+        value = value.substr(1 + (size > 0 ? to_wstring(size * 8).length() : 0), value.length() - 2 - (size > 0 ? to_wstring(size * 8).length() : 0)); // Remove the surrounding quotes and prefix
+        if (size == 0) size = 4;
+        l->push(NewToken(size == 4 ? STRING32 : (size == 2 ? STRING16 : STRING8), value, l->line, l->column));
+        l->advanceN(value.length() + 2 + (size > 0 ? to_wstring(size * 8).length() : 0)); // Advance past the string including the quotes and prefix
     };
     
     regexHandler fstringHandler = [](Lexer* l, const Pattern& pattern) {
@@ -411,12 +428,30 @@ namespace lexer {
         wsmatch match;
         const wstring remaining = l->remainder();
         regex_search(remaining, match, pattern.regexPattern);
-        wstring value = match.str(0).substr(1, match.str(0).length() - 2); // Extract the character(s) between the single quotes
+        const wstring matchedValue = match.str(0);
+        wstring value = matchedValue; // Extract the character(s) between the single quotes
+        char size = 0; // Default to char32
+        if (value[0] == L'8') size = 1; // char8
+        else if (value[0] == L'1' && value[1] == L'6') size = 2; // char16
+        else if (value[0] == L'3' && value[1] == L'2') size = 4; // char32
+        else if (value[0] != L'\'') {
+            if (_allowLexerErrors) {
+                wstring message = L"Invalid character literal prefix at " + l->position() + L": " + value.substr(0, 2);
+                _wcout << (_debug ? L"[Lexer] " : L"") << message << endl;
+                l->errors.push_back(Error(message, l->line, l->column));
+                if (_panic) {
+                    if (_debug) _wcout << L"[Lexer] Panicing" << endl;
+                    exit(1);
+                }
+            }
+        }
+        value = value.substr(1 + (size > 0 ? to_wstring(size * 8).length() : 0), value.length() - 2 - (size > 0 ? to_wstring(size * 8).length() : 0)); // Remove the surrounding single quotes and prefix
+        if (size == 0) size = 4;
         unsigned long long line = l->line;
         unsigned long long col = l->column;
         if (value.length() != 1) {
             if (_allowLexerErrors) {
-                wstring message = L"Invalid character literal at " + l->position() + L": " + match.str(0) + L". Character literals must contain exactly one character.";
+                wstring message = L"Invalid character literal at " + l->position() + L": " + match.str(0) + L" (" + value + L"). Character literals must contain exactly one character.";
                 _wcout << (_debug ? L"[Lexer] " : L"") << message << endl;
                 l->errors.push_back(Error(message, line, col));
                 if (_panic) {
@@ -424,10 +459,13 @@ namespace lexer {
                     exit(1);
                 }
             }
-            l->advanceN(match.str(0).length()); // Advance past the invalid character literal
+            l->advanceN(matchedValue.length()); // Advance past the invalid character literal
             value = value.substr(0, 1); // Default to the first character if multiple are found
-        } else l->advanceN(3); // Advance past the character including the surrounding single quotes
-        l->push(NewToken(CHAR, value, line, col));
+        } else {
+            // Always advance by the original matched lexeme length to keep cursor/line state correct.
+            l->advanceN(matchedValue.length());
+        }
+        l->push(NewToken(size == 4 ? CHAR32 : (size == 2 ? CHAR16 : CHAR8), value, line, col));
     };
 
     regexHandler ruleHandler = [](Lexer* l, const Pattern& pattern) {
@@ -453,10 +491,10 @@ namespace lexer {
                 {Pattern(wregex(L"^0b[0-1_]+b?@?")), binaryNumberHandler},
                 {Pattern(wregex(L"^0[0-7_]+b?@?")), octalNumberHandler},
                 {Pattern(wregex(L"^0x[0-9a-fA-F_]+@?")), hexNumberHandler},
+                {Pattern(wregex(L"^(8|16|32)?\"[^\"]*\"")), stringHandler},
+                {Pattern(wregex(L"^(8|16|32)?\'[^\']*\'")), characterHandler},
                 {Pattern(wregex(L"^[0-9][0-9_]*b@?")), byteHandler},
                 {Pattern(wregex(L"^[0-9][0-9_]*(\\.[0-9_]*)?(e[0-9_+]+)?@?")), numberHandler},
-                {Pattern(wregex(L"^\"[^\"]*\"")), stringHandler},
-                {Pattern(wregex(L"^\'[^\']*\'")), characterHandler},
                 {Pattern(wregex(L"^//.*")), skipHandler},
                 {Pattern(wregex(L"^/\\*")), multilineSkipHandler},
                 {Pattern(wregex(L"^;+")), semicolonHandler},

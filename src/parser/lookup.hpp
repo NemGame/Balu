@@ -48,9 +48,13 @@ namespace parser {
         nud(lexer::NUMBER, parse_primary_expr);
         nud(lexer::PNUMBER, parse_primary_expr);
         nud(lexer::BYTE, parse_primary_expr);
-        nud(lexer::STRING, parse_primary_expr);
+        nud(lexer::STRING8, parse_primary_expr);
+        nud(lexer::STRING16, parse_primary_expr);
+        nud(lexer::STRING32, parse_primary_expr);
         nud(lexer::FSTRING, parse_primary_expr);
-        nud(lexer::CHAR, parse_primary_expr);
+        nud(lexer::CHAR8, parse_primary_expr);
+        nud(lexer::CHAR16, parse_primary_expr);
+        nud(lexer::CHAR32, parse_primary_expr);
         nud(lexer::BOOL, parse_primary_expr);
         nud(lexer::AUTO, parse_primary_expr);
         nud(lexer::ANY, parse_primary_expr);
@@ -88,13 +92,18 @@ namespace parser {
         // Types
         stmt(lexer::NUMBER_KW, parse_var_decl_stmt);
         stmt(lexer::BYTE_KW, parse_var_decl_stmt);
-        stmt(lexer::STRING_KW, parse_var_decl_stmt);
         stmt(lexer::BOOL_KW, parse_var_decl_stmt);
-        stmt(lexer::CHAR_KW, parse_var_decl_stmt);
         stmt(lexer::AUTO, parse_var_decl_stmt);
         stmt(lexer::ANY, parse_var_decl_stmt);
         stmt(lexer::VOID, parse_var_decl_stmt);
         stmt(lexer::IDENTIFIER, parse_var_decl_stmt);
+
+        stmt(lexer::CHAR8_KW, parse_var_decl_stmt);
+        stmt(lexer::CHAR16_KW, parse_var_decl_stmt);
+        stmt(lexer::CHAR32_KW, parse_var_decl_stmt);
+        stmt(lexer::STRING8_KW, parse_var_decl_stmt);
+        stmt(lexer::STRING16_KW, parse_var_decl_stmt);
+        stmt(lexer::STRING32_KW, parse_var_decl_stmt);
 
         // stmt(lexer::NUMBER, skip_stmt);
         // stmt(lexer::BYTE, skip_stmt);

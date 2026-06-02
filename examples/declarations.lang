@@ -27,8 +27,8 @@ char sup = '早';
 bool 猫 = true;
 bool kéz = false;
 
-char wasd = "anyad";
-char wasd = "állat";
+string wasd = "anyad";
+string wasd = "állat";
 
 
 let anytest = 10;      // If type is not specified, 'any' is inferred
@@ -47,10 +47,10 @@ mut bytestest: byte = 10;
 mut anytest: any = 10;
 auto autotest = 10;
 mut autotest: auto = 10;
-void voidtest = 10;
-mut voidtest: void = 10;
-mut nulltest: null = 10;
-any[] arraytest = 10;
+void voidtest = null;
+mut voidtest: void = null;
+mut nulltest: null = null;
+any[] arraytest = any[]{10};
 mut arraytest: any[] = 10;
 
 let atest: []any[][] = 10;
@@ -89,3 +89,11 @@ byte bytestest = 10;
 auto autotest = 10;
 void voidtest = 10;
 []any arraytest = 10;
+
+char8 smallCharacter = 8'1';
+char16 mediumCharacter = 16'á';
+char32 bigCharacter = 32'あ';
+
+string8 smallString = 8"123";
+string16 mediumString = 16"áéíóú";
+string32 bigString = 32"あいうえお";

@@ -33,13 +33,27 @@
   - This may be a lot slower than the system-maximum
 - Size: auto-scales
 ## Characters
-### char: [TODO: Add char8(1), char16(2), char32(4)]
+### char:
 - Stores a singular character, inicated by surrounding with 's, e.g. 'a'
-- Size: 1 byte
-### string: [TODO: Add string8(1), string16(2), string32(4)]
+- Size: 4 byte
+- Subtypes:
+  - char8:
+    - 0-255
+    - Size: 1 byte
+  - char16:
+    - 0-65535
+    - Size: 2 bytes
+  - char32:
+    - 0-4294967295
+    - Size: 4 bytes
+### string:
 - Stores a sequence of characters, inicated by surrounding with "s, e.g. "abc"
 - Cannot be indexed **yet**
-- Size: auto-scales
+- Size: 4 bytes / character
+- Subtypes:
+  - string8: 1 byte / character
+  - string16: 2 bytes / character
+  - string32: 4 bytes / character
 ## Variable declaration
 ### See [examples/declarations.lang](examples/declarations.lang) for more examples
 #### Javascript

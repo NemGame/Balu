@@ -46,4 +46,5 @@ struct Error {
 #include "lexer/init.hpp"
 #include "ast/init.hpp"
 #include "parser/init.hpp"
+#include "IR/init.hpp"
 #include "compiler/init.hpp"

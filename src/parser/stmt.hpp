@@ -82,12 +82,12 @@ namespace parser {
         }
         // Check if we are looking at a type or just the variable name.
         // We parse a type if:
-        // 1. It's a known keyword type (NUMBER, STRING, etc.)
-        // 2. It's a prefix modifier (*, [)
+        // 1. It's a known keyword type (NUMBER, STRING32, etc.)
+        // 2. It's a prefix modifier ([)
         // 3. It's an identifier followed by a modifier or another identifier (the variable name)
         lexer::TokenKind nextKind = p->tokens.size() > p->pos + 1 ? p->tokens[p->pos + 1].kind : lexer::EOF_TOKEN;
         if (p->currentTokenKind() != lexer::IDENTIFIER || 
-            (nextKind == lexer::IDENTIFIER || nextKind == lexer::STAR || nextKind == lexer::OPEN_BRACKET)) 
+            (nextKind == lexer::IDENTIFIER || nextKind == lexer::OPEN_BRACKET)) 
             explicitType = parse_type(p, default_bp);
 
         wstring varName = p->expectError(lexer::IDENTIFIER, Error(L"Expected variable name after declaration with " + (letConst ? (isConstant ? wstring(L"'const'") : wstring(L"'let'")) : (isConstant ? wstring(L"typename") : wstring(L"'mut'"))) + L", but got " + lexer::TokenKindString(p->currentTokenKind()) + L" at " + p->position())).value;

@@ -1,17 +1,13 @@
 #pragma once
 
 namespace ast::optimizer {
-    struct TypeInfoBefore {
-        bool operator()(const type_info* a, const type_info* b) const {
-            return a->before(*b);
-        }
-    };
-
-    const map<const type_info*, vector<const type_info*>, TypeInfoBefore> TokenTypeCompatibility = {
-        {&typeid(ast::NumberExpr), {&typeid(ast::ByteExpr), &typeid(ast::CharExpr)}},
-        {&typeid(ast::CharExpr), {&typeid(ast::ByteExpr), &typeid(ast::NumberExpr)}},
-        {&typeid(ast::BooleanExpr), {&typeid(ast::NumberExpr), &typeid(ast::ByteExpr)}},
-        {&typeid(ast::ByteExpr), {&typeid(ast::NumberExpr), &typeid(ast::CharExpr), &typeid(ast::BooleanExpr)}},
+    const map<wstring, vector<wstring>> TokenTypeCompatibility = {
+        {L"number", {L"byte", L"char32", L"char16", L"char8", L"bool"}},
+        {L"char32", {L"byte", L"number", L"char16", L"char8", L"bool"}},
+        {L"bool", {L"number", L"byte"}},
+        {L"byte", {L"number", L"char32", L"char16", L"char8", L"bool"}},
+        {L"void", {L"null"}},
+        {L"null", {L"void"}},
     };
     void OptimizeIfStmt(ast::Stmt*& baseStmt) {
         ast::IfStmt* stmt = dynamic_cast<ast::IfStmt*>(baseStmt);
@@ -124,17 +120,19 @@ namespace ast::optimizer {
             ast::Type* assignedValueType = ExpressionToType(stmt->AssignedValue);
             if (assignedValueType) {
                 // Check if assigned value type is compatible with the variable's explicit type
+                const wstring assignedValueTypeName = assignedValueType->GetName();
+                const wstring explicitTypeName = stmt->ExplicitType->GetName();
                 const bool isCompatible = stmt->ExplicitType->GetName() == assignedValueType->GetName() ||
                     stmt->ExplicitType->GetName() == L"any" ||
-                    (TokenTypeCompatibility.count(&typeid(*assignedValueType)) > 0 &&
-                     find(TokenTypeCompatibility.at(&typeid(*assignedValueType)).begin(), TokenTypeCompatibility.at(&typeid(*assignedValueType)).end(), &typeid(*stmt->ExplicitType)) != TokenTypeCompatibility.at(&typeid(*assignedValueType)).end());
+                    (TokenTypeCompatibility.count(assignedValueTypeName) > 0 &&
+                     find(TokenTypeCompatibility.at(assignedValueTypeName).begin(), TokenTypeCompatibility.at(assignedValueTypeName).end(), explicitTypeName) != TokenTypeCompatibility.at(assignedValueTypeName).end());
                 if (isCompatible) {
                     delete assignedValueType; // No need for this since it's compatible
                 } else {
                     const wstring message = L"Type mismatch: cannot assign value of type " + assignedValueType->GetName() + L" to variable of type " + stmt->ExplicitType->GetName();
-                    wcout << message << endl;
+                    _wcout << message << endl;
                     if (_panic) {
-                        if (_debug) wcout << L"[Parser] Panicing" << endl;
+                        if (_debug) _wcout << L"[Parser] Panicing" << endl;
                         exit(1);
                     }
                     delete stmt->ExplicitType;

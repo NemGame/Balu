@@ -1,13 +1,9 @@
 #pragma once
 
-// TODO: Add keyword to jump out of the current block for if and simple blocks, 'jup'? 'localbreak'?
-
 namespace lexer {    
     enum TokenKind {
         EOF_TOKEN = 0,
         NUMBER,       // Auto-size, like vector, but for numbers (byte(, short, int, long, float, double <- TODO: implement))
-        STRING,       // e.g., "hello", "world", etc.
-        CHAR,         // e.g., 'a', 'b', etc.
         BOOL,         // e.g., true, false
         BYTE,         // 0-255 ; ends in 'b', e.g., 255b
         ANY,          // Any type, may change in runtime ; keyword
@@ -15,9 +11,23 @@ namespace lexer {
         VOID,         // Void type
         NULL_,        // Null type
 
+        CHAR8,        // char8
+        CHAR16,       // char16
+        CHAR32,       // char32
+
+        STRING8,      // string8
+        STRING16,     // string16
+        STRING32,     // string32
+
+        // Keywords
+        CHAR8_KW,   // char8 keyword
+        CHAR16_KW,  // char16 keyword
+        CHAR32_KW,  // char32 keyword
+        STRING8_KW,  // string8 keyword
+        STRING16_KW, // string16 keyword
+        STRING32_KW, // string32 keyword
+
         NUMBER_KW,  // number keyword
-        STRING_KW,  // string keyword
-        CHAR_KW,    // char keyword
         BOOL_KW,    // bool keyword
         BYTE_KW,    // byte keyword
 
@@ -129,7 +139,9 @@ namespace lexer {
         EVAL,           // eval
     };
     vector<TokenKind> TokenTypes = {
-        NUMBER_KW, STRING_KW, CHAR_KW, BOOL_KW, BYTE_KW, ANY, AUTO, VOID, NULL_
+        NUMBER_KW, BOOL_KW, BYTE_KW, ANY, AUTO, VOID, NULL_,
+        CHAR8_KW, CHAR16_KW, CHAR32_KW, 
+        STRING8_KW, STRING16_KW, STRING32_KW,
     };
 
     wstring TokenKindString(TokenKind kind);
@@ -172,8 +184,8 @@ namespace lexer {
         {L"return", RETURN},
         {L"break", BREAK},
 
-        {L"string", STRING_KW},
-        {L"char", CHAR_KW},
+        {L"string", STRING32_KW},
+        {L"char", CHAR32_KW},
         {L"number", NUMBER_KW},
         {L"byte", BYTE_KW},
         {L"bool", BOOL_KW},
@@ -181,6 +193,13 @@ namespace lexer {
         {L"any", ANY},
         {L"void", VOID},
         {L"null", NULL_},
+
+        {L"char8", CHAR8_KW},
+        {L"char16", CHAR16_KW},
+        {L"char32", CHAR32_KW},
+        {L"string8", STRING8_KW},
+        {L"string16", STRING16_KW},
+        {L"string32", STRING32_KW},
 
         {L"#rule", RULE},
     };
@@ -191,7 +210,7 @@ namespace lexer {
         unsigned long long column;
         void Debug(wostream& wcout_ = _wcout, bool endWithNewLine = true) const { // Change ostream to wostream, cout to wcout
             wcout_ << L"[" << line << L":" << column << L"] ";
-            if (isOneOfMany(NUMBER, STRING, CHAR, BOOL, BYTE, IDENTIFIER, RULE, FSTRING, PNUMBER, NULL_)) {
+            if (isOneOfMany(NUMBER, STRING8, STRING16, STRING32, CHAR8, CHAR16, CHAR32, BOOL, BYTE, IDENTIFIER, RULE, FSTRING, PNUMBER, NULL_)) {
                 wcout_ << TokenKindString(kind) << L" (" << value << L")";
             } else {
                 wcout_ << TokenKindString(kind) << L" ()";
@@ -211,7 +230,8 @@ namespace lexer {
             return isOneOfMany(PRIVATE, PROTECTED, PUBLIC, INTERNAL);
         }
         bool isTypeName() const {
-            return isOneOfMany(STRING_KW, CHAR_KW, NUMBER_KW, BOOL_KW, BYTE_KW, ANY, AUTO, VOID, IDENTIFIER);
+            return isOneOfMany(NUMBER_KW, BOOL_KW, BYTE_KW, ANY, AUTO, VOID, IDENTIFIER,
+                               CHAR8_KW, CHAR16_KW, CHAR32_KW, STRING8_KW, STRING16_KW, STRING32_KW);
         }
         bool isType() const {
             for (TokenKind tokenType : TokenTypes) {
@@ -232,8 +252,6 @@ namespace lexer {
         switch (kind) {
             case EOF_TOKEN: return L"EOF";
             case NUMBER: return L"NUMBER";
-            case STRING: return L"STRING";
-            case CHAR: return L"CHAR";
             case BOOL: return L"BOOL";
             case BYTE: return L"BYTE";
             case ANY: return L"ANY";
@@ -241,9 +259,14 @@ namespace lexer {
             case VOID: return L"VOID";
             case NULL_: return L"NULL_TYPE";
 
+            case CHAR8_KW: return L"CHAR8_KW";
+            case CHAR16_KW: return L"CHAR16_KW";
+            case CHAR32_KW: return L"CHAR32_KW";
+            case STRING8_KW: return L"STRING8_KW";
+            case STRING16_KW: return L"STRING16_KW";
+            case STRING32_KW: return L"STRING32_KW";
+            
             case NUMBER_KW: return L"NUMBER_KW";
-            case STRING_KW: return L"STRING_KW";
-            case CHAR_KW: return L"CHAR_KW";
             case BOOL_KW: return L"BOOL_KW";
             case BYTE_KW: return L"BYTE_KW";
 
