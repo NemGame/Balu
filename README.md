@@ -17,6 +17,8 @@
 ### To ignore the errors, just add the `-np`, or `--no-panic` flag in the command line
 ### For help, add the `-h`, `--help`, `-?`, `/help`, `/h` or `/help` flag in the command line
 
+## Curious to see what your code looks like just before compilation? 
+### Use the `-decompile=filename` flag ; replace `filename` with your desired output file's name
 # Types
 ### The Balu language is gradually typed, meaning it CAN type statically (give strict types), but you can also create dynamic variables (like python, or javascript)
 ## Numbers:
@@ -34,7 +36,7 @@
 - Size: auto-scales
 ## Characters
 ### char:
-- Stores a singular character, inicated by surrounding with 's, e.g. 'a'
+- Stores a singular character, indicated by surrounding with 's, e.g. 'a'
 - Size: 4 byte
 - Subtypes:
   - char8:
