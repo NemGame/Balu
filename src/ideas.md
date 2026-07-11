@@ -2,4 +2,4 @@
 ## Lexer
 - number kw:
   - "number" -> "number_t"
-  - "number" is frequentishly used
+  - "number" is too frequentishly used as variable name
