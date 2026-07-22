@@ -12,5 +12,5 @@ namespace IR {
     _IRGlobals Globals;
 }
 
-#include "converter/init.hpp"
+#include "convert.hpp"
 #include "IR.hpp"

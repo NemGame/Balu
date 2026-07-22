@@ -28,5 +28,33 @@ namespace IR {
         Node* next; // Pointer to the next instruction in the sequence
         Node* prev; // Pointer to the previous instruction in the sequence
         Node(const Instruction& instruction) : instruction(instruction), next(nullptr), prev(nullptr) {}
+        Node* getLast() {
+            Node* current = this;
+            while (current->next) current = current->next;
+            return current;
+        }
+        Node* getFirst() {
+            Node* current = this;
+            while (current->prev) current = current->prev;
+            return current;
+        }
+        size_t getInstructionCount() {
+            size_t count = 0;
+            Node* current = this->getFirst();
+            while (current) {
+                count++;
+                current = current->next;
+            }
+            return count;
+        }
+        size_t getInstructionsLeft() {
+            size_t count = 0;
+            Node* current = this;
+            while (current) {
+                count++;
+                current = current->next;
+            }
+            return count;
+        }
     };
 }
