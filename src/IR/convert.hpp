@@ -17,9 +17,9 @@ namespace IR {
 
             // TODO: add comparison
 
-            Node* conditionNode = new Node(Instruction(statementTrue ? Opcode::JUMP_IF_FALSE : Opcode::JUMP_IF_TRUE));
+            Node* jumpNode = new Node(Instruction(statementTrue ? Opcode::JUMP_IF_FALSE : Opcode::JUMP_IF_TRUE));
             
-            if (thenNode == nullptr && elseNode == nullptr) return conditionNode->getFirst();
+            if (thenNode == nullptr && elseNode == nullptr) return jumpNode->getFirst();
 
             if (thenNode) {
                 if (elseNode) {
@@ -28,19 +28,20 @@ namespace IR {
                     jumpOverElseNode->prev = thenNode->getLast();
                 }
                 size_t thenLength = thenNode->getInstructionCount();
-                conditionNode->instruction.operands.push_back(to_string(thenLength + 1)); // Jump to the instruction after the then branch
+                jumpNode->instruction.operands.push_back(to_string(thenLength + 1)); // Jump to the instruction after the then branch
             }
 
-            conditionNode->next = nullptr;
+            jumpNode->next = nullptr;
             if (thenNode) {
-                conditionNode->next = thenNode->getFirst();
-                thenNode->prev = conditionNode->getLast();
+                jumpNode->next = thenNode->getFirst();
+                thenNode->prev = jumpNode;
                 if (elseNode) {
-                    thenNode->next = elseNode->getFirst();
-                    elseNode->prev = thenNode->getLast();
+                    Node* lastThenNode = thenNode->getLast();
+                    lastThenNode->next = elseNode->getFirst();
+                    elseNode->prev = lastThenNode;
                 }
             }
-            return conditionNode;
+            return jumpNode;
         }
 
         return nullptr;
