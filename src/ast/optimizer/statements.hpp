@@ -1,21 +1,26 @@
 #pragma once
 
 namespace ast::optimizer {
+    // If `x` may be assigned a value of type `y`
+    // ```ts
+    // let foo:y;
+    // let bar:x = foo;
+    // ```
     const map<wstring, vector<wstring>> TokenTypeCompatibility = {
         {L"number", {L"byte", L"char32", L"char16", L"char8", L"bool"}},
-        {L"char32", {L"byte", L"number", L"char16", L"char8", L"bool"}},
+        {L"char32", {L"byte", L"number", L"bool"}},
+        {L"char16", {L"byte", L"number", L"char32", L"bool"}},
+        {L"char8", {L"byte", L"number", L"char16", L"char32", L"bool"}},
+        {L"string32", {L"bool"}},
+        {L"string16", {L"bool", L"string32"}},
+        {L"string8", {L"bool", L"string16", L"string32"}},
         {L"bool", {L"number", L"byte"}},
-        {L"byte", {L"number", L"char32", L"char16", L"char8", L"bool"}},
+        {L"byte", {L"number", L"char8", L"bool"}},
         {L"void", {L"null"}},
         {L"null", {L"void"}},
     };
-    void OptimizeIfStmt(ast::Stmt*& baseStmt) {
-        ast::IfStmt* stmt = dynamic_cast<ast::IfStmt*>(baseStmt);
-        if (!stmt) {
-            return;
-        }
-
-        auto isEmptyBranch = [](ast::Stmt* branch) {
+    struct Helper {
+        static bool isEmptyBranch(ast::Stmt* branch) {
             if (!branch) {
                 return true;
             }
@@ -26,35 +31,41 @@ namespace ast::optimizer {
 
             return false;
         };
-        
+    };
+    void OptimizeIfStmt(ast::Stmt*& baseStmt) {
+        ast::IfStmt* stmt = dynamic_cast<ast::IfStmt*>(baseStmt);
+        if (!stmt) {
+            return;
+        }
+
         Optimize(stmt->Condition);
         if (auto booleanExpr = dynamic_cast<ast::BooleanExpr*>(stmt->Condition)) {
             if (booleanExpr->value) {
                 // Convert to block statement and ignore else branch
 
                 // Copy then branch to avoid deleting it when we delete the if statement
-                ast::Stmt* copiedThenBranch = stmt->ThenBranch->Clone();
+                ast::Stmt* copiedThenBranch = stmt->ThenBranch ? stmt->ThenBranch->Clone() : nullptr;
                 delete stmt;
                 baseStmt = copiedThenBranch;
-                Optimize(baseStmt);
+                if (baseStmt) Optimize(baseStmt);
                 return;
             } else {
                 // Copy else branch to avoid deleting it when we delete the if statement
-                ast::Stmt* copiedElseBranch = stmt->ElseBranch->Clone();
+                ast::Stmt* copiedElseBranch = stmt->ElseBranch ? stmt->ElseBranch->Clone() : nullptr;
                 delete stmt;
                 baseStmt = copiedElseBranch;
-                Optimize(baseStmt);
+                if (baseStmt) Optimize(baseStmt);
                 return;
             }
         }
         
-        if (isEmptyBranch(stmt->ThenBranch) && isEmptyBranch(stmt->ElseBranch)) {
+        if (Helper::isEmptyBranch(stmt->ThenBranch) && Helper::isEmptyBranch(stmt->ElseBranch)) {
             // If both branches are empty, we can remove the entire if statement
             delete stmt;
             baseStmt = nullptr;
             return;
         }
-        if (!isEmptyBranch(stmt->ThenBranch)) Optimize(stmt->ThenBranch);
+        if (!Helper::isEmptyBranch(stmt->ThenBranch)) Optimize(stmt->ThenBranch);
         if (stmt->ElseBranch) {
             Optimize(stmt->ElseBranch);
             if (dynamic_cast<ast::BlockStmt*>(stmt->ElseBranch) && static_cast<ast::BlockStmt*>(stmt->ElseBranch)->statements.empty()) {
@@ -66,12 +77,13 @@ namespace ast::optimizer {
                 stmt->ElseBranch = static_cast<ast::BlockStmt*>(stmt->ElseBranch)->statements[0];
                 Optimize(stmt->ElseBranch);
             }
-            if (isEmptyBranch(stmt->ThenBranch)) {
+            if (Helper::isEmptyBranch(stmt->ThenBranch)) {
                 if (auto thenBranch = dynamic_cast<ast::BlockStmt*>(stmt->ThenBranch)) {
                     if (thenBranch->statements.empty()) {
                         delete stmt->ThenBranch;
                         stmt->ThenBranch = stmt->ElseBranch;
                         stmt->Condition = new ast::PrefixExpr(stmt->Condition, lexer::NewToken(lexer::NOT, L"!"));
+                        Optimize(stmt->Condition);
                         stmt->ElseBranch = nullptr;
                     }
                 }
@@ -83,12 +95,33 @@ namespace ast::optimizer {
         if (!stmt) {
             return;
         }
-
-        if (!stmt->Body) {
-            // If the body is empty, we can remove the entire while statement
-            delete stmt;
-            baseStmt = nullptr;
-            return;
+        const bool isBodyEmpty = Helper::isEmptyBranch(stmt->Body);
+        if (Helper::isEmptyBranch(stmt->ElseBranch)) {
+            delete stmt->ElseBranch;
+            stmt->ElseBranch = nullptr;
+            if (isBodyEmpty) {
+                ast::Expr* condition = stmt->Condition;
+                stmt->Condition = nullptr;
+                delete stmt;
+                ast::ExpressionStmt* exprStmt = new ast::ExpressionStmt(condition);
+                baseStmt = exprStmt;
+                Optimize(baseStmt);
+                if (isLiteral(exprStmt->expression)) {
+                    delete baseStmt;
+                    baseStmt = nullptr;
+                }
+            }
+        } else Optimize(stmt->ElseBranch);
+        Optimize(stmt->Condition);
+        if (auto booleanExpr = dynamic_cast<ast::BooleanExpr*>(stmt->Condition)) {
+            if (!booleanExpr->value) {
+                ast::Stmt* elseBranch = stmt->ElseBranch;
+                stmt->ElseBranch = nullptr;
+                delete stmt;
+                baseStmt = elseBranch;
+                if (baseStmt) Optimize(baseStmt);
+                return;
+            }
         }
         if (auto innerWhile = dynamic_cast<ast::WhileStmt*>(stmt->Body)) {
             OptimizeWhileStmt(stmt->Body);
@@ -103,8 +136,14 @@ namespace ast::optimizer {
             }
 
             // Merge the inner while into the current while
-            stmt->Body = innerWhile->Body;
-            stmt->Condition = new ast::BinaryExpr(stmt->Condition, innerWhile->Condition, lexer::NewToken(lexer::AND, L"&&"));
+            ast::Stmt* mergedBody = innerWhile->Body;
+            ast::Expr* mergedCondition = innerWhile->Condition;
+            innerWhile->Body = nullptr;
+            innerWhile->Condition = nullptr;
+            delete innerWhile;
+
+            stmt->Body = mergedBody;
+            stmt->Condition = new ast::BinaryExpr(stmt->Condition, mergedCondition, lexer::NewToken(lexer::AND, L"&&"));
         }
     }
     void OptimizeVarDeclStmt(ast::Stmt*& baseStmt) {
@@ -122,17 +161,24 @@ namespace ast::optimizer {
                 // Check if assigned value type is compatible with the variable's explicit type
                 const wstring assignedValueTypeName = assignedValueType->GetName();
                 const wstring explicitTypeName = stmt->ExplicitType->GetName();
-                const bool isCompatible = stmt->ExplicitType->GetName() == assignedValueType->GetName() ||
-                    stmt->ExplicitType->GetName() == L"any" ||
-                    (TokenTypeCompatibility.count(assignedValueTypeName) > 0 &&
-                     find(TokenTypeCompatibility.at(assignedValueTypeName).begin(), TokenTypeCompatibility.at(assignedValueTypeName).end(), explicitTypeName) != TokenTypeCompatibility.at(assignedValueTypeName).end());
+                const bool isTypeNull = assignedValueTypeName == L"null";
+                const bool isCompatible = isTypeNull || explicitTypeName == assignedValueTypeName ||
+                    explicitTypeName == L"any" ||
+                    (
+                        TokenTypeCompatibility.count(assignedValueTypeName) > 0 &&
+                        find(
+                            TokenTypeCompatibility.at(assignedValueTypeName).begin(), 
+                            TokenTypeCompatibility.at(assignedValueTypeName).end(), 
+                            explicitTypeName
+                        ) != TokenTypeCompatibility.at(assignedValueTypeName).end()
+                    );
                 if (isCompatible) {
                     delete assignedValueType; // No need for this since it's compatible
                 } else {
                     const wstring message = L"Type mismatch: cannot assign value of type " + assignedValueType->GetName() + L" to variable of type " + stmt->ExplicitType->GetName();
                     _wcout << message << endl;
-                    if (_panic) {
-                        if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                    if (CompilerOptions.panic) {
+                        if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
                         exit(1);
                     }
                     delete stmt->ExplicitType;

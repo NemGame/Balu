@@ -1,2 +1,30 @@
-Added alias for PrefixExpr (UnaryExpr)
-Added some IR stuff and made _IRGlobals
+Optimized while statements
+Fixed type mismatch in variable declaration optimizer:
+- added char16, char8 and strings (32, 16, 8) to `TokenTypeCompatibility`
+- fixed conversion of different sized data types
+    - e.g. `let x: string16 = 8"";` is valid, but `let x: string8 = 16"";` is not
+    - e.g. `let x: byte = 16'a';` is no longer valid
+Added one-life if, else, elif and while statements
+Refactored global variables:
+- `CompilerOptions`: 
+    - `verbose`: Whether to print verbose output [false]
+    - `showWarnings`: Whether to show warnings [true]
+    - `panic`: Whether to panic on errors (exit immediately) [true]
+    - `debug`: Whether to print debug information [false]
+    - `provideHelp`: Whether to tell the user about the correct syntax when they make a syntax error [true]
+    - `allowLexerErrors`: Whether to allow lexer errors (if false, the lexer will panic on errors) [true]
+    - `allowOptimization`: Whether to allow optimizations [true]
+- `OptimizationOptions`:
+    - `FastMath`: Fast math optimization options
+        - `finiteMathOnly`: Whether to allow only finite math operations (no NaN or Inf) ; (x == x -> true) [false]
+Added fast math optimization: finiteMathOnly:
+- x == x -> true
+- x != x -> false
+- x && true -> x
+- x && false -> false
+Changed the directive from allowing a ton of syntaxes to make the language more strict and easier to parse:
+- Variable declaration:
+    - `let x: type = value;` -> a mutable variable declaration
+    - `const x: type = value;` -> an immutable variable declaration
+    - `type x = value;` -> an immutable variable declaration
+Added types: int8, int16, int24, int32, int64, uint8, uint16, uint24, uint32, uint64, short, ushort, sbyte

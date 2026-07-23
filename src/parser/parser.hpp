@@ -28,7 +28,7 @@ namespace parser {
         }
 
         ast::BlockStmt block = ast::BlockStmt(Body);
-        if (_allowOptimization) {
+        if (CompilerOptions.allowOptimization) {
             ast::Stmt* root = &block;
             ast::optimizer::Optimize(root);
         }

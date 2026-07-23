@@ -1,0 +1,9 @@
+// Decompiled from ..\examples\while.lang
+while (true) {
+};
+let x: string8 = 8"";
+while ((x == 1b)) x = 8"x";
+x = 8"x";
+while (((x != 8"wasd") && (x == x))) {
+} else x = 8"x";
+if ((x == 8"wasd")) x = 8"x";

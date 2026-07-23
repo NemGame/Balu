@@ -5,7 +5,7 @@ namespace parser {
         {lexer::ALIAS, L"alias <aliasName> = <Expression/Variable/Type/Alias>;"},
     };
     wstring GetCorrectSyntax(lexer::TokenKind kind) {
-        if (_provideHelp && CorrectSyntax.find(kind) != CorrectSyntax.end()) {
+        if (CompilerOptions.provideHelp && CorrectSyntax.find(kind) != CorrectSyntax.end()) {
             return L"\n=> Correct syntax: " + CorrectSyntax[kind];
         }
         return L"";

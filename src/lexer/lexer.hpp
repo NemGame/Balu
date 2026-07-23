@@ -71,7 +71,7 @@ namespace lexer {
     Lexer createLexer(const wstring& source);
 
     vector<Token> Tokenize(const wstring& source) {
-        if (_verbose) _wcout << L"[Lexer] Starting tokenization" << endl;
+        if (CompilerOptions.verbose) _wcout << L"[Lexer] Starting tokenization" << endl;
         Lexer lex = createLexer(source);
 
         while (!lex.at_eof())
@@ -92,10 +92,10 @@ namespace lexer {
             }
             if (!matched) {
                 // Handle unmatched case, e.g., advance by one character or throw an error
-                if (_showWarnings) _wcout << L"Warning: Unmatched character: " << lex.at() << L" at " << lex.position() << endl;
+                if (CompilerOptions.showWarnings) _wcout << L"Warning: Unmatched character: " << lex.at() << L" at " << lex.position() << endl;
                 lex.advanceN(1);
             }
-            if (_verbose) _wcout << L"[Lexer] Current position: " << lex.position() << L", Tokens so far: " << lex.tokens.size() << endl;
+            if (CompilerOptions.verbose) _wcout << L"[Lexer] Current position: " << lex.position() << L", Tokens so far: " << lex.tokens.size() << endl;
         }
 
         lex.push(NewToken(EOF_TOKEN, L"EOF", lex.line, lex.column));
@@ -203,12 +203,12 @@ namespace lexer {
 
             // Preserve precise literals as exact decimal text for AST/decompiler and big-number ops.
             if (!expandScientificNotation(value)) {
-                if (_allowLexerErrors) {
+                if (CompilerOptions.allowLexerErrors) {
                     wstring message = L"Invalid precise number literal at " + l->position() + L": " + match.str(0);
-                    _wcout << (_debug ? L"[Lexer] " : L"") << message << endl;
+                    _wcout << (CompilerOptions.debug ? L"[Lexer] " : L"") << message << endl;
                     l->errors.push_back(Error(message, l->line, l->column));
-                    if (_panic) {
-                        if (_debug) _wcout << L"[Lexer] Panicing" << endl;
+                    if (CompilerOptions.panic) {
+                        if (CompilerOptions.debug) _wcout << L"[Lexer] Panicing" << endl;
                         exit(1);
                     }
                 }
@@ -319,13 +319,13 @@ namespace lexer {
         if (value.back() == L'@') {
             isPrecise = true;
             value.pop_back();
-            if (_allowLexerErrors) {
+            if (CompilerOptions.allowLexerErrors) {
                 const wstring bRemoved = value.back() == L'b' ? value.substr(0, value.length() - 1) : value;
                 const wstring message = L"Invalid byte literal at " + l->position() + L": " + match.str(0) + L" | Byte literals cannot be precise. Did you mean to use a precise number literal (e.g., " + bRemoved + L"@) instead?";
-                _wcout << (_debug ? L"[Lexer] " : L"") << message << endl;
+                _wcout << (CompilerOptions.debug ? L"[Lexer] " : L"") << message << endl;
                 l->errors.push_back(Error(message, l->line, l->column));
-                if (_panic) {
-                    if (_debug) _wcout << L"[Lexer] Panicing" << endl;
+                if (CompilerOptions.panic) {
+                    if (CompilerOptions.debug) _wcout << L"[Lexer] Panicing" << endl;
                     exit(1);
                 }
             }
@@ -333,6 +333,72 @@ namespace lexer {
         l->push(NewToken(isPrecise ? PNUMBER : BYTE, value.substr(0, value.length() - 1), l->line, l->column)); // Remove the trailing 'b'
         l->advanceN(value.length());
         if (isPrecise) l->advanceN(1); // Advance past the trailing '@' if it's a precise number literal
+    };
+
+    // 1i8 -> byte ; 1u32 -> uint32 ; 1i64 -> int64
+    regexHandler intHandler = [](Lexer* l, const Pattern& pattern) {
+        wsmatch match;
+        const wstring remaining = l->remainder();
+        regex_search(remaining, match, pattern.regexPattern);
+        wstring value = match.str(0);
+        bool isUnsigned = false;
+        if (value.find(L'u') != wstring::npos) {
+            isUnsigned = true;
+        }
+        size_t typePos = value.find_first_of(L"iu");
+        if (typePos == wstring::npos) {
+            if (CompilerOptions.allowLexerErrors) {
+                const wstring message = L"Invalid integer literal at " + l->position() + L": " + match.str(0) + L" | Integer literals must specify a type (e.g., 1i32, 1u64).";
+                _wcout << (CompilerOptions.debug ? L"[Lexer] " : L"") << message << endl;
+                l->errors.push_back(Error(message, l->line, l->column));
+                if (CompilerOptions.panic) {
+                    if (CompilerOptions.debug) _wcout << L"[Lexer] Panicing" << endl;
+                    exit(1);
+                }
+            }
+            return;
+        }
+        wstring typeStr = value.substr(typePos + 1);
+        TokenKind kind = INT32; // Default to NUMBER
+        if (isUnsigned) {
+            if (typeStr == L"8") kind = BYTE;
+            else if (typeStr == L"16") kind = USHORT;
+            else if (typeStr == L"24") kind = UINT24;
+            else if (typeStr == L"32" || typeStr == L"") kind = UINT32;
+            else if (typeStr == L"64") kind = UINT64;
+            else {
+                if (CompilerOptions.allowLexerErrors) {
+                    const wstring message = L"Invalid unsigned integer type at " + l->position() + L": " + match.str(0) + L" | Valid types are u8, u16, u24, u32, u64.";
+                    _wcout << (CompilerOptions.debug ? L"[Lexer] " : L"") << message << endl;
+                    l->errors.push_back(Error(message, l->line, l->column));
+                    if (CompilerOptions.panic) {
+                        if (CompilerOptions.debug) _wcout << L"[Lexer] Panicing" << endl;
+                        exit(1);
+                    }
+                }
+                return;
+            }
+        } else {
+            if (typeStr == L"8") kind = SBYTE;
+            else if (typeStr == L"16") kind = SHORT;
+            else if (typeStr == L"24") kind = INT24;
+            else if (typeStr == L"32" || typeStr == L"") kind = INT32;
+            else if (typeStr == L"64") kind = INT64;
+            else {
+                if (CompilerOptions.allowLexerErrors) {
+                    const wstring message = L"Invalid signed integer type at " + l->position() + L": " + match.str(0) + L" | Valid types are i8, i16, i24, i32, i64.";
+                    _wcout << (CompilerOptions.debug ? L"[Lexer] " : L"") << message << endl;
+                    l->errors.push_back(Error(message, l->line, l->column));
+                    if (CompilerOptions.panic) {
+                        if (CompilerOptions.debug) _wcout << L"[Lexer] Panicing" << endl;
+                        exit(1);
+                    }
+                }
+                return;
+            }
+        }
+        l->push(NewToken(kind, value.substr(0, typePos), l->line, l->column)); // Remove the type suffix
+        l->advanceN(value.length());
     };
 
     regexHandler symbolHandler = [](Lexer* l, const Pattern& pattern) {
@@ -393,26 +459,37 @@ namespace lexer {
         wsmatch match;
         const wstring remaining = l->remainder();
         regex_search(remaining, match, pattern.regexPattern);
-        wstring value = match.str(0);
+        const wstring matchedValue = match.str(0);
+        wstring value = matchedValue;
         char size = 0; // Default to char32/utf-32
-        if (value[0] == L'8') size = 1; // char8/utf-8
-        else if (value[0] == L'1' && value[1] == L'6') size = 2; // char16/utf-16
-        else if (value[0] == L'3' && value[1] == L'2') size = 4; // char32/utf-32
+        size_t prefixLen = 0;
+        if (value[0] == L'8') {
+            size = 1; // char8/utf-8
+            prefixLen = 1;
+        }
+        else if (value[0] == L'1' && value[1] == L'6') {
+            size = 2; // char16/utf-16
+            prefixLen = 2;
+        }
+        else if (value[0] == L'3' && value[1] == L'2') {
+            size = 4; // char32/utf-32
+            prefixLen = 2;
+        }
         else if (value[0] != L'"') {
-            if (_allowLexerErrors) {
+            if (CompilerOptions.allowLexerErrors) {
                 wstring message = L"Invalid string literal prefix at " + l->position() + L": " + value.substr(0, 2);
-                _wcout << (_debug ? L"[Lexer] " : L"") << message << endl;
+                _wcout << (CompilerOptions.debug ? L"[Lexer] " : L"") << message << endl;
                 l->errors.push_back(Error(message, l->line, l->column));
-                if (_panic) {
-                    if (_debug) _wcout << L"[Lexer] Panicing" << endl;
+                if (CompilerOptions.panic) {
+                    if (CompilerOptions.debug) _wcout << L"[Lexer] Panicing" << endl;
                     exit(1);
                 }
             }
         }
-        value = value.substr(1 + (size > 0 ? to_wstring(size * 8).length() : 0), value.length() - 2 - (size > 0 ? to_wstring(size * 8).length() : 0)); // Remove the surrounding quotes and prefix
+        value = value.substr(1 + prefixLen, value.length() - 2 - prefixLen); // Remove the surrounding quotes and optional prefix
         if (size == 0) size = 4;
         l->push(NewToken(size == 4 ? STRING32 : (size == 2 ? STRING16 : STRING8), value, l->line, l->column));
-        l->advanceN(value.length() + 2 + (size > 0 ? to_wstring(size * 8).length() : 0)); // Advance past the string including the quotes and prefix
+        l->advanceN(static_cast<int>(matchedValue.length())); // Advance by the exact lexeme length
     };
     
     regexHandler fstringHandler = [](Lexer* l, const Pattern& pattern) {
@@ -435,12 +512,12 @@ namespace lexer {
         else if (value[0] == L'1' && value[1] == L'6') size = 2; // char16
         else if (value[0] == L'3' && value[1] == L'2') size = 4; // char32
         else if (value[0] != L'\'') {
-            if (_allowLexerErrors) {
+            if (CompilerOptions.allowLexerErrors) {
                 wstring message = L"Invalid character literal prefix at " + l->position() + L": " + value.substr(0, 2);
-                _wcout << (_debug ? L"[Lexer] " : L"") << message << endl;
+                _wcout << (CompilerOptions.debug ? L"[Lexer] " : L"") << message << endl;
                 l->errors.push_back(Error(message, l->line, l->column));
-                if (_panic) {
-                    if (_debug) _wcout << L"[Lexer] Panicing" << endl;
+                if (CompilerOptions.panic) {
+                    if (CompilerOptions.debug) _wcout << L"[Lexer] Panicing" << endl;
                     exit(1);
                 }
             }
@@ -450,12 +527,12 @@ namespace lexer {
         unsigned long long line = l->line;
         unsigned long long col = l->column;
         if (value.length() != 1) {
-            if (_allowLexerErrors) {
+            if (CompilerOptions.allowLexerErrors) {
                 wstring message = L"Invalid character literal at " + l->position() + L": " + match.str(0) + L" (" + value + L"). Character literals must contain exactly one character.";
-                _wcout << (_debug ? L"[Lexer] " : L"") << message << endl;
+                _wcout << (CompilerOptions.debug ? L"[Lexer] " : L"") << message << endl;
                 l->errors.push_back(Error(message, line, col));
-                if (_panic) {
-                    if (_debug) _wcout << L"[Lexer] Panicing" << endl;
+                if (CompilerOptions.panic) {
+                    if (CompilerOptions.debug) _wcout << L"[Lexer] Panicing" << endl;
                     exit(1);
                 }
             }
@@ -473,7 +550,7 @@ namespace lexer {
         const wstring remaining = l->remainder();
         regex_search(remaining, match, pattern.regexPattern);
         wstring value = match.str(0);
-        if (_verbose) _wcout << L"Found rule: " << value << endl;
+        if (CompilerOptions.verbose) _wcout << L"Found rule: " << value << endl;
         l->push(NewToken(RULE, value.substr(1), l->line, l->column)); // Remove the "#" prefix
         l->advanceN(value.length());
     };
@@ -494,6 +571,7 @@ namespace lexer {
                 {Pattern(wregex(L"^(8|16|32)?\"[^\"]*\"")), stringHandler},
                 {Pattern(wregex(L"^(8|16|32)?\'[^\']*\'")), characterHandler},
                 {Pattern(wregex(L"^[0-9][0-9_]*b@?")), byteHandler},
+                {Pattern(wregex(L"^([0-9]+)(i|u)([0-9]*)?")), intHandler},
                 {Pattern(wregex(L"^[0-9][0-9_]*(\\.[0-9_]*)?(e[0-9_+]+)?@?")), numberHandler},
                 {Pattern(wregex(L"^//.*")), skipHandler},
                 {Pattern(wregex(L"^/\\*")), multilineSkipHandler},

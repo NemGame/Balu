@@ -204,6 +204,7 @@ namespace ast {
         bool isFormatString;
         char byteSize;
         StringExpr(const wstring& v, char size = 4, bool isFormat = false) : value(v), isFormatString(isFormat), byteSize(size) {}
+        StringExpr(const wstring& v, wstring size = L"string32", bool isFormat = false) : value(v), isFormatString(isFormat), byteSize(size == L"string32" ? 4 : (size == L"string16" ? 2 : 1)) {}
         void expr() override {}
         void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
             wcout_ << GetName(indent) << endl;
@@ -222,6 +223,7 @@ namespace ast {
         wchar_t value;
         char byteSize; // 1 for char8, 2 for char16, 4 for char32
         CharExpr(wchar_t v, char size) : value(v), byteSize(size) {}
+        CharExpr(wchar_t v, wstring size) : value(v), byteSize(size == L"char32" ? 4 : (size == L"char16" ? 2 : 1)) {}
         void expr() override {}
         void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
             wcout_ << GetName(indent) << endl;
@@ -253,13 +255,42 @@ namespace ast {
             return new BooleanExpr(value);
         }
     };
+    // Can be assigned to any type, but is not a type itself (it's declaration keyword is `void`)
     struct NullExpr : public Expr {
+        enum class NullState {
+            EXPLICIT, // Explicitly stated as null
+            IMPLICIT,
+            UNSET
+        };
+    private:
+        NullState state = NullState::UNSET;
+        wstring getStateString() const {
+            switch (state) {
+                case NullState::EXPLICIT: return L"Explicit";
+                case NullState::IMPLICIT: return L"Implicit";
+                case NullState::UNSET: return L"Unset";
+                default: return L"Unknown";
+            }
+        }
+    public:
+        NullExpr(NullState state = NullState::UNSET) : state(state) {}
         void expr() override {}
         void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
             wcout_ << GetName(indent) << endl;
         }
+        bool isExplicitlyStated() const {
+            return state == NullState::EXPLICIT;
+        }
+        void setState(NullState newState) {
+            state = newState;
+        }
+        void setStateIfUnset(NullState newState) {
+            if (state == NullState::UNSET) {
+                state = newState;
+            }
+        }
         wstring GetName(int indent = 0) const override {
-            return wstring(indent * 2, L' ') + L"NullExpr: null";
+            return wstring(indent * 2, L' ') + L"NullExpr: null (" + getStateString() + L")";
         }
         wstring GetValue() const override {
             return L"null";

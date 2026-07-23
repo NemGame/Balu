@@ -29,3 +29,15 @@ while {
 } else if {
 
 }
+
+let x: string8;
+while (x == 1b) x = 8"x";
+
+while (false) {}
+else x = 8"x";
+
+while (!(x == 8"wasd") && x == x) {}
+else x = 8"x";
+
+if (x != 8"wasd") {}
+else x = 8"x";

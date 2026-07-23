@@ -49,6 +49,7 @@ namespace ast::optimizer {
         } else if (auto binaryExpr = dynamic_cast<ast::BinaryExpr*>(expr)) {
             Optimize(binaryExpr->left);
             Optimize(binaryExpr->right);
+            if (OptimizationOptions.FastMath.finiteMathOnly) FastMathOptimization(expr);
             MergeLiterals(expr);
         } else if (auto assignmentExpr = dynamic_cast<ast::AssignmentExpr*>(expr)) {
             Optimize(assignmentExpr->Assignee);

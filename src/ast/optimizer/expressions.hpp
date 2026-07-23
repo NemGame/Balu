@@ -7,12 +7,16 @@ namespace ast::optimizer {
         {{lexer::DASH, lexer::PLUS}, lexer::DASH},
         {{lexer::PLUS, lexer::DASH}, lexer::DASH},
         {{lexer::NOT, lexer::NOT}, lexer::PLUS},  // Skip double negation
+        {{lexer::NOT, lexer::NOT_EQUALS}, lexer::EQUALS},
+        {{lexer::NOT, lexer::EQUALS}, lexer::NOT_EQUALS},
     };
     const map<lexer::TokenKind, wstring> OperatorToString = {
         {lexer::PLUS, L"+"},
         {lexer::DASH, L"-"},
         {lexer::NOT, L"!"},
         {lexer::BITWISE_NOT, L"~"},
+        {lexer::EQUALS, L"=="},
+        {lexer::NOT_EQUALS, L"!="},
     };
     const vector<const type_info*> TypeLiterals = {&typeid(ast::NumberExpr), &typeid(ast::NullExpr), &typeid(ast::BooleanExpr), &typeid(ast::ByteExpr), &typeid(ast::StringExpr), &typeid(ast::CharExpr)};
     const vector<const type_info*> NumberLiterals = {&typeid(ast::NumberExpr), &typeid(ast::ByteExpr), &typeid(ast::CharExpr)};
@@ -34,16 +38,33 @@ namespace ast::optimizer {
             return;
         }
         lexer::Token op = expr->Operator;
-        if (auto rightPrefix = dynamic_cast<ast::PrefixExpr*>(expr->RightExpr)) {
-            auto key = vector<lexer::TokenKind>{op.kind, rightPrefix->Operator.kind};
+        auto rightPrefixExpr = dynamic_cast<ast::PrefixExpr*>(expr->RightExpr);
+        auto rightBinaryExpr = dynamic_cast<ast::BinaryExpr*>(expr->RightExpr);
+        auto operatorKind = rightPrefixExpr ? rightPrefixExpr->Operator.kind : (
+            rightBinaryExpr ? rightBinaryExpr->op.kind : lexer::INVALID
+        );
+        auto rightExpr = rightPrefixExpr ? rightPrefixExpr->RightExpr : (
+            rightBinaryExpr ? rightBinaryExpr->right : nullptr
+        );
+        if (operatorKind != lexer::INVALID && rightExpr) {
+            auto key = vector<lexer::TokenKind>{op.kind, operatorKind};
             auto it = OperatorLookup.find(key);
             if (it != OperatorLookup.end()) {
-                // Fold nested prefix operators into a single one.
+                if (rightBinaryExpr) {
+                    expr->RightExpr = nullptr;
+                    delete expr;
+                    baseExpr = rightBinaryExpr;
+                    rightBinaryExpr->op = lexer::NewToken(it->second, OperatorToString.at(it->second), op.line, op.column);
+                    Optimize(baseExpr);
+                    return;
+                }
                 expr->Operator.kind = it->second;
                 expr->Operator.value = OperatorToString.at(it->second);
-                expr->RightExpr = rightPrefix->RightExpr;
-                rightPrefix->RightExpr = nullptr;
-                delete rightPrefix;
+                expr->RightExpr = rightExpr;
+                if (rightPrefixExpr) {
+                    rightPrefixExpr->RightExpr = nullptr;
+                    delete rightPrefixExpr;
+                }
 
                 if (expr->Operator.kind == lexer::PLUS) {
                     // +x -> x
@@ -151,6 +172,43 @@ namespace ast::optimizer {
             return new ast::SymbolType(L"null");
         } else {
             return nullptr; // Not a literal expression that can be converted to a type.
+        }
+    }
+    void FastMathOptimization(ast::Expr*& baseExpr) {
+        if (auto binaryExpr = dynamic_cast<ast::BinaryExpr*>(baseExpr)) {
+            if (binaryExpr->op.kind == lexer::EQUALS) {
+                if (binaryExpr->left->GetValue() == binaryExpr->right->GetValue()) {
+                    delete baseExpr;
+                    baseExpr = new ast::BooleanExpr(true);
+                    return;
+                }
+            } else if (binaryExpr->op.kind == lexer::NOT_EQUALS) {
+                if (binaryExpr->left->GetValue() == binaryExpr->right->GetValue()) {
+                    delete baseExpr;
+                    baseExpr = new ast::BooleanExpr(false);
+                    return;
+                }
+            } else if (binaryExpr->op.kind == lexer::AND) {
+                auto leftBool = dynamic_cast<ast::BooleanExpr*>(binaryExpr->left);
+                auto rightBool = dynamic_cast<ast::BooleanExpr*>(binaryExpr->right);
+                if ((leftBool && !leftBool->value) || (rightBool && !rightBool->value)) {
+                    delete baseExpr;
+                    baseExpr = new ast::BooleanExpr(false);
+                    return;
+                } else if (leftBool && leftBool->value) {
+                    ast::Expr* replacement = binaryExpr->right->Clone();
+                    delete baseExpr;
+                    baseExpr = replacement;
+                    Optimize(baseExpr); // Optimize the new expression
+                    return;
+                } else if (rightBool && rightBool->value) {
+                    ast::Expr* replacement = binaryExpr->left->Clone();
+                    delete baseExpr;
+                    baseExpr = replacement;
+                    Optimize(baseExpr); // Optimize the new expression
+                    return;
+                }
+            }
         }
     }
 }

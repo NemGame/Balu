@@ -1,4 +1,7 @@
-mut string wasd;
+mut string wasd = "Lol";
+
+if (x == 1) wasd = "1";
+else wasd = "2";
 
 if (x == 2) {
     wasd = "2";

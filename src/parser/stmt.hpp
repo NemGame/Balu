@@ -1,7 +1,27 @@
 #pragma once
 
 namespace parser {
+    ast::Expr* getDefaultValueForType(ast::Type* type) {
+        if (auto symbolType = dynamic_cast<ast::SymbolType*>(type)) {
+            if (symbolType->name == L"number") {
+                return new ast::NumberExpr(0);
+            } else if (symbolType->name == L"bool") {
+                return new ast::BooleanExpr(false);
+            } else if (symbolType->name == L"byte") {
+                return new ast::ByteExpr(0);
+            } else if (symbolType->name == L"string8" || symbolType->name == L"string16" || symbolType->name == L"string32") {
+                return new ast::StringExpr(L"", symbolType->name);
+            } else if (symbolType->name == L"char8" || symbolType->name == L"char16" || symbolType->name == L"char32") {
+                return new ast::CharExpr(L'\0', symbolType->name);
+            } else if (symbolType->name == L"null") {
+                return new ast::NullExpr(ast::NullExpr::NullState::EXPLICIT);
+            }
+        }
+        // For other types, we can return a NullExpr as a default value.
+        return new ast::NullExpr(ast::NullExpr::NullState::EXPLICIT);
+    }
     ast::Type* parse_type(Parser* parser, binding_power bp);
+    ast::Stmt* parse_block_stmt(Parser* p);
     bool is_assignment_operator(lexer::TokenKind kind) {
         return kind == lexer::ASSIGNMENT ||
                kind == lexer::PLUS_EQUALS ||
@@ -11,7 +31,11 @@ namespace parser {
                kind == lexer::PERCENT_EQUALS;
     }
     ast::Stmt* parse_stmt(Parser* p) {
-        if (_verbose) _wcout << L"Parsing statement at " << p->position() << endl;
+        if (CompilerOptions.verbose) _wcout << L"Parsing statement at " << p->position() << endl;
+
+        if (p->currentTokenKind() == lexer::OPEN_CURLY) {
+            return parse_block_stmt(p);
+        }
 
         // Identifier-led assignments (e.g. x = 2;) are expression statements,
         // not declarations. Handle them before stmt lookup routes IDENTIFIER to var decl.
@@ -31,7 +55,7 @@ namespace parser {
             return stmt_lu[p->currentTokenKind()](p);
         }
 
-        ast::Expr* expr = parse_expr(p, default_bp); // This could return nullptr if an error occurred and _panic is false
+        ast::Expr* expr = parse_expr(p, default_bp); // This could return nullptr if an error occurred and CompilerOptions.panic is false
         if (expr == nullptr) {
             // If expression parsing failed, we should not proceed to create an ExpressionStmt.
             // The error would have been reported by parse_expr.
@@ -46,7 +70,7 @@ namespace parser {
         return new ast::ExpressionStmt( expr );
     }
     ast::Stmt* parse_block_stmt(Parser* p) {
-        if (_verbose) _wcout << L"Parsing block statement at " << p->position() << endl;
+        if (CompilerOptions.verbose) _wcout << L"Parsing block statement at " << p->position() << endl;
         p->expect(lexer::OPEN_CURLY);  // consume '{'
         vector<ast::Stmt*> statements;
         while (p->hasTokens() && p->currentTokenKind() != lexer::CLOSE_CURLY) {
@@ -58,7 +82,7 @@ namespace parser {
         return new ast::BlockStmt(statements);
     };
     ast::Stmt* parse_var_decl_stmt(Parser* p) {
-        if (_verbose) _wcout << L"Parsing variable declaration statement at " << p->position() << endl;
+        if (CompilerOptions.verbose) _wcout << L"Parsing variable declaration statement at " << p->position() << endl;
         // Declared using the let or const keyword, otherwise it's either a mut, or a typename declaration
         bool letConst = p->currentTokenKind() == lexer::LET || p->currentTokenKind() == lexer::CONST;
         
@@ -95,9 +119,9 @@ namespace parser {
         if (mapContainsKey(lexer::reserved_lu, varName)) {
             wstring message = L"Variable name '" + varName + L"' at " + p->position() + L" cannot be a reserved keyword";
             p->errors.push_back(ParserError(message));
-            _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-            if (_panic) {
-                if (_debug) _wcout << L"[Parser] Panicing" << endl;
+            _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+            if (CompilerOptions.panic) {
+                if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
                 exit(1);
             }
             varName = L'_' + varName;  // Prepend an underscore to make it a valid identifier
@@ -109,9 +133,9 @@ namespace parser {
                 ast::Type* newExplicitType = parse_type(p, default_bp);
                 wstring message = L"Variable declaration for '" + varName + L"' at " + p->position() + L" can only contain one type, but multiple were found (" + explicitType->GetName() + L" and " + newExplicitType->GetName() + L")";
                 p->errors.push_back(ParserError(message));
-                _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-                if (_panic) {
-                    if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+                if (CompilerOptions.panic) {
+                    if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
                     exit(1);
                 }
             } else explicitType = parse_type(p, default_bp);
@@ -127,9 +151,9 @@ namespace parser {
             if (p->currentTokenKind() != lexer::ASSIGNMENT) {
                 wstring message = L"Expected token at " + p->position() + L" to be either an assignment operator '=' for variable initialization or a semicolon ';' to end the declaration, but found " + lexer::TokenKindString(p->currentTokenKind());
                 p->errors.push_back(ParserError(message));
-                _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-                if (_panic) {
-                    if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+                if (CompilerOptions.panic) {
+                    if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
                     exit(1);
                 }
                 p->advanceUntil(lexer::SEMICOLON); // Skip to the end of the problematic statement
@@ -146,9 +170,9 @@ namespace parser {
             if (explicitType->GetName() == L"any") {
                 wstring message = L"Constant variable declaration for '" + varName + L"' at " + p->position() + L" cannot have type 'any' as it cannot be reassigned, did you mean 'auto'?";
                 p->errors.push_back(ParserError(message));
-                _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-                if (_panic) {
-                    if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+                if (CompilerOptions.panic) {
+                    if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
                     exit(1);
                 }
                 explicitType = new ast::SymbolType(L"auto");
@@ -156,16 +180,28 @@ namespace parser {
             if (assignedValue == nullptr) {
                 wstring message = L"Constant variable declaration for '" + varName + L"' at " + p->position() + L" must have an initializer";
                 p->errors.push_back(ParserError(message));
-                _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-                if (_panic) {
-                    if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+                if (CompilerOptions.panic) {
+                    if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
                     exit(1);
                 }
-                assignedValue = new ast::NullExpr();
+                assignedValue = new ast::NullExpr(ast::NullExpr::NullState::IMPLICIT);
             }
         }
 
         if (assignedValue == nullptr) assignedValue = new ast::NullExpr();
+        else if (auto assignedValueNullExpr = dynamic_cast<ast::NullExpr*>(assignedValue)) {
+            assignedValueNullExpr->setStateIfUnset(ast::NullExpr::NullState::EXPLICIT);
+        }
+
+        if (auto assignedValueNullExpr = dynamic_cast<ast::NullExpr*>(assignedValue)) {
+            if (!assignedValueNullExpr->isExplicitlyStated()) {
+                ast::Expr* defaultValue = getDefaultValueForType(explicitType);
+                delete assignedValue;
+                assignedValue = defaultValue;
+            }
+        }
+
         return new ast::VarDeclStmt{
             varName,
             isConstant,
@@ -174,7 +210,7 @@ namespace parser {
         };
     }
     ast::Stmt* parse_alias_decl_stmt(Parser* p) {
-        if (_verbose) _wcout << L"Parsing alias declaration statement at " << p->position() << endl;
+        if (CompilerOptions.verbose) _wcout << L"Parsing alias declaration statement at " << p->position() << endl;
         p->expect(lexer::ALIAS);  // consume 'alias'
 
         const wstring correctSyntax = GetCorrectSyntax(lexer::ALIAS);
@@ -186,9 +222,9 @@ namespace parser {
             wstring probableAliasName = currentIsTypename ? p->nextToken().value : L"?";
             wstring message = L"Alias declaration for '" + probableAliasName + L"' at " + p->position() + L" cannot have an explicit type ("+ lexer::TokenKindString(p->currentTokenKind()) + L")" + correctSyntax;
             p->errors.push_back(ParserError(message));
-            _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-            if (_panic) {
-                if (_debug) _wcout << L"[Parser] Panicing" << endl;
+            _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+            if (CompilerOptions.panic) {
+                if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
                 exit(1);
             }
             if (p->currentTokenKind() == lexer::COLON) p->advance();
@@ -204,9 +240,9 @@ namespace parser {
         if (p->currentTokenKind() == lexer::COLON) {
             wstring message = L"Alias declaration for '" + aliasName + L"' at " + p->position() + L" cannot have an explicit type";
             p->errors.push_back(ParserError(message));
-            _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-            if (_panic) {
-                if (_debug) _wcout << L"[Parser] Panicing" << endl;
+            _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+            if (CompilerOptions.panic) {
+                if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
                 exit(1);
             }
             p->advance();  // consume ':'
@@ -217,9 +253,9 @@ namespace parser {
         if (p->currentTokenKind() != lexer::ASSIGNMENT) {
             wstring message = L"Alias '" + aliasName + L"' must be initialized at " + p->position() + correctSyntax;
             p->errors.push_back(ParserError(message));
-            _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-            if (_panic) {
-                if (_debug) _wcout << L"[Parser] Panicing" << endl;
+            _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+            if (CompilerOptions.panic) {
+                if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
                 exit(1);
             }
             p->advanceUntil(lexer::SEMICOLON); // Skip to the end of the problematic statement
@@ -234,9 +270,9 @@ namespace parser {
         if (aliasedValue == nullptr) {
             wstring message = L"Alias declaration for '" + aliasName + L"' at " + p->position() + L" must have an initializer" + correctSyntax;
             p->errors.push_back(ParserError(message));
-            _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-            if (_panic) {
-                if (_debug) _wcout << L"[Parser] Panicing" << endl;
+            _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+            if (CompilerOptions.panic) {
+                if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
                 exit(1);
             }
             aliasedValue = new ast::NullExpr();
@@ -272,9 +308,9 @@ namespace parser {
                 }
                 wstring message = L"Conflicting access modifiers for struct member at " + p->position() + L" (" + lexer::TokenKindString(p->currentTokenKind()) + L" and " + lexer::TokenKindString(p->nextTokenKind()) + L")";
                 p->errors.push_back(ParserError(message));
-                _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-                if (_panic) {
-                    if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+                if (CompilerOptions.panic) {
+                    if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
                     exit(1);
                 }
                 p->advanceUntil(lexer::IDENTIFIER, lexer::STATIC, lexer::FN, lexer::STRUCT, lexer::SEMICOLON);  // Skip to the next relevant token
@@ -287,7 +323,7 @@ namespace parser {
         return ast::AMPrivate;  // Default access modifier is private
     }
     ast::Stmt* parse_struct_decl_stmt(Parser* p) {
-        if (_verbose) _wcout << L"Parsing struct declaration statement at " << p->position() << endl;
+        if (CompilerOptions.verbose) _wcout << L"Parsing struct declaration statement at " << p->position() << endl;
         p->expect(lexer::STRUCT);  // consume 'struct'
 
         unordered_map<wstring, ast::StructProperty*> properties;
@@ -311,9 +347,9 @@ namespace parser {
                 if (accessModifierSet) {
                     wstring message = L"Duplicate access modifier for struct member at " + p->position() + L" (" + lexer::TokenKindString(p->currentTokenKind()) + L" and " + AccessModifierString(accessModifier) + L")";
                     p->errors.push_back(ParserError(message));
-                    _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-                    if (_panic) {
-                        if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                    _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+                    if (CompilerOptions.panic) {
+                        if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
                         exit(1);
                     }
                 }
@@ -334,9 +370,9 @@ namespace parser {
                 if (ExpectedType->GetName() == L"any") {
                     wstring message = L"Struct method declaration for '" + p->currentToken().value + L"' at " + p->position() + L" cannot have return type 'any', did you mean 'auto'?";
                     p->errors.push_back(ParserError(message));
-                    _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-                    if (_panic) {
-                        if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                    _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+                    if (CompilerOptions.panic) {
+                        if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
                         exit(1);
                     }
                     delete ExpectedType;
@@ -351,9 +387,9 @@ namespace parser {
                     if (!isMethod) {
                         wstring message = L"Duplicate struct property '" + propertyName + L"' found in struct '" + structName + L"' declaration at " + p->position();
                         p->errors.push_back(ParserError(message));
-                        _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-                        if (_panic) {
-                            if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                        _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+                        if (CompilerOptions.panic) {
+                            if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
                             exit(1);
                         }
                         p->advanceUntil(lexer::SEMICOLON);  // Skip until the end of the property declaration
@@ -369,9 +405,9 @@ namespace parser {
                 if (ExpectedType != nullptr) {
                     wstring message = L"Struct property declaration for '" + propertyName + L"' at " + p->position() + L" cannot have an explicit type as it was already specified as '" + ExpectedType->GetName() + L"'";
                     p->errors.push_back(ParserError(message));
-                    _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-                    if (_panic) {
-                        if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                    _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+                    if (CompilerOptions.panic) {
+                        if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
                         exit(1);
                     }
                     p->advance();  // consume the type
@@ -405,9 +441,9 @@ namespace parser {
                     } else {
                         wstring message = L"Expected parameter name in method '" + propertyName + L"' declaration at " + p->position() + L", but got " + lexer::TokenKindString(p->currentTokenKind());
                         p->errors.push_back(ParserError(message));
-                        _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-                        if (_panic) {
-                            if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                        _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+                        if (CompilerOptions.panic) {
+                            if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
                             exit(1);
                         }
                         p->advanceUntil(lexer::CLOSE_PAREN, lexer::COMMA);
@@ -420,9 +456,9 @@ namespace parser {
                             ast::Type* newParamType = parse_type(p, default_bp);
                             wstring message = L"Method parameter '" + paramName + L"' in method '" + propertyName + L"' declaration at " + p->position() + L" cannot have an explicit type as it was already specified as '" + (paramType == nullptr ? L"alias" : paramType->GetName()) + L"'";
                             p->errors.push_back(ParserError(message));
-                            _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-                            if (_panic) {
-                                if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                            _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+                            if (CompilerOptions.panic) {
+                                if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
                                 exit(1);
                             }
                             p->advance();  // consume the type
@@ -437,9 +473,9 @@ namespace parser {
                     if (parameters.find(paramName) != parameters.end()) {
                         wstring message = L"Duplicate parameter name '" + paramName + L"' found in method '" + propertyName + L"' declaration at " + p->position();
                         p->errors.push_back(ParserError(message));
-                        _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-                        if (_panic) {
-                            if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                        _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+                        if (CompilerOptions.panic) {
+                            if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
                             exit(1);
                         }
                         p->advanceUntil(lexer::COMMA);  // Skip until the end of the parameter declaration
@@ -465,9 +501,9 @@ namespace parser {
                         ast::Type* newExpectedType = parse_type(p, default_bp);
                         wstring message = L"Struct method declaration for '" + propertyName + L"' at " + p->position() + L" cannot have an explicit return type as it was already specified as '" + ExpectedType->GetName() + L"'";
                         p->errors.push_back(ParserError(message));
-                        _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-                        if (_panic) {
-                            if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                        _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+                        if (CompilerOptions.panic) {
+                            if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
                             exit(1);
                         }
                         p->advance();  // consume the type
@@ -548,9 +584,9 @@ namespace parser {
             } else {
                 wstring message = L"Expected parameter name in function '" + funcName + L"' declaration at " + p->position() + L", but got " + lexer::TokenKindString(p->currentTokenKind());
                 p->errors.push_back(ParserError(message));
-                _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-                if (_panic) {
-                    if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+                if (CompilerOptions.panic) {
+                    if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
                     exit(1);
                 }
                 p->advanceUntil(lexer::CLOSE_PAREN, lexer::COMMA, lexer::SEMICOLON);
@@ -563,9 +599,9 @@ namespace parser {
                     ast::Type* newParamType = parse_type(p, default_bp);
                     wstring message = L"Function parameter '" + paramName + L"' in function '" + funcName + L"' declaration at " + p->position() + L" cannot have an explicit type as it was already specified as '" + (paramType == nullptr ? L"alias" : paramType->GetName()) + L"'";
                     p->errors.push_back(ParserError(message));
-                    _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-                    if (_panic) {
-                        if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                    _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+                    if (CompilerOptions.panic) {
+                        if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
                         exit(1);
                     }
                     p->advance();  // consume the type
@@ -589,9 +625,9 @@ namespace parser {
                     ast::Type* newParamType = parse_type(p, default_bp);
                     wstring message = L"Function parameter '" + paramName + L"' in function '" + funcName + L"' declaration at " + p->position() + L" cannot have an explicit type as it was already specified as '" + paramType->GetName() + L"'";
                     p->errors.push_back(ParserError(message));
-                    _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-                    if (_panic) {
-                        if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                    _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+                    if (CompilerOptions.panic) {
+                        if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
                         exit(1);
                     }
                     p->advance();  // consume the type
@@ -601,9 +637,9 @@ namespace parser {
             else if (p->currentTokenKind() != lexer::CLOSE_PAREN) {
                 wstring message = L"Expected token after parameter declaration for '" + paramName + L"' in function '" + funcName + L"' at " + p->position() + L" to be either a semicolon ';' or a comma ',' to separate parameters, but got " + lexer::TokenKindString(p->currentTokenKind());
                 p->errors.push_back(ParserError(message));
-                _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-                if (_panic) {
-                    if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+                if (CompilerOptions.panic) {
+                    if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
                     exit(1);
                 }
                 p->advanceUntil(lexer::COMMA, lexer::SEMICOLON, lexer::CLOSE_PAREN);
@@ -614,15 +650,15 @@ namespace parser {
         return parameters;
     }
     ast::Stmt* parse_func_decl_stmt(Parser* p) {
-        if (_verbose) _wcout << L"Parsing function declaration statement at " << p->position() << endl;
+        if (CompilerOptions.verbose) _wcout << L"Parsing function declaration statement at " << p->position() << endl;
         const ast::FunctionLining functionLining = p->currentToken().kind == lexer::INLINE ? ast::FLInline : (p->currentToken().kind == lexer::OUTLINE ? ast::FLOutline : ast::FLAutomatic);
         if (functionLining != ast::FLAutomatic) p->advance();  // consume 'inline' or 'outline'
         if (p->currentToken().isOneOfMany(lexer::INLINE, lexer::OUTLINE)) {
             wstring message = L"Function declaration at " + p->position() + L" has multiple function lining specifiers, only one is allowed";
             p->errors.push_back(ParserError(message));
-            _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-            if (_panic) {
-                if (_debug) _wcout << L"[Parser] Panicing" << endl;
+            _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+            if (CompilerOptions.panic) {
+                if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
                 exit(1);
             }
             while (p->currentToken().isOneOfMany(lexer::INLINE, lexer::OUTLINE)) p->advance();  // consume any extra 'inline' or 'outline' keywords
@@ -631,9 +667,9 @@ namespace parser {
         else if (functionLining != ast::FLAutomatic) {
             wstring message = L"Expected 'fn' keyword after function lining specifier '" + (functionLining == ast::FLInline ? wstring(L"'inline'") : wstring(L"'outline'")) + L"' at " + p->position() + L", but got " + lexer::TokenKindString(p->currentTokenKind());
             p->errors.push_back(ParserError(message));
-            _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-            if (_panic) {
-                if (_debug) _wcout << L"[Parser] Panicing" << endl;
+            _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+            if (CompilerOptions.panic) {
+                if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
                 exit(1);
             }
             // If function name, try ignoring 'fn' keyword
@@ -649,9 +685,9 @@ namespace parser {
         if (p->currentTokenKind() != lexer::OPEN_PAREN) {
             wstring message = L"Expected '(' after function name '" + funcName + L"' at " + p->position() + L", but got " + lexer::TokenKindString(p->currentTokenKind());
             p->errors.push_back(ParserError(message));
-            _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-            if (_panic) {
-                if (_debug) _wcout << L"[Parser] Panicing" << endl;
+            _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+            if (CompilerOptions.panic) {
+                if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
                 exit(1);
             }
             p->advanceUntil(lexer::SEMICOLON);
@@ -674,9 +710,9 @@ namespace parser {
             if (p->currentTokenKind() != lexer::SEMICOLON) {
                 const wstring message = L"Expected expression after arrow ('=>') function declaration at " + p->position() + L" to be followed by a semicolon ';', but got " + lexer::TokenKindString(p->currentTokenKind());
                 p->errors.push_back(ParserError(message));
-                _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-                if (_panic) {
-                    if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+                if (CompilerOptions.panic) {
+                    if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
                     exit(1);
                 }
                 p->advanceUntil(lexer::SEMICOLON);
@@ -693,7 +729,7 @@ namespace parser {
         );
     }
     ast::Stmt* parse_type_change_stmt(Parser* p) {
-        if (_verbose) _wcout << L"Parsing type change statement at " << p->position() << endl;
+        if (CompilerOptions.verbose) _wcout << L"Parsing type change statement at " << p->position() << endl;
         p->advance();  // consume 'typeof'
         // Get varname
         wstring varName;
@@ -702,9 +738,9 @@ namespace parser {
         } else {
             wstring message = L"Expected variable name after 'typeof' keyword at " + p->position() + L", but got " + lexer::TokenKindString(p->currentTokenKind());
             p->errors.push_back(ParserError(message));
-            _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-            if (_panic) {
-                if (_debug) _wcout << L"[Parser] Panicing" << endl;
+            _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+            if (CompilerOptions.panic) {
+                if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
                 exit(1);
             }
             p->advanceUntil(lexer::SEMICOLON);
@@ -716,9 +752,9 @@ namespace parser {
         if (p->currentTokenKind() != lexer::ASSIGNMENT) {
             wstring message = L"Expected assignment operator '=' after variable name '" + varName + L"' in type change statement at " + p->position() + L", but got " + lexer::TokenKindString(p->currentTokenKind());
             p->errors.push_back(ParserError(message));
-            _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-            if (_panic) {
-                if (_debug) _wcout << L"[Parser] Panicing" << endl;
+            _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+            if (CompilerOptions.panic) {
+                if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
                 exit(1);
             }
             p->advanceUntil(lexer::SEMICOLON);
@@ -738,9 +774,9 @@ namespace parser {
             } else {
                 wstring message = L"Expected type expression after '=' in type change statement for variable '" + varName + L"' at " + p->position() + L", but got " + lexer::TokenKindString(p->currentTokenKind());
                 p->errors.push_back(ParserError(message));
-                _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-                if (_panic) {
-                    if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+                if (CompilerOptions.panic) {
+                    if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
                     exit(1);
                 }
                 p->advanceUntil(lexer::SEMICOLON);
@@ -752,7 +788,7 @@ namespace parser {
         return new ast::TypeChangeStmt(varName, newTypeExpr);
     }
     ast::Stmt* parse_if_stmt(Parser* p) {
-        if (_verbose) _wcout << L"Parsing if statement at " << p->position() << endl;
+        if (CompilerOptions.verbose) _wcout << L"Parsing if statement at " << p->position() << endl;
         p->expect(lexer::IF, lexer::ELIF);
         ast::Expr* condition = nullptr;
         if (p->currentTokenKind() == lexer::OPEN_PAREN) {
@@ -763,38 +799,39 @@ namespace parser {
         if (p->currentTokenKind() == lexer::SEMICOLON) {
             wstring message = L"Expected 'if' statement at " + p->position() + L" to have a condition expression in parentheses, but got ';'";
             p->errors.push_back(ParserError(message));
-            _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-            if (_panic) {
-                if (_debug) _wcout << L"[Parser] Panicing" << endl;
+            _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+            if (CompilerOptions.panic) {
+                if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
                 exit(1);
             }
             p->advance();
             return nullptr;
         }
-        ast::Stmt* thenBranch = parse_block_stmt(p);
+        ast::Stmt* thenBranch = parse_stmt(p);
         ast::Stmt* elseBranch = nullptr;
         if (p->currentToken().isOneOfMany(lexer::ELSE, lexer::ELIF)) {
             if (p->currentTokenKind() == lexer::ELSE) p->advance();  // consume 'else'
             if (p->currentToken().isOneOfMany(lexer::IF, lexer::ELIF)) elseBranch = parse_if_stmt(p);  // else if
             else {
-                if (p->currentTokenKind() != lexer::OPEN_CURLY) {
-                    wstring message = L"Expected 'else' branch for if statement at " + p->position() + L" to be a block statement starting with '{', but got " + lexer::TokenKindString(p->currentTokenKind());
+                elseBranch = parse_stmt(p);
+                if (elseBranch == nullptr) {
+                    wstring message = L"Expected 'else' branch for if statement at " + p->position() + L" to be a statement, but got " + lexer::TokenKindString(p->currentTokenKind());
                     p->errors.push_back(ParserError(message));
-                    _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-                    if (_panic) {
-                        if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                    _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+                    if (CompilerOptions.panic) {
+                        if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
                         exit(1);
                     }
                     p->advanceUntil(lexer::OPEN_CURLY, lexer::SEMICOLON);
                     if (p->currentTokenKind() != lexer::SEMICOLON) p->advanceDepth(lexer::OPEN_CURLY, lexer::CLOSE_CURLY);
                     p->advance();
-                } else elseBranch = parse_block_stmt(p);  // else
+                }
             }
         }
         return new ast::IfStmt(condition, thenBranch, elseBranch);
     }
     ast::Stmt* parse_while_stmt(Parser* p) {
-        if (_verbose) _wcout << L"Parsing while statement at " << p->position() << endl;
+        if (CompilerOptions.verbose) _wcout << L"Parsing while statement at " << p->position() << endl;
         p->expect(lexer::WHILE);
         ast::Expr* condition = nullptr;
         if (p->currentTokenKind() == lexer::OPEN_PAREN) {
@@ -805,16 +842,16 @@ namespace parser {
         if (p->currentTokenKind() == lexer::SEMICOLON) {
             wstring message = L"Expected 'while' statement at " + p->position() + L" to have a condition expression in parentheses, but got ';'";
             p->errors.push_back(ParserError(message));
-            _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-            if (_panic) {
-                if (_debug) _wcout << L"[Parser] Panicing" << endl;
+            _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+            if (CompilerOptions.panic) {
+                if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
                 exit(1);
             }
             p->advance();
             return nullptr;
         }
         if (condition == nullptr) condition = new ast::BooleanExpr(true);
-        ast::Stmt* body = parse_block_stmt(p);
+        ast::Stmt* body = parse_stmt(p);
         ast::Stmt* elseBranch = nullptr;
         if (p->currentTokenKind() == lexer::ELIF) {
             elseBranch = parse_if_stmt(p);
@@ -822,18 +859,19 @@ namespace parser {
             p->advance();  // consume 'else'
             if (p->currentTokenKind() == lexer::IF) elseBranch = parse_if_stmt(p);  // else if
             else {
-                if (p->currentTokenKind() != lexer::OPEN_CURLY) {
-                    wstring message = L"Expected 'else' branch for while statement at " + p->position() + L" to be a block statement starting with '{', but got " + lexer::TokenKindString(p->currentTokenKind());
+                elseBranch = parse_stmt(p);
+                if (elseBranch == nullptr) {
+                    wstring message = L"Expected 'else' branch for while statement at " + p->position() + L" to be a statement, but got " + lexer::TokenKindString(p->currentTokenKind());
                     p->errors.push_back(ParserError(message));
-                    _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
-                    if (_panic) {
-                        if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                    _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+                    if (CompilerOptions.panic) {
+                        if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
                         exit(1);
                     }
                     p->advanceUntil(lexer::OPEN_CURLY, lexer::SEMICOLON);
                     if (p->currentTokenKind() != lexer::SEMICOLON) p->advanceDepth(lexer::OPEN_CURLY, lexer::CLOSE_CURLY);
                     p->advance();
-                } else elseBranch = parse_block_stmt(p);  // else
+                }
             }
         }
         if (p->currentTokenKind() == lexer::SEMICOLON) p->advance();  // Optional semicolon after while statement

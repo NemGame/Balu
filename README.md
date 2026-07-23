@@ -3,17 +3,24 @@
 # The Balu Programming Language
 ### Tired of constantly getting compile-time errors?
 ### Try out the Balu programming language! It fixes itself, so your HTML brain can rest easy.
-### You don't want to learn a new syntax? We support multiple kinds of syntaxes! (e.g. [Variable declaration](#variable-declaration))
 
 ## What is this?
 ### The Balu programming language is a gradually typed, garbage collected language
+
+## Why?
+### Programming languages should do what **you** tell them to do. 
+### You want inlining? You don't suggest, you command. 
+### You want outlining? Go ahead!
+### You want a struct to be 5 bytes, not 8? Okay, it shall be done
+### You want to break out of an if block? Can do
+### **You** are the programmer, if **you** want a 200 line function to be inlined, it will be inlined.
 
 ## How to install?
 ### It's a singular file, so just download it and put it in any folder you'd like
 
 ## How to use?
 ### Windows: `.\main.exe filename.balu`
-### Currently only Windows is supported, Win10 is used for testing
+### Currently only Windows is supported, Win10 is used for testing (with g++ 16.1.0)
 ### To ignore the errors, just add the `-np`, or `--no-panic` flag in the command line
 ### For help, add the `-h`, `--help`, `-?`, `/help`, `/h` or `/help` flag in the command line
 

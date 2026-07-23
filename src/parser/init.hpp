@@ -82,13 +82,13 @@ namespace parser {
                 if (error.isNull()) {
                     wstring message = L"Expected token at " + position() + L" to be " + lexer::TokenKindString(expectedKind) + L" but found " + lexer::TokenKindString(kind);
                     error = Error(message);
-                    _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
+                    _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
                 } else {
-                    _wcout << (_debug ? L"[Parser] " : L"") << error.message << endl;
+                    _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << error.message << endl;
                 }
                 errors.push_back(ParserError(error.message, token.line, token.column));
-                if (_panic) {
-                    if (_debug) _wcout << L"[Parser] Panicing" << endl;
+                if (CompilerOptions.panic) {
+                    if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
                     exit(1);
                 }
             }
@@ -109,10 +109,10 @@ namespace parser {
             }
             expectedKindsStr = expectedKindsStr.substr(0, expectedKindsStr.length() - 2); // Remove trailing comma and space
             wstring message = L"Expected one of [" + expectedKindsStr + L"] but found " + lexer::TokenKindString(kind) + L" at " + position();
-            _wcout << (_debug ? L"[Parser] " : L"") << message << endl;
+            _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
             errors.push_back(ParserError(message, token.line, token.column));
-            if (_panic) {
-                if (_debug) _wcout << L"[Parser] Panicing" << endl;
+            if (CompilerOptions.panic) {
+                if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
                 exit(1);
             }
             return advance();

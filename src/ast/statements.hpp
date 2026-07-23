@@ -48,6 +48,7 @@ namespace ast {
         vector<Stmt*> statements;
         void stmt() override {}
         BlockStmt(vector<Stmt*> statements) : statements(statements) {}
+        BlockStmt() : statements({}) {}
         BlockStmt(BlockStmt&& other) noexcept : statements(std::move(other.statements)) {
             other.statements.clear();
         }
@@ -70,8 +71,8 @@ namespace ast {
                 if (s) s->Dump(indent + 1, wcout_);
             }
         }
-        static BlockStmt Null() { return BlockStmt({}); }
-        static BlockStmt* NullPtr() { return new BlockStmt({}); }
+        static BlockStmt Null() { return BlockStmt(); }
+        static BlockStmt* NullPtr() { return new BlockStmt(); }
         wstring kind() const { return L"BlockStmt"; }
         Stmt* Clone() const override {
             vector<Stmt*> clonedStatements;

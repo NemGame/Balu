@@ -3,6 +3,8 @@
 namespace lexer {    
     enum TokenKind {
         EOF_TOKEN = 0,
+        INVALID,      // Invalid token
+
         NUMBER,       // Auto-size, like vector, but for numbers (byte(, short, int, long, float, double <- TODO: implement))
         BOOL,         // e.g., true, false
         BYTE,         // 0-255 ; ends in 'b', e.g., 255b
@@ -19,6 +21,16 @@ namespace lexer {
         STRING16,     // string16
         STRING32,     // string32
 
+        SHORT,        // short
+        SBYTE,        // sbyte
+        INT24,        // int24
+        INT32,        // int32
+        INT64,        // int64
+        USHORT,       // ushort
+        UINT24,       // uint24
+        UINT32,       // uint32
+        UINT64,       // uint64
+
         // Keywords
         CHAR8_KW,   // char8 keyword
         CHAR16_KW,  // char16 keyword
@@ -26,6 +38,15 @@ namespace lexer {
         STRING8_KW,  // string8 keyword
         STRING16_KW, // string16 keyword
         STRING32_KW, // string32 keyword
+        SHORT_KW,   // short keyword
+        SBYTE_KW,   // sbyte keyword
+        INT24_KW,   // int24 keyword
+        INT32_KW,   // int32 keyword
+        INT64_KW,   // int64 keyword
+        USHORT_KW,   // ushort keyword
+        UINT24_KW,   // uint24 keyword
+        UINT32_KW,   // uint32 keyword
+        UINT64_KW,   // uint64 keyword
 
         NUMBER_KW,  // number keyword
         BOOL_KW,    // bool keyword
@@ -142,6 +163,8 @@ namespace lexer {
         NUMBER_KW, BOOL_KW, BYTE_KW, ANY, AUTO, VOID, NULL_,
         CHAR8_KW, CHAR16_KW, CHAR32_KW, 
         STRING8_KW, STRING16_KW, STRING32_KW,
+        SHORT_KW, INT24_KW, INT32_KW, INT64_KW,
+        USHORT_KW, UINT24_KW, UINT32_KW, UINT64_KW
     };
 
     wstring TokenKindString(TokenKind kind);
@@ -186,8 +209,10 @@ namespace lexer {
 
         {L"string", STRING32_KW},
         {L"char", CHAR32_KW},
+        {L"int", INT32_KW},
         {L"number", NUMBER_KW},
         {L"byte", BYTE_KW},
+        {L"sbyte", SBYTE_KW},
         {L"bool", BOOL_KW},
         {L"auto", AUTO},
         {L"any", ANY},
@@ -200,6 +225,18 @@ namespace lexer {
         {L"string8", STRING8_KW},
         {L"string16", STRING16_KW},
         {L"string32", STRING32_KW},
+        {L"short", SHORT_KW},
+        {L"int8", SBYTE_KW},
+        {L"int16", SHORT_KW},
+        {L"int24", INT24_KW},
+        {L"int32", INT32_KW},
+        {L"int64", INT64_KW},
+        {L"ushort", USHORT_KW},
+        {L"uint8", BYTE_KW},
+        {L"uint16", USHORT_KW},
+        {L"uint24", UINT24_KW},
+        {L"uint32", UINT32_KW},
+        {L"uint64", UINT64_KW},
 
         {L"#rule", RULE},
     };
@@ -210,7 +247,9 @@ namespace lexer {
         unsigned long long column;
         void Debug(wostream& wcout_ = _wcout, bool endWithNewLine = true) const { // Change ostream to wostream, cout to wcout
             wcout_ << L"[" << line << L":" << column << L"] ";
-            if (isOneOfMany(NUMBER, STRING8, STRING16, STRING32, CHAR8, CHAR16, CHAR32, BOOL, BYTE, IDENTIFIER, RULE, FSTRING, PNUMBER, NULL_)) {
+            if (isOneOfMany(NUMBER, STRING8, STRING16, STRING32, CHAR8, CHAR16, CHAR32, SHORT, INT24, INT32, INT64,
+                            USHORT, UINT24, UINT32, UINT64, 
+                            BOOL, BYTE, SBYTE, IDENTIFIER, RULE, FSTRING, PNUMBER, NULL_) || TokenKindString(kind) == L"UNKNOWN") {
                 wcout_ << TokenKindString(kind) << L" (" << value << L")";
             } else {
                 wcout_ << TokenKindString(kind) << L" ()";
@@ -231,7 +270,9 @@ namespace lexer {
         }
         bool isTypeName() const {
             return isOneOfMany(NUMBER_KW, BOOL_KW, BYTE_KW, ANY, AUTO, VOID, IDENTIFIER,
-                               CHAR8_KW, CHAR16_KW, CHAR32_KW, STRING8_KW, STRING16_KW, STRING32_KW);
+                               CHAR8_KW, CHAR16_KW, CHAR32_KW, STRING8_KW, STRING16_KW, STRING32_KW,
+                               SHORT_KW, INT24_KW, INT32_KW, INT64_KW,
+                               USHORT_KW, UINT24_KW, UINT32_KW, UINT64_KW);
         }
         bool isType() const {
             for (TokenKind tokenType : TokenTypes) {
@@ -251,13 +292,30 @@ namespace lexer {
     wstring TokenKindString(TokenKind kind) {
         switch (kind) {
             case EOF_TOKEN: return L"EOF";
+            case INVALID: return L"INVALID";
             case NUMBER: return L"NUMBER";
             case BOOL: return L"BOOL";
             case BYTE: return L"BYTE";
+            case SBYTE: return L"SBYTE";
             case ANY: return L"ANY";
             case AUTO: return L"AUTO";
             case VOID: return L"VOID";
             case NULL_: return L"NULL_TYPE";
+
+            case CHAR8: return L"CHAR8";
+            case CHAR16: return L"CHAR16";
+            case CHAR32: return L"CHAR32";
+            case STRING8: return L"STRING8";
+            case STRING16: return L"STRING16";
+            case STRING32: return L"STRING32";
+            case SHORT: return L"SHORT";
+            case INT24: return L"INT24";
+            case INT32: return L"INT32";
+            case INT64: return L"INT64";
+            case USHORT: return L"USHORT";
+            case UINT24: return L"UINT24";
+            case UINT32: return L"UINT32";
+            case UINT64: return L"UINT64";
 
             case CHAR8_KW: return L"CHAR8_KW";
             case CHAR16_KW: return L"CHAR16_KW";
@@ -265,10 +323,19 @@ namespace lexer {
             case STRING8_KW: return L"STRING8_KW";
             case STRING16_KW: return L"STRING16_KW";
             case STRING32_KW: return L"STRING32_KW";
+            case SHORT_KW: return L"SHORT_KW";
+            case INT24_KW: return L"INT24_KW";
+            case INT32_KW: return L"INT32_KW";
+            case INT64_KW: return L"INT64_KW";
+            case USHORT_KW: return L"USHORT_KW";
+            case UINT24_KW: return L"UINT24_KW";
+            case UINT32_KW: return L"UINT32_KW";
+            case UINT64_KW: return L"UINT64_KW";
             
             case NUMBER_KW: return L"NUMBER_KW";
             case BOOL_KW: return L"BOOL_KW";
             case BYTE_KW: return L"BYTE_KW";
+            case SBYTE_KW: return L"SBYTE_KW";
 
             case IDENTIFIER: return L"IDENTIFIER";
             case RULE: return L"RULE";

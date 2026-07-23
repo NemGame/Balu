@@ -140,25 +140,25 @@ int main(int argc, char* argv[]) {
 
     if (_feedbackMode) _wcout << wstring(20, L'=') << L"[Feedback Mode Enabled]" << wstring(20, L'=') << endl;
 
-    _verbose = _feedbackMode ? true : vectorContains(*flags, vector<wstring>{L"-v", L"--verbose", L"/verbose"});
-    _showWarnings =  _feedbackMode ? true : !vectorContains(*flags, vector<wstring>{L"--no-warnings", L"/no-warnings", L"-nw", L"/nw"});
-    _panic =  _feedbackMode ? false : !vectorContains(*flags, vector<wstring>{L"--no-panic", L"/no-panic", L"-np", L"/np"});
-    _debug = _feedbackMode ? true : vectorContains(*flags, vector<wstring>{L"--debug", L"/debug", L"-d", L"/d"});
-    _allowLexerErrors = _feedbackMode ? true : !vectorContains(*flags, vector<wstring>{L"--no-lexer-errors", L"/no-lexer-errors", L"-nle", L"/nle"});
-    _allowOptimization = _feedbackMode ? true : !vectorContains(*flags, vector<wstring>{L"--no-optimizations", L"/no-optimizations", L"-no-opt", L"/no-opt"});
+    CompilerOptions.verbose = _feedbackMode ? true : vectorContains(*flags, vector<wstring>{L"-v", L"--verbose", L"/verbose"});
+    CompilerOptions.showWarnings =  _feedbackMode ? true : !vectorContains(*flags, vector<wstring>{L"--no-warnings", L"/no-warnings", L"-nw", L"/nw"});
+    CompilerOptions.panic =  _feedbackMode ? false : !vectorContains(*flags, vector<wstring>{L"--no-panic", L"/no-panic", L"-np", L"/np"});
+    CompilerOptions.debug = _feedbackMode ? true : vectorContains(*flags, vector<wstring>{L"--debug", L"/debug", L"-d", L"/d"});
+    CompilerOptions.allowLexerErrors = _feedbackMode ? true : !vectorContains(*flags, vector<wstring>{L"--no-lexer-errors", L"/no-lexer-errors", L"-nle", L"/nle"});
+    CompilerOptions.allowOptimization = _feedbackMode ? true : !vectorContains(*flags, vector<wstring>{L"--no-optimizations", L"/no-optimizations", L"-no-opt", L"/no-opt"});
     if (vectorContains(*flags, vector<wstring>{L"--log-globals"})) {
         _wcout << L"Global Variables:" << endl;
-        _wcout << L"_verbose: " << (_verbose ? L"true" : L"false") << endl;
-        _wcout << L"_showWarnings: " << (_showWarnings ? L"true" : L"false") << endl;
-        _wcout << L"_panic: " << (_panic ? L"true" : L"false") << endl;
-        _wcout << L"_allowLexerErrors: " << (_allowLexerErrors ? L"true" : L"false") << endl;
-        _wcout << L"_allowOptimization: " << (_allowOptimization ? L"true" : L"false") << endl;
-        _wcout << L"_debug: " << (_debug ? L"true" : L"false") << endl;
-        _wcout << L"_provideHelp: " << (_provideHelp ? L"true" : L"false") << endl;
+        _wcout << L"_verbose: " << (CompilerOptions.verbose ? L"true" : L"false") << endl;
+        _wcout << L"_showWarnings: " << (CompilerOptions.showWarnings ? L"true" : L"false") << endl;
+        _wcout << L"_panic: " << (CompilerOptions.panic ? L"true" : L"false") << endl;
+        _wcout << L"_allowLexerErrors: " << (CompilerOptions.allowLexerErrors ? L"true" : L"false") << endl;
+        _wcout << L"_allowOptimization: " << (CompilerOptions.allowOptimization ? L"true" : L"false") << endl;
+        _wcout << L"_debug: " << (CompilerOptions.debug ? L"true" : L"false") << endl;
+        _wcout << L"_provideHelp: " << (CompilerOptions.provideHelp ? L"true" : L"false") << endl;
         _wcout << L"_feedbackMode: " << (_feedbackMode ? L"true" : L"false") << endl;
     }
 
-    if (_verbose) _wcout << L"Verbose mode enabled." << endl;
+    if (CompilerOptions.verbose) _wcout << L"Verbose mode enabled." << endl;
 
     #pragma region Initialize provided key-value pairs
     wstring inputfilename = L"";
@@ -173,23 +173,23 @@ int main(int argc, char* argv[]) {
         if (pair.name == L"filename" || pair.name == L"fn") {
             inputfilename = pair.value;
             inputfilenameProvided = true;
-            if (_verbose) _wcout << L"Got inputfilename from key-value pair: " << inputfilename << endl;
+            if (CompilerOptions.verbose) _wcout << L"Got inputfilename from key-value pair: " << inputfilename << endl;
         } else if (pair.name == L"output" || pair.name == L"o" || pair.name == L"outfile") {
             outputfilename = pair.value;
             outputfilenameProvided = true;
-            if (_verbose) _wcout << L"Got outputfilename from key-value pair: " << outputfilename << endl;
+            if (CompilerOptions.verbose) _wcout << L"Got outputfilename from key-value pair: " << outputfilename << endl;
         } else if (pair.name == L"ast") {
             ASToutfilename = pair.value;
-            if (_verbose) _wcout << L"Got AST output filename from key-value pair: " << ASToutfilename << endl;
+            if (CompilerOptions.verbose) _wcout << L"Got AST output filename from key-value pair: " << ASToutfilename << endl;
         } else if (pair.name == L"st") {
             SToutfilename = pair.value;
-            if (_verbose) _wcout << L"Got ST output filename from key-value pair: " << SToutfilename << endl;
+            if (CompilerOptions.verbose) _wcout << L"Got ST output filename from key-value pair: " << SToutfilename << endl;
         } else if (pair.name == L"stdout") {
             STDOUTfilename = pair.value;
-            if (_verbose) _wcout << L"Got STDOUT filename from key-value pair: " << STDOUTfilename << endl;
+            if (CompilerOptions.verbose) _wcout << L"Got STDOUT filename from key-value pair: " << STDOUTfilename << endl;
         } else if (pair.name == L"decompile") {
             astDecompilerFilename = pair.value;
-            if (_verbose) _wcout << L"Got AST decompiler output filename from key-value pair: " << astDecompilerFilename << endl;
+            if (CompilerOptions.verbose) _wcout << L"Got AST decompiler output filename from key-value pair: " << astDecompilerFilename << endl;
         }
     }
     #pragma endregion
@@ -201,7 +201,7 @@ int main(int argc, char* argv[]) {
         if (stdoutFile.is_open()) {
             stdoutFile.imbue(locale(stdoutFile.getloc(), new codecvt_utf8_utf16<wchar_t>()));
             _wcout.rdbuf(stdoutFile.rdbuf());
-            if (_verbose) _wcout << L"Rerouted STDOUT to " << STDOUTfilename << endl;
+            if (CompilerOptions.verbose) _wcout << L"Rerouted STDOUT to " << STDOUTfilename << endl;
         } else {
             _wcout << L"Error: Unable to open STDOUT file for writing." << endl;
             return 1;
@@ -214,7 +214,7 @@ int main(int argc, char* argv[]) {
             inputfilename = (*freeArgs)[0];
             inputfilenameProvided = true;
             freeArgs->erase(freeArgs->begin());  // Remove the first element from the vector
-            if (_verbose) _wcout << L"Got inputfilename from free arguments: " << inputfilename << endl;
+            if (CompilerOptions.verbose) _wcout << L"Got inputfilename from free arguments: " << inputfilename << endl;
         } else {
             _wcout << L"Error: No inputfilename provided." << endl;
             return 1;
@@ -229,9 +229,9 @@ int main(int argc, char* argv[]) {
             outputfilename = (*freeArgs)[0];
             outputfilenameProvided = true;
             freeArgs->erase(freeArgs->begin());  // Remove the first element from the vector
-            if (_verbose) _wcout << L"Got outputfilename from free arguments: " << outputfilename << endl;
+            if (CompilerOptions.verbose) _wcout << L"Got outputfilename from free arguments: " << outputfilename << endl;
         } else {
-            if (_verbose) _wcout << L"No outputfilename provided, but it's optional so continuing without it." << endl;
+            if (CompilerOptions.verbose) _wcout << L"No outputfilename provided, but it's optional so continuing without it." << endl;
         }
     }
     _wcout << L"Output filename: " << outputfilename << endl;
@@ -266,7 +266,7 @@ int main(int argc, char* argv[]) {
         MultiByteToWideChar(CP_UTF8, 0, content.c_str(), (int)content.size(), &fileContent[0], size_needed);
     }
 
-    if (_verbose) _wcout << L"Read input file content successfully." << endl;
+    if (CompilerOptions.verbose) _wcout << L"Read input file content successfully." << endl;
     #pragma endregion
 
     vector<lexer::Token> tokens = lexer::Tokenize(fileContent);
@@ -372,6 +372,6 @@ int main(int argc, char* argv[]) {
         _wcout << L"[Feedback Mode] End of feedback." << endl;
     }
 
-    if (_debug) _wcout << L"Program finished successfully." << endl;
+    if (CompilerOptions.debug) _wcout << L"Program finished successfully." << endl;
     return 0;
 }
