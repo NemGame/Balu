@@ -66,7 +66,25 @@ namespace ast::decompiler {
         } else if (auto s = dynamic_cast<ast::CharExpr*>(expr)) {
             return to_wstring(s->byteSize * 8) + L"'" + wstring(1, s->value) + L"'";
         } else if (auto s = dynamic_cast<ast::ByteExpr*>(expr)) {
-            return to_wstring(s->value) + L"b";
+            return to_wstring(s->value) + L"u8";
+        } else if (auto s = dynamic_cast<ast::SByteExpr*>(expr)) {
+            return to_wstring(s->value) + L"i8";
+        } else if (auto s = dynamic_cast<ast::ShortExpr*>(expr)) {
+            return to_wstring(s->value) + L"i16";
+        } else if (auto s = dynamic_cast<ast::UShortExpr*>(expr)) {
+            return to_wstring(s->value) + L"u16";
+        } else if (auto s = dynamic_cast<ast::Int24Expr*>(expr)) {
+            return to_wstring(s->value) + L"i24";
+        } else if (auto s = dynamic_cast<ast::UInt24Expr*>(expr)) {
+            return to_wstring(s->value) + L"u24";
+        } else if (auto s = dynamic_cast<ast::Int32Expr*>(expr)) {
+            return to_wstring(s->value) + L"i32";
+        } else if (auto s = dynamic_cast<ast::UInt32Expr*>(expr)) {
+            return to_wstring(s->value) + L"u32";
+        } else if (auto s = dynamic_cast<ast::Int64Expr*>(expr)) {
+            return to_wstring(s->value) + L"i64";
+        } else if (auto s = dynamic_cast<ast::UInt64Expr*>(expr)) {
+            return to_wstring(s->value) + L"u64";
         } else if (auto s = dynamic_cast<ast::BooleanExpr*>(expr)) {
             return s->value ? L"true" : L"false";
         } else if (auto s = dynamic_cast<ast::NullExpr*>(expr)) {

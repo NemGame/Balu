@@ -92,6 +92,27 @@ namespace parser {
         return left;
     }
 
+    template<typename T>
+    T getValue(Parser* parser, wstring typeName, bool* isValid) {
+        T result;
+        try {
+            if constexpr (is_same_v<T, unsigned long long> || is_same_v<T, uint64_t>) {
+                result = static_cast<T>(stoull(parser->currentToken().value));
+            } else result = static_cast<T>(stoll(parser->currentToken().value));
+        } catch (const std::exception& e) {
+            wstring message = L"Invalid " + typeName + L" literal at " + parser->position() + L": " + parser->currentToken().value;
+            parser->errors.push_back(ParserError(message, parser->currentToken().line, parser->currentToken().column));
+            _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+            if (CompilerOptions.panic) {
+                if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
+                exit(1);
+            }
+            *isValid = false;
+        }
+        parser->advance();
+        return result;
+    }
+
     ast::Expr* parse_primary_expr(Parser* parser) {
         if (CompilerOptions.verbose) _wcout << L"[Parser] Parsing primary expression at " << parser->position() << endl;
 
@@ -100,76 +121,32 @@ namespace parser {
             return parse_array_initializer_with_type(parser, underlyingType);
         }
 
+        
+        bool isValid = true;
         switch (parser->currentTokenKind()) {
-            case lexer::NUMBER: {
-                long double value = 0;
-                try {
-                    value = stold(parser->currentToken().value);
-                } catch (const std::exception& e) {
-                    wstring message = L"Invalid number literal at " + parser->position() + L": " + parser->currentToken().value;
-                    parser->errors.push_back(ParserError(message, parser->currentToken().line, parser->currentToken().column));
-                    _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
-                    if (CompilerOptions.panic) {
-                        if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
-                        exit(1);
-                    }
-                    parser->advance();
-                    return nullptr;
-                }
-                parser->advance();
-                return new ast::NumberExpr(value);
-            }
-            case lexer::PNUMBER: {
-                return new ast::NumberExpr(parser->advance().value);
-            }
-            case lexer::BYTE: {
-                unsigned char value = 0;
-                try {
-                    value = static_cast<unsigned char>(stoi(parser->currentToken().value));
-                } catch (const std::exception& e) {
-                    wstring message = L"Invalid byte literal at " + parser->position() + L": " + parser->currentToken().value;
-                    parser->errors.push_back(ParserError(message, parser->currentToken().line, parser->currentToken().column));
-                    _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
-                    if (CompilerOptions.panic) {
-                        if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
-                        exit(1);
-                    }
-                    parser->advance();
-                    return nullptr;
-                }
-                parser->advance();
-                return new ast::ByteExpr(value);
-            }
+            case lexer::NUMBER: { long double value = getValue<long double>(parser, L"number", &isValid); if (!isValid) return nullptr; return new ast::NumberExpr(value); }
+            case lexer::PNUMBER: { return new ast::NumberExpr(parser->advance().value); }
+            case lexer::SHORT: { int16_t value = getValue<int16_t>(parser, L"short", &isValid); if (!isValid) return nullptr; return new ast::ShortExpr(value); }
+            case lexer::USHORT: { uint16_t value = getValue<uint16_t>(parser, L"ushort", &isValid); if (!isValid) return nullptr; return new ast::UShortExpr(value); }
+            case lexer::INT24: { int32_t value = getValue<int32_t>(parser, L"int24", &isValid); if (!isValid) return nullptr; return new ast::Int24Expr(value); }
+            case lexer::UINT24: { uint32_t value = getValue<uint32_t>(parser, L"uint24", &isValid); if (!isValid) return nullptr; return new ast::UInt24Expr(value); }
+            case lexer::INT32: { int32_t value = getValue<int32_t>(parser, L"int32", &isValid); if (!isValid) return nullptr; return new ast::Int32Expr(value); }
+            case lexer::UINT32: { uint32_t value = getValue<uint32_t>(parser, L"uint32", &isValid); if (!isValid) return nullptr; return new ast::UInt32Expr(value); }
+            case lexer::INT64: { int64_t value = getValue<int64_t>(parser, L"int64", &isValid); if (!isValid) return nullptr; return new ast::Int64Expr(value); }
+            case lexer::UINT64: { uint64_t value = getValue<uint64_t>(parser, L"uint64", &isValid); if (!isValid) return nullptr; return new ast::UInt64Expr(value); }
+            case lexer::BYTE: { uint8_t value = getValue<uint8_t>(parser, L"byte", &isValid); if (!isValid) return nullptr; return new ast::ByteExpr(value); }
+            case lexer::SBYTE: { int8_t value = getValue<int8_t>(parser, L"sbyte", &isValid); if (!isValid) return nullptr; return new ast::SByteExpr(value); }
             case lexer::STRING32: { return new ast::StringExpr(parser->advance().value, 4); }
             case lexer::STRING16: { return new ast::StringExpr(parser->advance().value, 2); }
             case lexer::STRING8: { return new ast::StringExpr(parser->advance().value, 1); }
-            case lexer::FSTRING: {
-                return new ast::StringExpr(parser->advance().value, 4, true);
-            }
-            case lexer::CHAR32: {
-                return new ast::CharExpr(parser->advance().value[0], 4);
-            }
-            case lexer::CHAR8: {
-                return new ast::CharExpr(parser->advance().value[0], 1);
-            }
-            case lexer::CHAR16: {
-                return new ast::CharExpr(parser->advance().value[0], 2);
-            }
-            case lexer::BOOL: {
-                bool value = parser->currentToken().value == L"true";
-                parser->advance();
-                return new ast::BooleanExpr(value);
-            }
-            case lexer::NULL_: {
-                parser->advance();
-                return new ast::NullExpr();
-            }
-            case lexer::IDENTIFIER: {
-                return new ast::SymbolExpr(parser->advance().value);
-            }
-            case lexer::RULE: {
-                return new ast::RuleExpr(parser->advance().value);
-            }
+            case lexer::FSTRING: { return new ast::StringExpr(parser->advance().value, 4, true); }
+            case lexer::CHAR32: { return new ast::CharExpr(parser->advance().value[0], 4); }
+            case lexer::CHAR8: { return new ast::CharExpr(parser->advance().value[0], 1); }
+            case lexer::CHAR16: { return new ast::CharExpr(parser->advance().value[0], 2); }
+            case lexer::BOOL: { bool value = parser->currentToken().value == L"true"; parser->advance(); return new ast::BooleanExpr(value); }
+            case lexer::NULL_: { parser->advance(); return new ast::NullExpr(); }
+            case lexer::IDENTIFIER: { return new ast::SymbolExpr(parser->advance().value); }
+            case lexer::RULE: { return new ast::RuleExpr(parser->advance().value); }
             default: {
                 lexer::Token token = parser->currentToken();
                 if (CompilerOptions.verbose || CompilerOptions.debug) _wcout << L"[Parser] Cannot create primary expression from token: " << lexer::TokenKindString(parser->currentTokenKind()) << endl;

@@ -72,11 +72,17 @@ namespace parser {
 
         if (token.kind == lexer::CHAR32_KW && token.value == L"char") {
             return new ast::SymbolType(L"char32");
-        }
-        if (token.kind == lexer::STRING32_KW && token.value == L"string") {
+        } else if (token.kind == lexer::STRING32_KW) {
             return new ast::SymbolType(L"string32");
+        } else if (token.kind == lexer::SHORT_KW) {
+            return new ast::SymbolType(L"int16");
+        } else if (token.kind == lexer::USHORT_KW) {
+            return new ast::SymbolType(L"uint16");
+        } else if (token.kind == lexer::BYTE_KW) {
+            return new ast::SymbolType(L"uint8");
+        } else if (token.kind == lexer::SBYTE_KW) {
+            return new ast::SymbolType(L"int8");
         }
-
         return new ast::SymbolType(token.value);
     }
     ast::Type* parse_array_type(Parser* parser) {
@@ -108,6 +114,15 @@ namespace parser {
         type_nud(lexer::STRING8_KW, parse_symbol_type);
         type_nud(lexer::STRING16_KW, parse_symbol_type);
         type_nud(lexer::STRING32_KW, parse_symbol_type);
+        type_nud(lexer::SHORT_KW, parse_symbol_type);
+        type_nud(lexer::USHORT_KW, parse_symbol_type);
+        type_nud(lexer::SBYTE_KW, parse_symbol_type);
+        type_nud(lexer::INT24_KW, parse_symbol_type);
+        type_nud(lexer::UINT24_KW, parse_symbol_type);
+        type_nud(lexer::INT32_KW, parse_symbol_type);
+        type_nud(lexer::UINT32_KW, parse_symbol_type);
+        type_nud(lexer::INT64_KW, parse_symbol_type);
+        type_nud(lexer::UINT64_KW, parse_symbol_type);
 
         type_led(lexer::OPEN_BRACKET, call, parse_postfix_array_type); // T[] (Higher precedence)
     }

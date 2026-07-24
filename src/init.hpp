@@ -12,6 +12,10 @@
 #include <map>
 #include <bitset>
 #include <algorithm>
+#include <cstdint>
+#include <locale>
+#include <codecvt>
+#include <type_traits>
 
 using namespace std;
 

@@ -183,8 +183,8 @@ namespace ast {
         }
     };
     struct ByteExpr : public Expr {
-        unsigned char value;
-        ByteExpr(unsigned char v) : value(v) {}
+        uint8_t value;
+        ByteExpr(uint8_t v) : value(v) {}
         void expr() override {}
         wstring GetValue() const override {
             return to_wstring(value);
@@ -197,6 +197,159 @@ namespace ast {
         }
         Expr* Clone() const override {
             return new ByteExpr(value);
+        }
+    };
+    struct SByteExpr : public Expr {
+        int8_t value;
+        SByteExpr(int8_t v) : value(v) {}
+        void expr() override {}
+        wstring GetValue() const override {
+            return to_wstring(value);
+        }
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
+            wcout_ << GetName(indent) << endl;
+        }
+        wstring GetName(int indent = 0) const override {
+            return wstring(indent * 2, L' ') + L"SByteExpr: " + to_wstring(value);
+        }
+        Expr* Clone() const override {
+            return new SByteExpr(value);
+        }
+    };
+    struct ShortExpr : public Expr {
+        int16_t value;
+        ShortExpr(int16_t v) : value(v) {}
+        void expr() override {}
+        wstring GetValue() const override {
+            return to_wstring(value);
+        }
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
+            wcout_ << GetName(indent) << endl;
+        }
+        wstring GetName(int indent = 0) const override {
+            return wstring(indent * 2, L' ') + L"ShortExpr: " + to_wstring(value);
+        }
+        Expr* Clone() const override {
+            return new ShortExpr(value);
+        }
+    };
+    struct UShortExpr : public Expr {
+        uint16_t value;
+        UShortExpr(uint16_t v) : value(v) {}
+        void expr() override {}
+        wstring GetValue() const override {
+            return to_wstring(value);
+        }
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
+            wcout_ << GetName(indent) << endl;
+        }
+        wstring GetName(int indent = 0) const override {
+            return wstring(indent * 2, L' ') + L"UShortExpr: " + to_wstring(value);
+        }
+        Expr* Clone() const override {
+            return new UShortExpr(value);
+        }
+    };
+    struct Int24Expr : public Expr {
+        int32_t value; // Using int32_t to store 24-bit integer
+        Int24Expr(int32_t v) : value(v & 0xFFFFFF) {} // Mask to 24 bits
+        void expr() override {}
+        wstring GetValue() const override {
+            return to_wstring(value);
+        }
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
+            wcout_ << GetName(indent) << endl;
+        }
+        wstring GetName(int indent = 0) const override {
+            return wstring(indent * 2, L' ') + L"Int24Expr: " + to_wstring(value);
+        }
+        Expr* Clone() const override {
+            return new Int24Expr(value);
+        }
+    };
+    struct UInt24Expr : public Expr {
+        uint32_t value; // Using uint32_t to store 24-bit unsigned integer
+        UInt24Expr(uint32_t v) : value(v & 0xFFFFFF) {} // Mask to 24 bits
+        void expr() override {}
+        wstring GetValue() const override {
+            return to_wstring(value);
+        }
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
+            wcout_ << GetName(indent) << endl;
+        }
+        wstring GetName(int indent = 0) const override {
+            return wstring(indent * 2, L' ') + L"UInt24Expr: " + to_wstring(value);
+        }
+        Expr* Clone() const override {
+            return new UInt24Expr(value);
+        }
+    };
+    struct Int32Expr : public Expr {
+        int32_t value;
+        Int32Expr(int32_t v) : value(v) {}
+        void expr() override {}
+        wstring GetValue() const override {
+            return to_wstring(value);
+        }
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
+            wcout_ << GetName(indent) << endl;
+        }
+        wstring GetName(int indent = 0) const override {
+            return wstring(indent * 2, L' ') + L"Int32Expr: " + to_wstring(value);
+        }
+        Expr* Clone() const override {
+            return new Int32Expr(value);
+        }
+    };
+    struct UInt32Expr : public Expr {
+        uint32_t value;
+        UInt32Expr(uint32_t v) : value(v) {}
+        void expr() override {}
+        wstring GetValue() const override {
+            return to_wstring(value);
+        }
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
+            wcout_ << GetName(indent) << endl;
+        }
+        wstring GetName(int indent = 0) const override {
+            return wstring(indent * 2, L' ') + L"UInt32Expr: " + to_wstring(value);
+        }
+        Expr* Clone() const override {
+            return new UInt32Expr(value);
+        }
+    };
+    struct Int64Expr : public Expr {
+        int64_t value;
+        Int64Expr(int64_t v) : value(v) {}
+        void expr() override {}
+        wstring GetValue() const override {
+            return to_wstring(value);
+        }
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
+            wcout_ << GetName(indent) << endl;
+        }
+        wstring GetName(int indent = 0) const override {
+            return wstring(indent * 2, L' ') + L"Int64Expr: " + to_wstring(value);
+        }
+        Expr* Clone() const override {
+            return new Int64Expr(value);
+        }
+    };
+    struct UInt64Expr : public Expr {
+        uint64_t value;
+        UInt64Expr(uint64_t v) : value(v) {}
+        void expr() override {}
+        wstring GetValue() const override {
+            return to_wstring(value);
+        }
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
+            wcout_ << GetName(indent) << endl;
+        }
+        wstring GetName(int indent = 0) const override {
+            return wstring(indent * 2, L' ') + L"UInt64Expr: " + to_wstring(value);
+        }
+        Expr* Clone() const override {
+            return new UInt64Expr(value);
         }
     };
     struct StringExpr : public Expr {
@@ -220,16 +373,37 @@ namespace ast {
         }
     };
     struct CharExpr : public Expr {
-        wchar_t value;
-        char byteSize; // 1 for char8, 2 for char16, 4 for char32
-        CharExpr(wchar_t v, char size) : value(v), byteSize(size) {}
-        CharExpr(wchar_t v, wstring size) : value(v), byteSize(size == L"char32" ? 4 : (size == L"char16" ? 2 : 1)) {}
+        char32_t value;
+        uint8_t byteSize; // 1 for char8, 2 for char16, 4 for char32
+        CharExpr(wchar_t v, uint8_t size) : value(CharExpr::toChar32(v)), byteSize(size) {}
+        CharExpr(wchar_t v, wstring size) : value(CharExpr::toChar32(v)), byteSize(size == L"char32" ? 4 : (size == L"char16" ? 2 : 1)) {}
+        static char32_t toChar32(const wstring& wstr) {
+            if (wstr.empty()) return 0;
+#if defined(_WIN32) || defined(_WIN64)
+            #if defined(__GNUC__) || defined(__clang__)
+            #pragma GCC diagnostic push
+            #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+            #endif
+            wstring_convert<std::codecvt_utf16<char32_t>, char32_t> convert;
+            string bytes(reinterpret_cast<const char*>(wstr.data()), wstr.size() * sizeof(wchar_t));
+            u32string u32str = convert.from_bytes(bytes);
+            
+            #if defined(__GNUC__) || defined(__clang__)
+            #pragma GCC diagnostic pop
+            #endif
+
+            return u32str.empty() ? 0 : u32str[0];
+#else
+            return static_cast<char32_t>(wstr[0]);
+#endif
+        }
+        static char32_t toChar32(wchar_t wc) { return CharExpr::toChar32(wstring(1, wc)); }
         void expr() override {}
         void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
             wcout_ << GetName(indent) << endl;
         }
         wstring GetName(int indent = 0) const override {
-            return wstring(indent * 2, L' ') + L"CharExpr" + to_wstring(byteSize * 8) + L": '" + value + L"'";
+            return wstring(indent * 2, L' ') + L"CharExpr" + to_wstring(byteSize * 8) + L": '" + to_wstring(value) + L"'";
         }
         wstring GetValue() const override {
             return wstring(1, value);

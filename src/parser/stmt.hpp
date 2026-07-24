@@ -9,6 +9,24 @@ namespace parser {
                 return new ast::BooleanExpr(false);
             } else if (symbolType->name == L"byte") {
                 return new ast::ByteExpr(0);
+            } else if (symbolType->name == L"sbyte") {
+                return new ast::SByteExpr(0);
+            } else if (symbolType->name == L"short") {
+                return new ast::ShortExpr(0);
+            } else if (symbolType->name == L"ushort") {
+                return new ast::UShortExpr(0);
+            } else if (symbolType->name == L"int24") {
+                return new ast::Int24Expr(0);
+            } else if (symbolType->name == L"uint24") {
+                return new ast::UInt24Expr(0);
+            } else if (symbolType->name == L"int32") {
+                return new ast::Int32Expr(0);
+            } else if (symbolType->name == L"uint32") {
+                return new ast::UInt32Expr(0);
+            } else if (symbolType->name == L"int64") {
+                return new ast::Int64Expr(0);
+            } else if (symbolType->name == L"uint64") {
+                return new ast::UInt64Expr(0);
             } else if (symbolType->name == L"string8" || symbolType->name == L"string16" || symbolType->name == L"string32") {
                 return new ast::StringExpr(L"", symbolType->name);
             } else if (symbolType->name == L"char8" || symbolType->name == L"char16" || symbolType->name == L"char32") {

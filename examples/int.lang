@@ -1,6 +1,6 @@
 sbyte b = 1i8;
 int8 i8 = 1i8;
-short s = 1s;
+short s = 1i16;
 int16 i16 = 1i16;
 int24 i24 = 1i24;
 int32 i32 = 1i32;
