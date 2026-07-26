@@ -10,8 +10,8 @@ namespace parser {
         additive,
         multiplicative,
         unary,
-        call,
         member,
+        call,
         primary
     };
     

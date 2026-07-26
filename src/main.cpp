@@ -2,23 +2,10 @@
 #include <codecvt>
 
 #pragma region Structs
-struct CommandLineValuePair {
-    wstring name;
-    wstring value;
-};
-
 wostream& operator<<(wostream& os, const CommandLineValuePair& pair) {
     os << pair.name << "=" << pair.value;
     return os;
 }
-
-struct CommandLineArgs {
-    wstring programName; // The first argument (the program name)
-    wstring programPath; // The full path to the program (can be derived from programName if needed)
-    vector<wstring> freeArgs;  // Without any prior dashes (not flags) -> wasd
-    vector<wstring> flags;     // With double dashes or / (flags) -> --v, --verbose, --help, /v, /verbose, /help, /?, -?
-    vector<CommandLineValuePair> keyValuePairs; // For inline key-value pairs; first is a singular dash, then the value (-filename=name.txt)
-};
 
 #pragma endregion
 
@@ -121,18 +108,18 @@ int main(int argc, char* argv[]) {
 
     int count = 0;
     const vector<wstring> args = GetCommandLineArgs(count);
-    CommandLineArgs parsedArgs = ParseCommandLineArgs(args);
+    CompilerOptions.User.Args = ParseCommandLineArgs(args);
 
-    vector<wstring> *freeArgs = &parsedArgs.freeArgs;
-    vector<wstring> *flags = &parsedArgs.flags;
-    vector<CommandLineValuePair> *keyValuePairs = &parsedArgs.keyValuePairs;
+    vector<wstring> *freeArgs = &CompilerOptions.User.Args.freeArgs;
+    vector<wstring> *flags = &CompilerOptions.User.Args.flags;
+    vector<CommandLineValuePair> *keyValuePairs = &CompilerOptions.User.Args.keyValuePairs;
 
-    //DisplayCommandLineArgs(parsedArgs);
+    //DisplayCommandLineArgs(CompilerOptions.User.args);
 
-    if (vectorContains(*flags, vector<wstring>{L"--show", L"/show", L"-s", L"/s"})) DisplayCommandLineArgs(parsedArgs);
+    if (vectorContains(*flags, vector<wstring>{L"--show", L"/show", L"-s", L"/s"})) DisplayCommandLineArgs(CompilerOptions.User.Args);
 
     if (vectorContains(*flags, vector<wstring>{L"--help", L"-h", L"-?", L"/help", L"/h", L"/?"})) {
-        DisplayHelp(parsedArgs.programName);
+        DisplayHelp(CompilerOptions.User.Args.programName);
         return 0;
     }
 
@@ -213,7 +200,6 @@ int main(int argc, char* argv[]) {
         if (freeArgs->size() > 0) {
             inputfilename = (*freeArgs)[0];
             inputfilenameProvided = true;
-            freeArgs->erase(freeArgs->begin());  // Remove the first element from the vector
             if (CompilerOptions.verbose) _wcout << L"Got inputfilename from free arguments: " << inputfilename << endl;
         } else {
             _wcout << L"Error: No inputfilename provided." << endl;
@@ -225,10 +211,9 @@ int main(int argc, char* argv[]) {
     #pragma endregion
     #pragma region Output Filename Extraction
     if (!outputfilenameProvided) {
-        if (freeArgs->size() > 0) {
-            outputfilename = (*freeArgs)[0];
+        if (freeArgs->size() > 1) {
+            outputfilename = (*freeArgs)[1];
             outputfilenameProvided = true;
-            freeArgs->erase(freeArgs->begin());  // Remove the first element from the vector
             if (CompilerOptions.verbose) _wcout << L"Got outputfilename from free arguments: " << outputfilename << endl;
         } else {
             if (CompilerOptions.verbose) _wcout << L"No outputfilename provided, but it's optional so continuing without it." << endl;

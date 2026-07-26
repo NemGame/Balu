@@ -51,6 +51,8 @@ namespace ast::decompiler {
         if (auto s = dynamic_cast<ast::BinaryExpr*>(expr)) {
             wstring left = DecompileExpression(s->left, indent);
             wstring right = DecompileExpression(s->right, indent);
+            const bool isMember = s->op.kind == lexer::DOT;
+            if (isMember) return left + L"." + right;
             return L'(' + left + L" " + s->op.value + L" " + right + L')';
         } else if (auto s = dynamic_cast<ast::NumberExpr*>(expr)) {
             if (s->isPrecise()) {

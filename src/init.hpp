@@ -19,6 +19,31 @@
 
 using namespace std;
 
+struct CommandLineValuePair {
+    wstring name;
+    wstring value;
+};
+
+struct CommandLineArgs {
+    wstring programName; // The first argument (the program name)
+    wstring programPath; // The full path to the program (can be derived from programName if needed)
+    vector<wstring> freeArgs;  // Without any prior dashes (not flags) -> wasd
+    vector<wstring> flags;     // With double dashes or / (flags) -> --v, --verbose, --help, /v, /verbose, /help, /?, -?
+    vector<CommandLineValuePair> keyValuePairs; // For inline key-value pairs; first is a singular dash, then the value (-filename=name.txt)
+    wstring GetCommand() const {
+        wstring command = programName;
+        for (const wstring& arg : freeArgs) {
+            command += L" " + arg;
+        }
+        for (const wstring& flag : flags) {
+            command += L" " + flag;
+        }
+        for (const CommandLineValuePair& pair : keyValuePairs) {
+            command += L" -" + pair.name + L"=" + pair.value;
+        }
+        return command;
+    }
+};
 
 // Global variables
 struct _CompilerOptions {
@@ -26,6 +51,9 @@ private:
     struct _IR {
         bool allowRedeclaration = true;  // Whether to allow redeclaration of variables in the same scope [true]
         bool allowIRWarnings = true;  // Whether to allow warnings in the IR [true]
+    };
+    struct _User {
+        CommandLineArgs Args;  // Command line arguments
     };
 public:
     bool verbose = false;  // Whether to print verbose output [false]
@@ -36,6 +64,7 @@ public:
     bool allowLexerErrors = true;  // Whether to allow lexer errors (if false, the lexer will panic on errors) [true]
     bool allowOptimization = true;  // Whether to allow optimizations [true]
     _IR IR;  // IR compiler options
+    _User User;  // User-provided options
 };
 _CompilerOptions CompilerOptions;
 struct _OptimizationOptions {

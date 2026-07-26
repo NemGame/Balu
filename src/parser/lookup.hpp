@@ -42,6 +42,7 @@ namespace parser {
         // Call/Member/Array expressions
         led(lexer::OPEN_CURLY, call, parse_struct_instantiation_expr);
         led(lexer::OPEN_PAREN, call, parse_function_call_expr);
+        led(lexer::DOT, member, parse_binary_expr);
         nud(lexer::OPEN_BRACKET, parse_array_instantiation_expr);
 
         // Literals and Symbols
