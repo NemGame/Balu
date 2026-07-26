@@ -196,4 +196,16 @@ namespace ast::optimizer {
             }
         }
     }
+    void _OptimizeBlockStmt(ast::BlockStmt*& blockStmt) {
+        if (blockStmt->statements.size() == 1) {
+            auto innerBlock = dynamic_cast<ast::BlockStmt*>(blockStmt->statements[0]);
+            if (innerBlock) {
+                // If the block has only one statement and that statement is a block, we can merge the inner block into the current block
+                blockStmt->statements = innerBlock->statements;
+                innerBlock->statements.clear(); // Prevent the destructor from deleting the statements
+                Optimize(reinterpret_cast<ast::Stmt*&>(blockStmt)); // Optimize the merged block
+                delete innerBlock; // Delete the inner block
+            }
+        }
+    }
 }

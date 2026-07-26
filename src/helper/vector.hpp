@@ -1,6 +1,7 @@
 #pragma once
 
-bool vectorContains(const vector<wstring>& vec, const wstring& value) {
+template<typename T, typename U>
+bool vectorContains(const vector<T>& vec, const U& value) {
     for (const auto& item : vec) {
         if (item == value) {
             return true;
@@ -8,7 +9,8 @@ bool vectorContains(const vector<wstring>& vec, const wstring& value) {
     }
     return false;
 }
-bool vectorContains(const vector<wstring>& vec, const vector<wstring>& values) {
+template<typename T>
+bool vectorContains(const vector<T>& vec, const vector<T>& values) {
     for (const auto& value : values) {
         if (vectorContains(vec, value)) {
             return true;
@@ -29,7 +31,21 @@ vector<wstring> wstringToVector(const wstring& str, wchar_t delimiter=L',') {
     return result;
 }
 wstring vectorToWstring(const vector<wstring>& vec, wchar_t delimiter=L',') {
+    if (vec.empty()) return L"";
+    if (vec.size() == 1) return vec[0];
     wstring result;
+    for (size_t i = 0; i < vec.size(); ++i) {
+        result += vec[i];
+        if (i < vec.size() - 1) {
+            result += delimiter;
+        }
+    }
+    return result;
+}
+string vectorToString(const vector<string>& vec, char delimiter=',') {
+    if (vec.empty()) return "";
+    if (vec.size() == 1) return vec[0];
+    string result;
     for (size_t i = 0; i < vec.size(); ++i) {
         result += vec[i];
         if (i < vec.size() - 1) {

@@ -1,2 +1,12 @@
-Completely implemented: sbyte, ushort, int8, uint8, int16, uint16, int24, uint24, int32, uint32, int64, uint64
-Fixed some types, so that they are exactly the promised size (wchar_t -> char32_t, unsigned char -> uint8_t)
+Added option to optimize labels in the IR: merges consecutive labels
+Fixed IR-if, now everything works perfectly
+Fixed block statement optimization:
+- Now blocks are re-merged after optimization
+Added while loops to IR
+Added variable declaration to IR
+Added assignment to IR
+Added scope management to IR
+Reworked IRGlobals.GetUniqueID to support a lot more stuff (size_t -> map)
+Added option to allowIRWarnings and allowRedeclaration to CompilerOptions.IR
+Added automatic variable deletion to IR: out-of-scope or no longer used:
+Added option for automaticVariableDeletion to OptimizationOptions.IR

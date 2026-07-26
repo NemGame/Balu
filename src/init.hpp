@@ -22,6 +22,12 @@ using namespace std;
 
 // Global variables
 struct _CompilerOptions {
+private:
+    struct _IR {
+        bool allowRedeclaration = true;  // Whether to allow redeclaration of variables in the same scope [true]
+        bool allowIRWarnings = true;  // Whether to allow warnings in the IR [true]
+    };
+public:
     bool verbose = false;  // Whether to print verbose output [false]
     bool showWarnings = true;  // Whether to show warnings [true]
     bool panic = true;  // Whether to panic on errors (exit immediately) [true]
@@ -29,6 +35,7 @@ struct _CompilerOptions {
     bool provideHelp = true;  // Whether to tell the user about the correct syntax when they make a syntax error [true]
     bool allowLexerErrors = true;  // Whether to allow lexer errors (if false, the lexer will panic on errors) [true]
     bool allowOptimization = true;  // Whether to allow optimizations [true]
+    _IR IR;  // IR compiler options
 };
 _CompilerOptions CompilerOptions;
 struct _OptimizationOptions {
@@ -36,8 +43,13 @@ private:
     struct _FastMath {
         bool finiteMathOnly = false;  // Whether to allow only finite math operations (no NaN or Inf) ; (x == x -> true) [false]
     };
+    struct _IR {
+        bool optimizeLabels = true;  // Whether to optimize labels in the IR [true]
+        bool automaticVariableDeletion = true;  // Whether to automatically delete variables when they go out of scope [true]
+    };
 public:
     _FastMath FastMath;  // Fast math optimization options
+    _IR IR;  // IR optimization options
 };
 _OptimizationOptions OptimizationOptions;
 

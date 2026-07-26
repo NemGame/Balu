@@ -210,6 +210,7 @@ namespace lexer {
         {L"string", STRING32_KW},
         {L"char", CHAR32_KW},
         {L"int", INT32_KW},
+        {L"uint", UINT32_KW},
         {L"number", NUMBER_KW},
         {L"byte", BYTE_KW},
         {L"sbyte", SBYTE_KW},

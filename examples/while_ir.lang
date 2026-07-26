@@ -1,0 +1,16 @@
+while (1 == 2) {
+    int x = 2i;
+    x = 3i;
+    x += 1u8;
+    x -= 1i32;
+    if (x == 3i) {
+        x = 3i;
+    } else {
+        x = 4i;
+    }
+
+    x = 3i;
+}
+
+int x = 3i;
+uint x = 38u;

@@ -3,47 +3,83 @@
 namespace IR {
     Node* ConvertASTToIR(const ast::Stmt* stmt) {
         if (stmt == nullptr) return nullptr;
-        if (auto ifStmt = dynamic_cast<const ast::IfStmt*>(stmt)) {
-            // `operands` contains the jump target difference (number of instructions to jump over)
-            Node* thenNode = ConvertASTToIR(ifStmt->ThenBranch);
-            Node* elseNode = ifStmt->ElseBranch ? ConvertASTToIR(ifStmt->ElseBranch) : nullptr;
-
-            bool statementTrue = true; // Default assumption
-            if (ifStmt->Condition) {
-                if (auto prefixExpr = dynamic_cast<const ast::PrefixExpr*>(ifStmt->Condition)) {
-                    if (prefixExpr->Operator.kind == lexer::TokenKind::NOT) statementTrue = false;
+        if (auto blockStmt = dynamic_cast<const ast::BlockStmt*>(stmt)) {
+            Node* head = nullptr;
+            Node* tail = nullptr;
+            size_t scope = Globals.GetNewScope();
+            for (const auto& s : blockStmt->statements) {
+                Node* currentNode = ConvertASTToIR(s);
+                if (currentNode) {
+                    if (!head) {
+                        head = currentNode->getFirst();
+                        tail = currentNode->getLast();
+                    } else {
+                        tail->next = currentNode->getFirst();
+                        currentNode->getFirst()->prev = tail;
+                        tail = currentNode->getLast();
+                    }
                 }
             }
-
-            // TODO: add comparison
-
-            Node* jumpNode = new Node(Instruction(statementTrue ? Opcode::JUMP_IF_FALSE : Opcode::JUMP_IF_TRUE));
-            
-            if (thenNode == nullptr && elseNode == nullptr) return jumpNode->getFirst();
-
-            if (thenNode) {
-                if (elseNode) {
-                    Node* jumpOverElseNode = new Node(Instruction(Opcode::JUMP, vector<string>({ to_string(elseNode->getInstructionCount() + 1) })));
-                    thenNode->getLast()->next = jumpOverElseNode;
-                    jumpOverElseNode->prev = thenNode->getLast();
-                }
-                size_t thenLength = thenNode->getInstructionCount();
-                jumpNode->instruction.operands.push_back(to_string(thenLength + 1)); // Jump to the instruction after the then branch
+            Node* setScopeNode = new Node(Instruction(Opcode::SET_SCOPE, vector<string>({ to_string(scope) })));
+            size_t newScope = Globals.RemoveScope();
+            Node* destroyScopeNode = new Node(Instruction(Opcode::SET_SCOPE, vector<string>({ to_string(newScope) })));
+            setScopeNode->next = head;
+            if (head) head->prev = setScopeNode;
+            Node* lastNode = setScopeNode->getLast();
+            lastNode->next = destroyScopeNode;
+            destroyScopeNode->prev = lastNode;
+            if (OptimizationOptions.IR.optimizeLabels) {
+                Optimizer::OptimizeLabels(head);
             }
-
-            jumpNode->next = nullptr;
-            if (thenNode) {
-                jumpNode->next = thenNode->getFirst();
-                thenNode->prev = jumpNode;
-                if (elseNode) {
-                    Node* lastThenNode = thenNode->getLast();
-                    lastThenNode->next = elseNode->getFirst();
-                    elseNode->prev = lastThenNode;
-                }
+            if (OptimizationOptions.IR.automaticVariableDeletion) {
+                Optimizer::AutoFreeVariables(setScopeNode);
             }
-            return jumpNode;
+            return setScopeNode;
+        } else if (auto ifStmt = dynamic_cast<const ast::IfStmt*>(stmt)) {
+            return ConvertIfToIR(ifStmt);
+        } else if (auto varDeclStmt = dynamic_cast<const ast::VarDeclStmt*>(stmt)) {
+            const string varName = to_string(varDeclStmt->VariableName);
+            const string varType = to_string(varDeclStmt->ExplicitType->GetName());
+            const bool isliteral = varDeclStmt->AssignedValue && ast::optimizer::isLiteral(varDeclStmt->AssignedValue);
+            Node* creation = new Node(Instruction(Opcode::CREATE_VAR, vector<string>({ varName, varType })));
+            if (isliteral) {
+                string value = to_string(ast::decompiler::DecompileExpression(varDeclStmt->AssignedValue));
+                Node* storeValue = new Node(Instruction(Opcode::STORE_VAR, vector<string>({ varName, value })));
+                creation->next = storeValue;
+                storeValue->prev = creation;
+            }
+            return creation;
+        } else if (auto whileStmt = dynamic_cast<const ast::WhileStmt*>(stmt)) {
+            return ConvertWhileToIR(whileStmt);
+        } else if (auto exprStmt = dynamic_cast<const ast::ExpressionStmt*>(stmt)) {
+            return ConvertASTToIR(exprStmt->expression);
         }
 
-        return nullptr;
+        return new Node(Instruction(Opcode::NOP)); // Placeholder for unhandled statements
+    }
+    Node* ConvertASTToIR(const ast::Expr* expr) {
+        if (expr == nullptr) return nullptr;
+        if (auto assignmentExpr = dynamic_cast<const ast::AssignmentExpr*>(expr)) {
+            return ConvertAssignmentToIR(assignmentExpr);
+        }
+
+        return new Node(Instruction(Opcode::NOP)); // Placeholder for unhandled expressions
+    }
+    // Adds the SOF and EOF nodes to the IR sequence generated from the AST
+    Node* MConvert(const ast::Stmt* stmt) {
+        Node* sof = new Node(Instruction(Opcode::SOF));
+        Node* ir = ConvertASTToIR(stmt);
+        Node* eof = new Node(Instruction(Opcode::EOF));
+        sof->next = ir;
+        if (ir) ir->prev = sof;
+        if (ir) {
+            Node* lastNode = ir->getLast();
+            lastNode->next = eof;
+            eof->prev = lastNode;
+        } else {
+            sof->next = eof;
+            eof->prev = sof;
+        }
+        return sof;
     }
 }

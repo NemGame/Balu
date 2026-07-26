@@ -18,7 +18,7 @@ namespace ast::optimizer {
         {lexer::EQUALS, L"=="},
         {lexer::NOT_EQUALS, L"!="},
     };
-    const vector<const type_info*> TypeLiterals = {&typeid(ast::NumberExpr), &typeid(ast::NullExpr), &typeid(ast::BooleanExpr), &typeid(ast::ByteExpr), &typeid(ast::StringExpr), &typeid(ast::CharExpr)};
+    const vector<const type_info*> TypeLiterals = {&typeid(ast::NumberExpr), &typeid(ast::NullExpr), &typeid(ast::BooleanExpr), &typeid(ast::ByteExpr), &typeid(ast::SByteExpr), &typeid(ast::ShortExpr), &typeid(ast::UShortExpr), &typeid(ast::Int24Expr), &typeid(ast::UInt24Expr), &typeid(ast::Int32Expr), &typeid(ast::UInt32Expr), &typeid(ast::Int64Expr), &typeid(ast::UInt64Expr), &typeid(ast::StringExpr), &typeid(ast::CharExpr)};
     const vector<const type_info*> NumberLiterals = {&typeid(ast::NumberExpr), &typeid(ast::ByteExpr), &typeid(ast::CharExpr)};
     bool isLiteral(Expr* e) {
         for (const auto* lit : TypeLiterals) {
@@ -167,7 +167,25 @@ namespace ast::optimizer {
         } else if (typeid(*expr) == typeid(ast::BooleanExpr)) {
             return new ast::SymbolType(L"bool");
         } else if (typeid(*expr) == typeid(ast::ByteExpr)) {
-            return new ast::SymbolType(L"byte");
+            return new ast::SymbolType(L"uint8");
+        } else if (typeid(*expr) == typeid(ast::SByteExpr)) {
+            return new ast::SymbolType(L"int8");
+        } else if (typeid(*expr) == typeid(ast::ShortExpr)) {
+            return new ast::SymbolType(L"int16");
+        } else if (typeid(*expr) == typeid(ast::UShortExpr)) {
+            return new ast::SymbolType(L"uint16");
+        } else if (typeid(*expr) == typeid(ast::Int24Expr)) {
+            return new ast::SymbolType(L"int24");
+        } else if (typeid(*expr) == typeid(ast::UInt24Expr)) {
+            return new ast::SymbolType(L"uint24");
+        } else if (typeid(*expr) == typeid(ast::Int32Expr)) {
+            return new ast::SymbolType(L"int32");
+        } else if (typeid(*expr) == typeid(ast::UInt32Expr)) {
+            return new ast::SymbolType(L"uint32");
+        } else if (typeid(*expr) == typeid(ast::Int64Expr)) {
+            return new ast::SymbolType(L"int64");
+        } else if (typeid(*expr) == typeid(ast::UInt64Expr)) {
+            return new ast::SymbolType(L"uint64");
         } else if (typeid(*expr) == typeid(ast::NullExpr)) {
             return new ast::SymbolType(L"null");
         } else {

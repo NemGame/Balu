@@ -82,6 +82,10 @@ namespace parser {
             return new ast::SymbolType(L"uint8");
         } else if (token.kind == lexer::SBYTE_KW) {
             return new ast::SymbolType(L"int8");
+        } else if (token.kind == lexer::INT32_KW) {
+            return new ast::SymbolType(L"int32");
+        } else if (token.kind == lexer::UINT32_KW) {
+            return new ast::SymbolType(L"uint32");
         }
         return new ast::SymbolType(token.value);
     }
