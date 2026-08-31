@@ -126,6 +126,8 @@ namespace ast::decompiler {
                 result += L" " + to_wstring(s->levels);
             }
             return result;
+        } else if (auto s = dynamic_cast<ast::VolatileExpr*>(expr)) {
+            return L"volatile " + DecompileStatement(s->InnerStmt, indent);
         }
         else {
             return L"<unknown expr>";

@@ -127,8 +127,6 @@ namespace lexer {
         ALIAS,          // alias
         NEW,            // new
         FN,             // fn
-        INLINE,         // inline
-        OUTLINE,        // outline
         STATIC,         // static
         PUBLIC,         // public
         PRIVATE,        // private
@@ -136,6 +134,11 @@ namespace lexer {
         INTERNAL,       // internal
         GET,            // get
         SET,            // set
+
+        // Modifiers
+        INLINE,         // inline
+        OUTLINE,        // outline
+        VOLATILE,       // volatile
 
         // Modules and imports
         IMPORT,         // import
@@ -178,8 +181,6 @@ namespace lexer {
         {L"alias", ALIAS},
         {L"new", NEW},
         {L"fn", FN},
-        {L"inline", INLINE},
-        {L"outline", OUTLINE},
         {L"static", STATIC},
         {L"public", PUBLIC},
         {L"private", PRIVATE},
@@ -187,6 +188,10 @@ namespace lexer {
         {L"internal", INTERNAL},
         {L"get", GET},
         {L"set", SET},
+
+        {L"inline", INLINE},
+        {L"outline", OUTLINE},
+        {L"volatile", VOLATILE},
 
         {L"import", IMPORT},
         {L"from", FROM},
@@ -408,9 +413,11 @@ namespace lexer {
             case SET: return L"SET";
             case NEW: return L"NEW";
             case FN: return L"FN";
+
             case INLINE: return L"INLINE";
             case OUTLINE: return L"OUTLINE";
-
+            case VOLATILE: return L"VOLATILE";
+            
             case IMPORT: return L"IMPORT";
             case FROM: return L"FROM";
             case EXPORT: return L"EXPORT";

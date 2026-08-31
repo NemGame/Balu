@@ -8,6 +8,7 @@ namespace parser {
     // Forward declarations
     ast::Type* parse_type(Parser* parser, binding_power bp);
     ast::Expr* parse_expr(Parser* parser, binding_power bp);
+    ast::Stmt* parse_stmt(Parser* parser);
 
     bool is_postfix_array_instantiation_start(Parser* parser) {
         if (!parser->currentToken().mightBeType()) {
@@ -326,5 +327,11 @@ namespace parser {
             p->expect(lexer::CLOSE_PAREN);
         }
         return new ast::TypeOfExpr(expr);
+    }
+    ast::Expr* parse_volatile_expr(Parser* p) {
+        if (CompilerOptions.verbose) _wcout << L"Parsing volatile expression at " << p->position() << endl;
+        p->SkipOver(lexer::VOLATILE);  // consume 'volatile'
+        ast::Stmt* expr = parse_stmt(p);
+        return new ast::VolatileExpr(expr);
     }
 }

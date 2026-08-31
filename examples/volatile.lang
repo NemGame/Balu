@@ -1,0 +1,7 @@
+volatile {
+    const x = 3 + 2;
+    5 * 3 + x;
+};
+volatile getArgs;
+volatile auto x = 3;
+volatile 3;

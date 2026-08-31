@@ -20,9 +20,13 @@
 
 ## How to use?
 ### Windows: `.\main.exe filename.balu`
-### Currently only Windows is supported, Win10 is used for testing (with g++ 16.1.0)
+### Currently only Windows is supported
 ### To ignore the errors, just add the `-np`, or `--no-panic` flag in the command line
 ### For help, add the `-h`, `--help`, `-?`, `/help`, `/h` or `/help` flag in the command line
+
+## Wanna build it yourself?
+### Good luck, you should be able to find what I used in [src/build.bat](src/build.bat)
+### I'm using [g++](https://github.com/skeeto/w64devkit/releases/tag/v2.9.1) and Windows 11
 
 ## Curious to see what your code looks like just before compilation? 
 ### Use the `-decompile=filename` flag ; replace `filename` with your desired output file's name

@@ -83,6 +83,9 @@ namespace parser {
         
         nud(lexer::TYPEOF, parse_typeof_expr);
 
+        // Volatile expression
+        nud(lexer::VOLATILE, parse_volatile_expr);
+
         // Statements
         stmt(lexer::LET, parse_var_decl_stmt);
         stmt(lexer::CONST, parse_var_decl_stmt);

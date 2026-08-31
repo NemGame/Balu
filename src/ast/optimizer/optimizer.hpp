@@ -36,6 +36,9 @@ namespace ast::optimizer {
         if (!expr) {
             return;
         }
+        if (auto volatileExpr = dynamic_cast<ast::VolatileExpr*>(expr)) {
+            return;
+        }
         if (auto prefixExpr = dynamic_cast<ast::PrefixExpr*>(expr)) {
             OptimizePrefixExpr(expr);
         } else if (auto binaryExpr = dynamic_cast<ast::BinaryExpr*>(expr)) {

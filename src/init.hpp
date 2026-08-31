@@ -19,6 +19,8 @@
 
 using namespace std;
 
+#define UNNECESSARY_PANIC_CHECK 0
+
 struct CommandLineValuePair {
     wstring name;
     wstring value;

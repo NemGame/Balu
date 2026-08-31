@@ -125,6 +125,23 @@ namespace parser {
             ss << L'[' << line << L':' << column << L']';
             return ss.str();
         }
+        // Exact same as `expect`, but the token is guaranteed to match
+        // Should be used when certain about the token
+        lexer::Token SkipOver(lexer::TokenKind kind) {
+#if UNNECESSARY_PANIC_CHECK
+            lexer::Token token = currentToken();
+            if (token.kind != kind) {
+                wstring message = L"Expected token at " + position() + L" to be " + lexer::TokenKindString(kind) + L" but found " + lexer::TokenKindString(token.kind);
+                _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+                errors.push_back(ParserError(message, token.line, token.column));
+                if (CompilerOptions.panic) {
+                    if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
+                    exit(1);
+                }
+            }
+#endif
+            return advance();
+        }
     };
 }
 

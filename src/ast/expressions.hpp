@@ -828,4 +828,46 @@ namespace ast {
             return new TypeOfExpr(QueriedExpr ? QueriedExpr->Clone() : nullptr);
         }
     };
+    struct VolatileExpr : public Expr {
+        Stmt* InnerStmt;
+        VolatileExpr(Stmt* stmt) : InnerStmt(stmt) {}
+        ~VolatileExpr() { delete InnerStmt; }
+        void expr() override {}
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
+            wcout_ << GetName(indent) << endl;
+        }
+        wstring GetName(int indent = 0) const override {
+            wstring str = wstring(indent * 2, L' ') + L"VolatileExpr";
+            if (InnerStmt) {
+                // Remove trailing \n
+                const wstring stmtName = GetInnerStmtName(indent + 1);
+                const wstring trimmed = stmtName.substr(0, stmtName.size() - 1);
+                str += L"\n" + trimmed;
+            }
+            return str;
+        }
+        wstring GetValue() const override {
+            wstring str = L"VolatileExpr";
+            if (InnerStmt) {
+                wstring innerName = GetInnerStmtName();
+                if (!innerName.empty()) {
+                    str += L": " + innerName;
+                } else {
+                    str += L": (empty)";
+                }
+            }
+            return str;
+        }
+        Expr* Clone() const override {
+            return new VolatileExpr(InnerStmt ? InnerStmt->Clone() : nullptr);
+        }
+        wstring GetInnerStmtName(int indent = 0) const {
+            if (InnerStmt) {
+                wstringstream wss;
+                InnerStmt->Dump(indent + 1, wss);
+                return wss.str();
+            }
+            return L"";
+        }
+    };
 }

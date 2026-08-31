@@ -55,6 +55,8 @@ namespace parser {
             return parse_block_stmt(p);
         }
 
+        const lexer::TokenKind currentKind = p->currentTokenKind();
+
         // Identifier-led assignments (e.g. x = 2;) are expression statements,
         // not declarations. Handle them before stmt lookup routes IDENTIFIER to var decl.
         if (p->currentTokenKind() == lexer::IDENTIFIER && is_assignment_operator(p->nextTokenKind())) {
@@ -83,7 +85,7 @@ namespace parser {
             return nullptr; // Return nullptr to indicate failure to parse a valid statement
         }
 
-        p->expect(lexer::SEMICOLON);
+        if (currentKind != lexer::VOLATILE) p->expect(lexer::SEMICOLON);  // Required semilcolon
 
         return new ast::ExpressionStmt( expr );
     }
