@@ -101,16 +101,17 @@ namespace ast {
     struct VarDeclStmt : public Stmt {
         wstring VariableName;
         bool isConstant;
+        bool mayAutoDelete;
         Expr* AssignedValue;
         Type* ExplicitType;
         void stmt() override {}
-        VarDeclStmt(const wstring& n, bool c, Expr* init, Type* type) : VariableName(n), isConstant(c), AssignedValue(init), ExplicitType(type) {}
+        VarDeclStmt(const wstring& n, bool c, Expr* init, Type* type, bool mayAutoDel = true) : VariableName(n), isConstant(c), AssignedValue(init), ExplicitType(type), mayAutoDelete(mayAutoDel) {}
         ~VarDeclStmt() {
             delete AssignedValue;
             delete ExplicitType;
         }
         void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
-            wcout_ << wstring(indent * 2, L' ') << L"VarDeclStmt: " << VariableName << (isConstant ? L" (const)" : L"") << endl;
+            wcout_ << wstring(indent * 2, L' ') << L"VarDeclStmt: " << VariableName << (isConstant ? L" (const)" : L"") << (!mayAutoDelete ? L" (manually managed)" : L"") << endl;
             if (ExplicitType) {
                 ExplicitType->Dump(indent + 1, wcout_);
             }
@@ -120,7 +121,7 @@ namespace ast {
         }
         wstring kind() const { return L"VarDeclStmt"; }
         Stmt* Clone() const override {
-            return new VarDeclStmt(VariableName, isConstant, AssignedValue ? AssignedValue->Clone() : nullptr, ExplicitType ? ExplicitType->Clone() : nullptr);
+            return new VarDeclStmt(VariableName, isConstant, AssignedValue ? AssignedValue->Clone() : nullptr, ExplicitType ? ExplicitType->Clone() : nullptr, mayAutoDelete);
         }
     };
     // typeof varName = typeName;
@@ -365,6 +366,21 @@ namespace ast {
             vector<MethodParameter*> clonedParams;
             for (auto& p : Parameters) clonedParams.push_back(p ? p->Clone() : nullptr);
             return new FuncDeclStmt(FunctionName, ReturnType ? ReturnType->Clone() : nullptr, Body ? Body->Clone() : nullptr, Lining, clonedParams);
+        }
+    };
+    struct UnusedStmt : public Stmt {
+        wstring variableIdentifier;
+        UnusedStmt(const wstring& varId) : variableIdentifier(varId) {}
+        void stmt() override {}
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
+            wcout_ << GetName(indent) << endl;
+        }
+        wstring kind() const { return L"UnusedStmt"; }
+        wstring GetName(int indent = 0) const {
+            return wstring(indent * 2, L' ') + L"UnusedStmt: " + variableIdentifier;
+        }
+        Stmt* Clone() const override {
+            return new UnusedStmt(variableIdentifier);
         }
     };
 }

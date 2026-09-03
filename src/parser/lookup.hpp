@@ -100,6 +100,9 @@ namespace parser {
         stmt(lexer::FN, parse_func_decl_stmt);
         stmt(lexer::OPEN_CURLY, parse_block_stmt);
 
+        stmt(lexer::USED, parse_var_decl_stmt);
+        stmt(lexer::UNUSED, parse_unused_stmt);
+
         stmt(lexer::TYPEOF, parse_type_change_stmt);
 
         // Types

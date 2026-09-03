@@ -127,7 +127,7 @@ namespace parser {
         }
         // Exact same as `expect`, but the token is guaranteed to match
         // Should be used when certain about the token
-        lexer::Token SkipOver(lexer::TokenKind kind) {
+        lexer::Token advanceOver(lexer::TokenKind kind) {
 #if UNNECESSARY_PANIC_CHECK
             lexer::Token token = currentToken();
             if (token.kind != kind) {

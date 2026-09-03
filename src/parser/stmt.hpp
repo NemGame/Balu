@@ -103,8 +103,12 @@ namespace parser {
     };
     ast::Stmt* parse_var_decl_stmt(Parser* p) {
         if (CompilerOptions.verbose) _wcout << L"Parsing variable declaration statement at " << p->position() << endl;
+        
+        const bool mayAutoDelete = p->currentTokenKind() != lexer::USED;
+        if (!mayAutoDelete) p->advanceOver(lexer::USED);
+
         // Declared using the let or const keyword, otherwise it's either a mut, or a typename declaration
-        bool letConst = p->currentTokenKind() == lexer::LET || p->currentTokenKind() == lexer::CONST;
+        const bool letConst = p->currentTokenKind() == lexer::LET || p->currentTokenKind() == lexer::CONST;
         
         // Keyword alone, skip
         if (p->currentToken().isTypeName() && p->nextTokenKind() == lexer::SEMICOLON) {
@@ -226,8 +230,24 @@ namespace parser {
             varName,
             isConstant,
             assignedValue,
-            explicitType
+            explicitType,
+            mayAutoDelete
         };
+    }
+    ast::Stmt* parse_unused_stmt(Parser* p) {
+        if (CompilerOptions.verbose) _wcout << L"Parsing unused statement at " << p->position() << endl;
+        p->expect(lexer::UNUSED);  // consume 'unused'
+
+        wstring variableIdentifier = p->expectError(lexer::IDENTIFIER, Error(L"Expected variable identifier after 'unused' keyword, but got " + lexer::TokenKindString(p->currentTokenKind()) + L" at " + p->position())).value;
+        if (p->previousTokenKind() != lexer::IDENTIFIER) {
+            p->advanceUntil(lexer::SEMICOLON); // Skip to the end of the problematic statement
+            p->expect(lexer::SEMICOLON); // Consume the semicolon
+            return nullptr;
+        }
+
+        p->expect(lexer::SEMICOLON); // Consume the semicolon
+
+        return new ast::UnusedStmt(variableIdentifier);
     }
     ast::Stmt* parse_alias_decl_stmt(Parser* p) {
         if (CompilerOptions.verbose) _wcout << L"Parsing alias declaration statement at " << p->position() << endl;

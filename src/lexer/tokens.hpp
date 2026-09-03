@@ -140,6 +140,10 @@ namespace lexer {
         OUTLINE,        // outline
         VOLATILE,       // volatile
 
+        // Memory management
+        USED,           // used
+        UNUSED,         // unused
+
         // Modules and imports
         IMPORT,         // import
         FROM,           // from
@@ -192,6 +196,9 @@ namespace lexer {
         {L"inline", INLINE},
         {L"outline", OUTLINE},
         {L"volatile", VOLATILE},
+
+        {L"used", USED},
+        {L"unused", UNUSED},
 
         {L"import", IMPORT},
         {L"from", FROM},
@@ -417,7 +424,10 @@ namespace lexer {
             case INLINE: return L"INLINE";
             case OUTLINE: return L"OUTLINE";
             case VOLATILE: return L"VOLATILE";
-            
+
+            case USED: return L"USED";
+            case UNUSED: return L"UNUSED";
+
             case IMPORT: return L"IMPORT";
             case FROM: return L"FROM";
             case EXPORT: return L"EXPORT";

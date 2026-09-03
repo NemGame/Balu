@@ -330,7 +330,7 @@ namespace parser {
     }
     ast::Expr* parse_volatile_expr(Parser* p) {
         if (CompilerOptions.verbose) _wcout << L"Parsing volatile expression at " << p->position() << endl;
-        p->SkipOver(lexer::VOLATILE);  // consume 'volatile'
+        p->advanceOver(lexer::VOLATILE);  // consume 'volatile'
         ast::Stmt* expr = parse_stmt(p);
         return new ast::VolatileExpr(expr);
     }

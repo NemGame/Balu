@@ -60,6 +60,7 @@ namespace IR::Optimizer {
         vector<VariableInfo> variables;
         size_t scopeCounter = 0;
         while (current) {
+            const bool mayAutoDelete = current->instruction.opcode != Opcode::CREATE_USED_VAR;
             if (current->instruction.opcode == Opcode::SET_SCOPE) {
                 scopeCounter = stoul(current->instruction.operands[0]);
                 for (auto it = variables.begin(); it != variables.end();) {
@@ -77,7 +78,7 @@ namespace IR::Optimizer {
                         ++it;
                     }
                 }
-            } else if (current->instruction.opcode == Opcode::CREATE_VAR) {
+            } else if (current->instruction.opcode == Opcode::CREATE_VAR || !mayAutoDelete) {
                 const string varName = current->instruction.operands[0], varType = current->instruction.operands[1];
                 auto it = find_if(variables.begin(), variables.end(), [&](const VariableInfo& v) { return v.name == varName; });
                 if (it != variables.end()) {
@@ -97,7 +98,7 @@ namespace IR::Optimizer {
                         it->type = varType;
                         it->declaration = current;
                     }
-                } else {
+                } else if (mayAutoDelete) {
                     VariableInfo varInfo;
                     varInfo.name = current->instruction.operands[0];
                     varInfo.type = current->instruction.operands[1];
