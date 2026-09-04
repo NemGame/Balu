@@ -371,6 +371,7 @@ namespace ast {
     struct UnusedStmt : public Stmt {
         wstring variableIdentifier;
         UnusedStmt(const wstring& varId) : variableIdentifier(varId) {}
+        UnusedStmt(VarDeclStmt* varDecl) : variableIdentifier(varDecl ? varDecl->VariableName : L"") {}
         void stmt() override {}
         void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
             wcout_ << GetName(indent) << endl;

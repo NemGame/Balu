@@ -306,6 +306,8 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    ast::precompiler::PreCompile(&ast);
+
     #pragma region AST Decompiler
 
     if (!astDecompilerFilename.empty()) {

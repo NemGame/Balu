@@ -6,3 +6,4 @@
 #include "statements.hpp"
 #include "optimizer/init.hpp"
 #include "decompiler/init.hpp"
+#include "precompiler/init.hpp"

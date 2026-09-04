@@ -1,0 +1,5 @@
+let x = 3;
+const x: string = "wasd";
+const y = 4;
+
+x;
