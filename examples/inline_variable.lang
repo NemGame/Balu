@@ -1,5 +1,12 @@
+let x: number = 2;
+4 + x;
+let x: number = 3;
+
+/*
 let x = 3;
+let y = x / 2;
 const x: string = "wasd";
 const y = 4;
 
-x;
+2 + x;
+2 + y;

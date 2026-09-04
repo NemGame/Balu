@@ -1,121 +1,158 @@
 #pragma once
 
 namespace ast::precompiler {
-
-    struct InlineVariableInfo {
+    struct VariableInfo {
+        wstring variableName = L"";
         Stmt* declaration = nullptr;
         size_t declarationIndex = 0;
         vector<Stmt*> usage = {};
+        size_t scope = 0;
+        Type* type = nullptr;
         bool canInline = false;
+        bool canBeDestroyed = false;
     };
-    struct DestroyVariableInfo {
-        bool canDestroy = false;
+    struct VariableRegistry : vector<VariableInfo> {
+        VariableInfo& AddVariable(VarDeclStmt* varDecl, size_t declarationIndex) {
+            VariableInfo varInfo;
+            varInfo.variableName = varDecl->VariableName;
+            varInfo.declaration = varDecl;
+            varInfo.declarationIndex = declarationIndex;
+            varInfo.type = varDecl->ExplicitType;
+            varInfo.canBeDestroyed = varDecl->mayAutoDelete;
+            push_back(varInfo);
+            return back();
+        }
+        bool HasVariable(VarDeclStmt* varDecl) {
+            for (const auto& varInfo : *this) {
+                if (varInfo.declaration == varDecl) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        bool HasVariable(const wstring& variableName) {
+            for (const VariableInfo& varInfo : *this) {
+                if (varInfo.declaration && varInfo.variableName == variableName) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        VariableInfo* GetVariable(const wstring& variableName) {
+            for (auto& varInfo : *this) {
+                if (varInfo.declaration && varInfo.variableName == variableName) {
+                    return &varInfo;
+                }
+            }
+            return nullptr;
+        }
+        void RemoveVariable(VarDeclStmt* varDecl) {
+            this->erase(std::remove_if(this->begin(), this->end(),
+                [varDecl](const VariableInfo& varInfo) { return varInfo.declaration == varDecl; }),
+                this->end());
+        }
+        void RemoveVariable(const wstring& variableName) {
+            this->erase(std::remove_if(this->begin(), this->end(),
+                [variableName](const VariableInfo& varInfo) { return varInfo.variableName == variableName; }),
+                this->end());
+        }
+        void fix() {
+            this->erase(std::remove_if(this->begin(), this->end(),
+                [](const VariableInfo& varInfo) { return varInfo.declaration == nullptr; }),
+                this->end());
+        }
+        void RemoveScope(size_t scope) {
+            this->erase(std::remove_if(this->begin(), this->end(),
+                [scope](const VariableInfo& varInfo) { return varInfo.scope == scope; }),
+                this->end());
+        }
+        void AdjustDeclarationIndices(BlockStmt* blockStmt, size_t startIndex) {
+            for (size_t i = startIndex; i < blockStmt->statements.size(); i++) {
+                if (auto varDecl = dynamic_cast<VarDeclStmt*>(blockStmt->statements[i])) {
+                    if (VariableInfo* varInfo = GetVariable(varDecl->VariableName)) {
+                        varInfo->declarationIndex = i;
+                    }
+                }
+            }
+        }
+        void UsedIdentifier(const wstring& variableName, Stmt* stmt) {
+            if (VariableInfo* varInfo = GetVariable(variableName)) {
+                varInfo->usage.push_back(stmt);
+            }
+        }
     };
-    unordered_map<wstring, size_t> GetIdentifiers(Expr* expr, unordered_map<wstring, size_t>& identifiers) {
-        if (auto identifierExpr = dynamic_cast<IdentifierExpr*>(expr)) {
-            identifiers[identifierExpr->value]++;
-        } else if (auto binaryExpr = dynamic_cast<BinaryExpr*>(expr)) {
-            GetIdentifiers(binaryExpr->left, identifiers);
-            GetIdentifiers(binaryExpr->right, identifiers);
-        }
-        else if (auto unaryExpr = dynamic_cast<UnaryExpr*>(expr)) {
-            GetIdentifiers(unaryExpr->RightExpr, identifiers);
-        }
-        return identifiers;
-    }
-    unordered_map<wstring, size_t> GetIdentifiers(Stmt* stmt, unordered_map<wstring, size_t>& identifiers) {
-        if (auto varDecl = dynamic_cast<VarDeclStmt*>(stmt)) {
-            unordered_map<wstring, size_t> initIdentifiers;
-            GetIdentifiers(varDecl->AssignedValue, initIdentifiers);
-            for (const auto& [key, value] : initIdentifiers) {
-                identifiers[key] += value;
+    void InlineVariables(Expr* expr, Stmt* exprStmt, VariableRegistry& variableInfos) {
+        if (auto binaryExpr = dynamic_cast<BinaryExpr*>(expr)) {
+            auto leftIdentifier = dynamic_cast<IdentifierExpr*>(binaryExpr->left);
+            if (leftIdentifier) {
+                variableInfos.UsedIdentifier(leftIdentifier->value, exprStmt);
             }
-        } else if (auto unusedStmt = dynamic_cast<UnusedStmt*>(stmt)) {
-            identifiers[unusedStmt->variableIdentifier]++;
-        } else if (auto exprStmt = dynamic_cast<ExpressionStmt*>(stmt)) {
-            unordered_map<wstring, size_t> exprIdentifiers;
-            GetIdentifiers(exprStmt->expression, exprIdentifiers);
-            for (const auto& [key, value] : exprIdentifiers) {
-                identifiers[key] += value;
-            }
-        }
-        return identifiers;
-    }
-    void AdjustDeclarationIndices(unordered_map<wstring, InlineVariableInfo>& inlineVariableMap, size_t startIndex, int difference) {
-        for (auto& [variableName, info] : inlineVariableMap) {
-            if (info.declarationIndex >= startIndex) {
-                info.declarationIndex += difference;
+            auto rightIdentifier = dynamic_cast<IdentifierExpr*>(binaryExpr->right);
+            if (rightIdentifier) {
+                variableInfos.UsedIdentifier(rightIdentifier->value, exprStmt);
             }
         }
     }
-    void InlineVariables(BlockStmt* blockStmt) {
+    void InlineVariables(BlockStmt* blockStmt, size_t currentScope, VariableRegistry& variableInfos) {
         if (CompilerOptions.verbose) _wcout << L"[PreCompiler] Inlining variables in block statement..." << endl;
-        unordered_map<wstring, InlineVariableInfo> inlineVariableMap;
 
-        unordered_map<wstring, bool> destroyVariableList;
-
-        unordered_map<wstring, size_t> exprIdentifiers;
-        GetIdentifiers(static_cast<Stmt*>(blockStmt), exprIdentifiers);
         for (size_t i = 0; i < blockStmt->statements.size(); i++) {
             Stmt* stmt = blockStmt->statements[i];
+
             if (auto varDecl = dynamic_cast<VarDeclStmt*>(stmt)) {
-                const bool isUsed = exprIdentifiers.find(varDecl->VariableName) != exprIdentifiers.end();
-                if (inlineVariableMap.find(varDecl->VariableName) != inlineVariableMap.end() || !isUsed) {
-                    if (!CompilerOptions.IR.allowRedeclaration && isUsed) {
-                        const wstring message = L"Variable " + varDecl->VariableName + L" is already declared.";
-                        _wcout << message << endl;
-                        if (CompilerOptions.panic) {
-                            throw runtime_error(string(message.begin(), message.end()));
+                if (variableInfos.HasVariable(varDecl->VariableName)) {
+                    if (VariableInfo* existingVarInfo = variableInfos.GetVariable(varDecl->VariableName)) {
+                        if (existingVarInfo->usage.size() == 0) {
+                            blockStmt->statements.erase(blockStmt->statements.begin() + existingVarInfo->declarationIndex);
+                            variableInfos.RemoveVariable(varDecl->VariableName);
+                            variableInfos.AdjustDeclarationIndices(blockStmt, existingVarInfo->declarationIndex);
+                            i--;
+                            goto firstDeclaration;
+                        }
+                        if (existingVarInfo->type->GetName() == varDecl->ExplicitType->GetName()) {
+                            AssignmentExpr* assignmentExpr = new AssignmentExpr(new IdentifierExpr(existingVarInfo->variableName), lexer::NewToken(lexer::ASSIGNMENT, L"="), varDecl->AssignedValue->Clone());
+                            delete varDecl;
+                            blockStmt->statements[i] = new ExpressionStmt(assignmentExpr);
+                            return;
                         }
                     }
-                    // TODO: Make it look good
-                    if (!isUsed) {
-                        blockStmt->statements.erase(blockStmt->statements.begin() + i);
-                        delete varDecl;
-                        AdjustDeclarationIndices(inlineVariableMap, i, -1);
-                        i--;
-                    }
-                    if (inlineVariableMap[varDecl->VariableName].usage.empty()) {
-                        _wcout << L"Destroying variable " << varDecl->VariableName << L" as it was never used" << endl;
-                        blockStmt->statements.erase(blockStmt->statements.begin() + inlineVariableMap[varDecl->VariableName].declarationIndex);
-                        delete inlineVariableMap[varDecl->VariableName].declaration;
-                        inlineVariableMap.erase(varDecl->VariableName);
-                        AdjustDeclarationIndices(inlineVariableMap, i, -1);
-                        i--;
-                    } else {
-                        UnusedStmt* unusedStmt = new UnusedStmt(varDecl);
-                        blockStmt->statements.insert(blockStmt->statements.begin() + i, unusedStmt);
-                        i++;
-                    }
+                    UnusedStmt* unusedStmt = new UnusedStmt(varDecl->VariableName);
+                    blockStmt->statements.insert(blockStmt->statements.begin() + i, unusedStmt);
+                    variableInfos.RemoveVariable(varDecl->VariableName);
+                    variableInfos.AdjustDeclarationIndices(blockStmt, i);
+                    i++;
                 }
-                inlineVariableMap[varDecl->VariableName] = InlineVariableInfo{varDecl, i, {}, ast::optimizer::isLiteral(varDecl->AssignedValue)};
-            } else if (auto unusedStmt = dynamic_cast<UnusedStmt*>(stmt)) {
-                if (destroyVariableList.find(unusedStmt->variableIdentifier) == destroyVariableList.end()) {
-                    destroyVariableList.erase(unusedStmt->variableIdentifier);
-                }
-            } else if (auto exprStmt = dynamic_cast<ExpressionStmt*>(stmt)) {
-                
-            }
-        }
+        firstDeclaration:
 
-        for (auto& [variableName, canDestroy] : destroyVariableList) {
-            if (canDestroy) {
-                UnusedStmt* unusedStmt = new UnusedStmt(variableName);
-                blockStmt->statements.push_back(unusedStmt);
-                continue;
-            }
-            const wstring message = L"Variable " + variableName + L" was never destroyed.";
-            _wcout << message << endl;
-            if (CompilerOptions.panic) {
-                throw runtime_error(string(message.begin(), message.end()));
+                InlineVariables(varDecl->AssignedValue, varDecl, variableInfos);
+
+                VariableInfo varInfo;
+                varInfo.declaration = varDecl;
+                varInfo.declarationIndex = i;
+                varInfo.type = varDecl->ExplicitType;
+                varInfo.canBeDestroyed = varDecl->mayAutoDelete;
+                varInfo.scope = currentScope;
+                varInfo.variableName = varDecl->VariableName;
+                variableInfos.push_back(varInfo);
+            } else if (auto _blockStmt = dynamic_cast<BlockStmt*>(stmt)) {
+                InlineVariables(_blockStmt, currentScope + 1, variableInfos);
+                variableInfos.RemoveScope(currentScope + 1);
+            } else if (auto unusedStmt = dynamic_cast<UnusedStmt*>(stmt)) {
+                variableInfos.RemoveVariable(unusedStmt->variableIdentifier);
+            } else if (auto exprStmt = dynamic_cast<ExpressionStmt*>(stmt)) {
+                InlineVariables(exprStmt->expression, exprStmt, variableInfos);
             }
         }
+    }
+    void InlineVariables(BlockStmt* blockStmt, size_t currentScope) {
+        VariableRegistry variableInfos;
+        InlineVariables(blockStmt, currentScope, variableInfos);
     }
 
     void PreCompile(Stmt* stmt) {
         if (CompilerOptions.verbose) _wcout << L"[PreCompiler] Pre-compiling statement..." << endl;
         if (auto blockStmt = dynamic_cast<BlockStmt*>(stmt)) {
-            InlineVariables(blockStmt);
+            InlineVariables(blockStmt, 0);
         }
     }
 }
