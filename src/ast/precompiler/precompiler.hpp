@@ -198,7 +198,6 @@ namespace ast::precompiler {
             PreCompile(assignmentExpr->Assignee, varReg, stmt);
             PreCompile(assignmentExpr->Value, varReg, stmt);
         } else if (auto identifierExpr = dynamic_cast<IdentifierExpr*>(expr)) {
-            varReg.UsedVariable(identifierExpr->value, stmt);
             wcout << L"Used variable: " << identifierExpr->value << endl;
         } else if (auto binaryExpr = dynamic_cast<BinaryExpr*>(expr)) {
             PreCompile(binaryExpr->left, varReg, stmt);
