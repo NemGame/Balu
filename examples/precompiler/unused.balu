@@ -1,0 +1,29 @@
+let x = 3;
+{
+    const z = 32;
+
+    let q: auto = 5;
+
+    used y = 2;
+
+    unused z;
+
+    y = 3;
+}
+
+unused x;
+used const x = 2;
+
+used let c = 3 + x;
+
+const b = 53;
+
+fn wasd(): void {
+    return (x + 2 * c) + 37 * b;
+}
+
+unused c;
+
+used let a;
+
+2 + 3;

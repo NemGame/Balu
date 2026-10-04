@@ -57,9 +57,13 @@ private:
     struct _User {
         CommandLineArgs Args;  // Command line arguments
     };
+    struct _Warnings {
+        bool mayLogWarnings = true;  // Whether to allow logging of warnings [true]
+        bool undeletableVariableRemains = true;  // Whether to warn if an undeletable variable remains [true]
+        bool unmatchedCharacter = true;  // Whether to warn if an unmatched character is encountered [true]
+    };
 public:
     bool verbose = false;  // Whether to print verbose output [false]
-    bool showWarnings = true;  // Whether to show warnings [true]
     bool panic = true;  // Whether to panic on errors (exit immediately) [true]
     bool debug = false;  // Whether to print debug information [false]
     bool provideHelp = true;  // Whether to tell the user about the correct syntax when they make a syntax error [true]
@@ -67,6 +71,7 @@ public:
     bool allowOptimization = true;  // Whether to allow optimizations [true]
     _IR IR;  // IR compiler options
     _User User;  // User-provided options
+    _Warnings Warnings;  // Warning options
 };
 _CompilerOptions CompilerOptions;
 struct _OptimizationOptions {

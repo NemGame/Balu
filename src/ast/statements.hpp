@@ -60,6 +60,19 @@ namespace ast {
             }
             return *this;
         }
+        size_t IndexOf(Stmt* stmt) {
+            for (size_t i = 0; i < statements.size(); ++i) {
+                if (statements[i] == stmt) return i;
+            }
+            return static_cast<size_t>(-1); // Not found
+        }
+        void Fix() {
+            vector<Stmt*> nonNullStatements;
+            for (auto s : statements) {
+                if (s != nullptr) nonNullStatements.push_back(s);
+            }
+            statements = std::move(nonNullStatements);
+        }
         BlockStmt(const BlockStmt&) = delete;
         BlockStmt& operator=(const BlockStmt&) = delete;
         ~BlockStmt() {

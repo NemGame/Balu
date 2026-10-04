@@ -179,6 +179,8 @@ namespace ast::decompiler {
             return result;
         } else if (auto s = dynamic_cast<ast::AliasDeclStmt*>(stmt)) {
             return wstring(indent * 4, L' ') + L"alias " + s->AliasName + L" = " + DecompileExpression(s->AliasedValue, 0);
+        } else if (auto s = dynamic_cast<ast::UnusedStmt*>(stmt)) {
+            return wstring(indent * 4, L' ') + L"unused " + s->variableIdentifier;
         }
         else {
             return L"<unknown stmt>";

@@ -92,7 +92,7 @@ namespace lexer {
             }
             if (!matched) {
                 // Handle unmatched case, e.g., advance by one character or throw an error
-                if (CompilerOptions.showWarnings) _wcout << L"Warning: Unmatched character: " << lex.at() << L" at " << lex.position() << endl;
+                if (CompilerOptions.Warnings.unmatchedCharacter) _wcout << L"Warning: Unmatched character: " << lex.at() << L" at " << lex.position() << endl;
                 lex.advanceN(1);
             }
             if (CompilerOptions.verbose) _wcout << L"[Lexer] Current position: " << lex.position() << L", Tokens so far: " << lex.tokens.size() << endl;

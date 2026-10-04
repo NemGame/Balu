@@ -128,7 +128,7 @@ int main(int argc, char* argv[]) {
     if (_feedbackMode) _wcout << wstring(20, L'=') << L"[Feedback Mode Enabled]" << wstring(20, L'=') << endl;
 
     CompilerOptions.verbose = _feedbackMode ? true : vectorContains(*flags, vector<wstring>{L"-v", L"--verbose", L"/verbose"});
-    CompilerOptions.showWarnings =  _feedbackMode ? true : !vectorContains(*flags, vector<wstring>{L"--no-warnings", L"/no-warnings", L"-nw", L"/nw"});
+    CompilerOptions.Warnings.mayLogWarnings =  _feedbackMode ? true : !vectorContains(*flags, vector<wstring>{L"--no-warnings", L"/no-warnings", L"-nw", L"/nw"});
     CompilerOptions.panic =  _feedbackMode ? false : !vectorContains(*flags, vector<wstring>{L"--no-panic", L"/no-panic", L"-np", L"/np"});
     CompilerOptions.debug = _feedbackMode ? true : vectorContains(*flags, vector<wstring>{L"--debug", L"/debug", L"-d", L"/d"});
     CompilerOptions.allowLexerErrors = _feedbackMode ? true : !vectorContains(*flags, vector<wstring>{L"--no-lexer-errors", L"/no-lexer-errors", L"-nle", L"/nle"});
@@ -136,7 +136,7 @@ int main(int argc, char* argv[]) {
     if (vectorContains(*flags, vector<wstring>{L"--log-globals"})) {
         _wcout << L"Global Variables:" << endl;
         _wcout << L"_verbose: " << (CompilerOptions.verbose ? L"true" : L"false") << endl;
-        _wcout << L"_showWarnings: " << (CompilerOptions.showWarnings ? L"true" : L"false") << endl;
+        _wcout << L"_mayLogWarnings: " << (CompilerOptions.Warnings.mayLogWarnings ? L"true" : L"false") << endl;
         _wcout << L"_panic: " << (CompilerOptions.panic ? L"true" : L"false") << endl;
         _wcout << L"_allowLexerErrors: " << (CompilerOptions.allowLexerErrors ? L"true" : L"false") << endl;
         _wcout << L"_allowOptimization: " << (CompilerOptions.allowOptimization ? L"true" : L"false") << endl;
