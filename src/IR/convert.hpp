@@ -31,9 +31,6 @@ namespace IR {
             if (OptimizationOptions.IR.optimizeLabels) {
                 Optimizer::OptimizeLabels(head);
             }
-            if (OptimizationOptions.IR.automaticVariableDeletion) {
-                Optimizer::AutoFreeVariables(setScopeNode);
-            }
             return setScopeNode;
         } else if (auto ifStmt = dynamic_cast<const ast::IfStmt*>(stmt)) {
             return ConvertIfToIR(ifStmt);
@@ -41,7 +38,7 @@ namespace IR {
             const string varName = to_string(varDeclStmt->VariableName);
             const string varType = to_string(varDeclStmt->ExplicitType->GetName());
             const bool isliteral = varDeclStmt->AssignedValue && ast::optimizer::isLiteral(varDeclStmt->AssignedValue);
-            Node* creation = new Node(Instruction(varDeclStmt->mayAutoDelete ? Opcode::CREATE_VAR : Opcode::CREATE_USED_VAR, vector<string>({ varName, varType })));
+            Node* creation = new Node(Instruction(Opcode::CREATE_VAR, vector<string>({ varName, varType })));
             if (isliteral) {
                 string value = to_string(ast::decompiler::DecompileExpression(varDeclStmt->AssignedValue));
                 Node* storeValue = new Node(Instruction(Opcode::STORE_VAR, vector<string>({ varName, value })));

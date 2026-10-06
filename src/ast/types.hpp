@@ -8,7 +8,7 @@ namespace ast {
         void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
             wcout_ << wstring(indent * 2, L' ') << L"SymbolType: " << name << endl;
         }
-        wstring GetName(int indent = 0) const {
+        wstring GetName(int indent = 0) const override {
             return name;
         }
         Type* Clone() const override {

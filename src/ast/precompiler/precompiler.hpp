@@ -119,9 +119,11 @@ namespace ast::precompiler {
 
         if (remainingVars.size() > 0) {
             for (const auto& varInfo : remainingVars) {
-                if (!varInfo->canBeDestroyed) {
+                bool isUndeletable = !varInfo->canBeDestroyed;
+                if (isUndeletable) {
                     if (CompilerOptions.Warnings.undeletableVariableRemains) {
-                        _wcout << L"Warning: Undeletable variable remains: \"" << varInfo->variableName << L"\" in scope " << scope << endl;
+                        _wcout << L"Warning: Undeletable variable found: \"" << varInfo->variableName << L"\" in scope " << scope << endl;
+                        isUndeletable = true;  // Only delete at the end of the scope for security reasons
                     }
                 }
                 if (varInfo->usage.empty()) {
@@ -136,7 +138,7 @@ namespace ast::precompiler {
                 }
                 UnusedStmt* unusedStmt = new UnusedStmt(varInfo->variableName);
                 size_t insertIndex = blockStmt->statements.size();
-                if (!varInfo->usage.empty()) {
+                if (!isUndeletable && !varInfo->usage.empty()) {
                     size_t lastUsageIndex = blockStmt->IndexOf(varInfo->usage.back());
                     if (lastUsageIndex != static_cast<size_t>(-1)) {
                         insertIndex = lastUsageIndex + 1;

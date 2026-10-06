@@ -7,7 +7,6 @@ namespace IR {
         EOF = 1,          // End of file
         NOP,          // No operation; does nothing
         CREATE_VAR,   // Create a variable with a given name on the stack [varName, varType]
-        CREATE_USED_VAR,   // Create a variable with a given name on the stack [varName, varType]
         SET_SCOPE,    // Set the current scope for variable resolution [scopeName] ; The global scope is 1
         DESTROY_VAR,  // Destroy a variable with a given name on the stack [varName]
         LOAD_VAR,     // Load a variable's value into a register [varName]
@@ -32,7 +31,6 @@ namespace IR {
             case Opcode::EOF: return L"EOF";
             case Opcode::NOP: return L"NOP";
             case Opcode::CREATE_VAR: return L"CREATE_VAR";
-            case Opcode::CREATE_USED_VAR: return L"CREATE_USED_VAR";
             case Opcode::SET_SCOPE: return L"SET_SCOPE";
             case Opcode::DESTROY_VAR: return L"DESTROY_VAR";
             case Opcode::LOAD_VAR: return L"LOAD_VAR";

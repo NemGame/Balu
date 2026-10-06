@@ -3,6 +3,7 @@
 namespace ASM {
     interface ConverterInterface {
         virtual vector<wstring> parse(const ast::Stmt* stmt) = 0;
+        virtual ~ConverterInterface() {}
     };
     enum TokenKind {
         EXIT = 0,       // Exit the program

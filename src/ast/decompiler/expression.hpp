@@ -25,7 +25,7 @@ namespace ast::decompiler {
         return wstring(indent * 4, L' ') + DecompileExpression(stmt->expression, indent);
     }
     wstring DecompileVarDeclStmt(ast::VarDeclStmt* stmt, int indent = 0) {
-        wstring result = wstring(indent * 4, L' ');
+        wstring result = wstring(indent * 4, L' ') + L"used ";
         if (!stmt->isConstant) {
             result += L"let ";
         } else {

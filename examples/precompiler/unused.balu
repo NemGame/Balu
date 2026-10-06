@@ -18,6 +18,10 @@ used let c = 3 + x;
 
 const b = 53;
 
+used let wasd = 53;
+
+wasd = 2;
+
 fn wasd(): void {
     return (x + 2 * c) + 37 * b;
 }

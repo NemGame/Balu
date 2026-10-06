@@ -86,7 +86,7 @@ namespace ast {
         }
         static BlockStmt Null() { return BlockStmt(); }
         static BlockStmt* NullPtr() { return new BlockStmt(); }
-        wstring kind() const { return L"BlockStmt"; }
+        wstring kind() const override { return L"BlockStmt"; }
         Stmt* Clone() const override {
             vector<Stmt*> clonedStatements;
             for (Stmt* stmt : statements) clonedStatements.push_back(stmt ? stmt->Clone() : nullptr);
@@ -106,7 +106,7 @@ namespace ast {
                 expression->Dump(indent + 1, wcout_);
             }
         }
-        wstring kind() const { return L"ExpressionStmt"; }
+        wstring kind() const override { return L"ExpressionStmt"; }
         Stmt* Clone() const override {
             return new ExpressionStmt(expression ? expression->Clone() : nullptr);
         }
@@ -132,7 +132,7 @@ namespace ast {
                 AssignedValue->Dump(indent + 1, wcout_);
             }
         }
-        wstring kind() const { return L"VarDeclStmt"; }
+        wstring kind() const override { return L"VarDeclStmt"; }
         Stmt* Clone() const override {
             return new VarDeclStmt(VariableName, isConstant, AssignedValue ? AssignedValue->Clone() : nullptr, ExplicitType ? ExplicitType->Clone() : nullptr, mayAutoDelete);
         }
@@ -152,7 +152,7 @@ namespace ast {
                 NewExpr->Dump(indent + 1, wcout_);
             }
         }
-        wstring kind() const { return L"TypeChangeStmt"; }
+        wstring kind() const override { return L"TypeChangeStmt"; }
         Stmt* Clone() const override {
             return new TypeChangeStmt(VariableName, NewExpr ? NewExpr->Clone() : nullptr);
         }
@@ -258,7 +258,7 @@ namespace ast {
                 m.second->Dump(indent + 1, wcout_);
             }
         }
-        wstring kind() const { return L"StructDeclStmt"; }
+        wstring kind() const override { return L"StructDeclStmt"; }
         Stmt* Clone() const override {
             unordered_map<wstring, StructProperty*> clonedProperties;
             for (const auto& p : Properties) clonedProperties[p.first] = p.second->Clone();
@@ -281,7 +281,7 @@ namespace ast {
                 AliasedValue->Dump(indent + 1, wcout_);
             }
         }
-        wstring kind() const { return L"AliasDeclStmt"; }
+        wstring kind() const override { return L"AliasDeclStmt"; }
         Stmt* Clone() const override {
             return new AliasDeclStmt(AliasName, AliasedValue ? AliasedValue->Clone() : nullptr);
         }
@@ -312,7 +312,7 @@ namespace ast {
                 ElseBranch->Dump(indent + 2, wcout_);
             }
         }
-        wstring kind() const { return L"IfStmt"; }
+        wstring kind() const override { return L"IfStmt"; }
         Stmt* Clone() const override {
             return new IfStmt(Condition ? Condition->Clone() : nullptr, ThenBranch ? ThenBranch->Clone() : nullptr, ElseBranch ? ElseBranch->Clone() : nullptr);
         }
@@ -343,7 +343,7 @@ namespace ast {
                 ElseBranch->Dump(indent + 2, wcout_);
             }
         }
-        wstring kind() const { return L"WhileStmt"; }
+        wstring kind() const override { return L"WhileStmt"; }
         Stmt* Clone() const override {
             return new WhileStmt(Condition ? Condition->Clone() : nullptr, Body ? Body->Clone() : nullptr, ElseBranch ? ElseBranch->Clone() : nullptr);
         }
@@ -374,7 +374,7 @@ namespace ast {
                 Body->Dump(indent + 1, wcout_);
             }
         }
-        wstring kind() const { return L"FunctionStmt"; }
+        wstring kind() const override { return L"FunctionStmt"; }
         Stmt* Clone() const override {
             vector<MethodParameter*> clonedParams;
             for (auto& p : Parameters) clonedParams.push_back(p ? p->Clone() : nullptr);
@@ -389,7 +389,7 @@ namespace ast {
         void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
             wcout_ << GetName(indent) << endl;
         }
-        wstring kind() const { return L"UnusedStmt"; }
+        wstring kind() const override { return L"UnusedStmt"; }
         wstring GetName(int indent = 0) const {
             return wstring(indent * 2, L' ') + L"UnusedStmt: " + variableIdentifier;
         }
