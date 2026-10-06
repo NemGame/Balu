@@ -59,6 +59,7 @@ namespace IR {
             int indent = opcode == Opcode::LABEL ? 0 : 2;
             if (opcode == Opcode::SOF || opcode == Opcode::EOF) wcout_ << L"--";
             else if (opcode == Opcode::SET_SCOPE) wcout_ << L" -";
+            else if (opcode == Opcode::NOP) wcout_ << L"? ";
             else if (opcode == Opcode::LABEL) wcout_ << L"\n" << to_wstring(operands.back()) << L":";
             else wcout_ << wstring(indent, L' ');
             if (indent != 0) {

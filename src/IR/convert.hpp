@@ -53,16 +53,16 @@ namespace IR {
         } else if (auto unusedStmt = dynamic_cast<const ast::UnusedStmt*>(stmt)) {
             return new Node(Instruction(Opcode::DESTROY_VAR, vector<string>({ to_string(unusedStmt->variableIdentifier) })));
         }
-
-        return new Node(Instruction(Opcode::NOP)); // Placeholder for unhandled statements
+        wstring s = ast::decompiler::DecompileStatement(const_cast<ast::Stmt*>(stmt));
+        return new Node(Instruction(Opcode::NOP, {to_string(s)})); // Placeholder for unhandled statements
     }
     Node* ConvertASTToIR(const ast::Expr* expr) {
         if (expr == nullptr) return nullptr;
         if (auto assignmentExpr = dynamic_cast<const ast::AssignmentExpr*>(expr)) {
             return ConvertAssignmentToIR(assignmentExpr);
         }
-
-        return new Node(Instruction(Opcode::NOP)); // Placeholder for unhandled expressions
+        wstring s = ast::decompiler::DecompileExpression(const_cast<ast::Expr*>(expr));
+        return new Node(Instruction(Opcode::NOP, {to_string(s)})); // Placeholder for unhandled expressions
     }
     // Adds the SOF and EOF nodes to the IR sequence generated from the AST
     Node* MConvert(const ast::Stmt* stmt) {
