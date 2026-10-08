@@ -397,4 +397,21 @@ namespace ast {
             return new UnusedStmt(variableIdentifier);
         }
     };
+    struct ImportStmt : public Stmt {
+        wstring ModuleName;
+        wstring namespaceName;
+        void stmt() override {}
+        ImportStmt(const wstring& moduleName, const wstring& nsName = L"") : ModuleName(moduleName), namespaceName(nsName) {}
+        void Dump(int indent = 0, wostream& wcout_ = _wcout) const override {
+            wcout_ << wstring(indent * 2, L' ') << L"ImportStmt: " << ModuleName;
+            if (!namespaceName.empty()) {
+                wcout_ << L" (namespace: " << namespaceName << L")";
+            }
+            wcout_ << endl;
+        }
+        wstring kind() const override { return L"ImportStmt"; }
+        Stmt* Clone() const override {
+            return new ImportStmt(ModuleName, namespaceName);
+        }
+    };
 }

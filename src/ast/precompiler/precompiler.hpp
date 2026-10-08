@@ -105,14 +105,14 @@ namespace ast::precompiler {
             }
         }
     };
-    void PreCompile(Stmt* stmt, VariableRegistry& varReg);
+    void PreCompile(Stmt* stmt, VariableRegistry& varReg, Stmt* parentStmt);
     void PreCompile(Expr* expr, VariableRegistry& varReg, Stmt* stmt);
 
     void PreCompileBlockStmt(BlockStmt* blockStmt, VariableRegistry& varReg) {
         uint64_t scope = varReg.AddScope();
 
         for (auto& stmt : blockStmt->statements) {
-            if (stmt != nullptr) PreCompile(stmt, varReg);
+            if (stmt != nullptr) PreCompile(stmt, varReg, blockStmt);
         }
         varReg.AdjustDeclarationIndices(blockStmt, 0);
         vector<VariableInfo*> remainingVars = varReg.GetVariablesInScope(scope);
@@ -154,14 +154,32 @@ namespace ast::precompiler {
 
     void PreCompile(Stmt* stmt) {
         VariableRegistry varReg;
-        PreCompile(stmt, varReg);
+        PreCompile(stmt, varReg, nullptr);
     }
-    void PreCompile(Stmt* stmt, VariableRegistry& varReg) {
+    void PreCompile(Stmt* stmt, VariableRegistry& varReg, Stmt* parentStmt) {
         if (CompilerOptions.verbose) _wcout << L"[PreCompiler] Pre-compiling statement..." << endl;
         if (stmt == nullptr) return;
         if (auto blockStmt = dynamic_cast<BlockStmt*>(stmt)) {
             PreCompileBlockStmt(blockStmt, varReg);
         } else if (auto varDecl = dynamic_cast<VarDeclStmt*>(stmt)) {
+            bool varExists = varReg.GetVariable(varDecl->VariableName) != nullptr;
+            if (varExists) {
+                if (!CompilerOptions.Language.allowRedeclaration) {
+                    wstring errorMessage = L"Redeclaration of variable: \"" + varDecl->VariableName + L"\" is not allowed";
+                    _wcout << L"Error: " << errorMessage << endl;
+                    if (CompilerOptions.panic) {
+                        throw runtime_error(string(errorMessage.begin(), errorMessage.end()));
+                    }
+                }
+                UnusedStmt* unusedStmt = new UnusedStmt(varDecl->VariableName);
+                PreCompile(unusedStmt, varReg, parentStmt);
+                if (auto blockStmt = dynamic_cast<BlockStmt*>(parentStmt)) {
+                    size_t ix = blockStmt->IndexOf(varDecl);
+                    if (ix != static_cast<size_t>(-1)) {
+                        blockStmt->statements.insert(blockStmt->statements.begin() + ix + 1, unusedStmt);  // TODO: Check if this fucks up precompilation
+                    }
+                }
+            }
             varReg.AddVariable(varDecl);
             PreCompile(varDecl->AssignedValue, varReg, varDecl);
         } else if (auto unusedStmt = dynamic_cast<UnusedStmt*>(stmt)) {
@@ -183,14 +201,14 @@ namespace ast::precompiler {
             PreCompile(aliasStmt->AliasedValue, varReg, stmt);
         } else if (auto ifStmt = dynamic_cast<IfStmt*>(stmt)) {
             PreCompile(ifStmt->Condition, varReg, stmt);
-            PreCompile(ifStmt->ThenBranch, varReg);
-            PreCompile(ifStmt->ElseBranch, varReg);
+            PreCompile(ifStmt->ThenBranch, varReg, ifStmt);
+            PreCompile(ifStmt->ElseBranch, varReg, ifStmt);
         } else if (auto whileStmt = dynamic_cast<WhileStmt*>(stmt)) {
             PreCompile(whileStmt->Condition, varReg, stmt);
-            PreCompile(whileStmt->Body, varReg);
-            PreCompile(whileStmt->ElseBranch, varReg);
+            PreCompile(whileStmt->Body, varReg, whileStmt);
+            PreCompile(whileStmt->ElseBranch, varReg, whileStmt);
         } else if (auto funcDeclStmt = dynamic_cast<FuncDeclStmt*>(stmt)) {
-            PreCompile(funcDeclStmt->Body, varReg);
+            PreCompile(funcDeclStmt->Body, varReg, funcDeclStmt);
         }
     }
     void PreCompile(Expr* expr, VariableRegistry& varReg, Stmt* stmt) {

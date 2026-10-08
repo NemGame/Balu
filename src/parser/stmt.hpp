@@ -923,4 +923,67 @@ namespace parser {
         if (p->currentTokenKind() == lexer::SEMICOLON) p->advance();  // consume ';'
         return nullptr;
     }
+    ast::Stmt* parse_import_stmt(Parser* p) {
+        p->advance();  // consume 'import'
+        bool isGlobal = p->currentTokenKind() == lexer::LESS;
+        if (isGlobal) p->advance();  // consume '<'
+        wstring moduleName;
+        if (isGlobal) {
+            if (p->currentTokenKind() != lexer::IDENTIFIER) {
+                wstring message = L"Expected identifier for module name in relative import at " + p->position() + L", but got " + lexer::TokenKindString(p->currentTokenKind());
+                p->errors.push_back(ParserError(message));
+                _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+                if (CompilerOptions.panic) {
+                    if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
+                    exit(1);
+                }
+                return nullptr;
+            }
+            moduleName = p->currentToken().value;
+            p->advance();
+            if (p->currentTokenKind() == lexer::GREATER) p->advance();  // consume '>' for relative import
+            else {
+                wstring message = L"Expected '>' for relative import at " + p->position() + L", but got " + lexer::TokenKindString(p->currentTokenKind());
+                p->errors.push_back(ParserError(message));
+                _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+                if (CompilerOptions.panic) {
+                    if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
+                    exit(1);
+                }
+                return nullptr;
+            }
+        } else {
+            ast::StringExpr* stringExpr = static_cast<ast::StringExpr*>(parse_expr(p, binding_power::default_bp));
+            if (stringExpr == nullptr) {
+                wstring message = L"Expected module name for import statement at " + p->position() + L", but got " + lexer::TokenKindString(p->currentTokenKind());
+                p->errors.push_back(ParserError(message));
+                _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+                if (CompilerOptions.panic) {
+                    if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
+                    exit(1);
+                }
+                return nullptr;
+            }
+            moduleName = stringExpr->value;
+        }
+
+        wstring namespaceName;
+        if (p->currentTokenKind() == lexer::AS) {
+            p->advance();  // consume 'as'
+            if (p->currentToken().isOneOfMany(lexer::IDENTIFIER)) {
+                namespaceName = p->currentToken().value;
+                p->advance();
+            } else {
+                wstring message = L"Expected identifier for namespace alias at " + p->position() + L", but got " + lexer::TokenKindString(p->currentTokenKind());
+                p->errors.push_back(ParserError(message));
+                _wcout << (CompilerOptions.debug ? L"[Parser] " : L"") << message << endl;
+                if (CompilerOptions.panic) {
+                    if (CompilerOptions.debug) _wcout << L"[Parser] Panicing" << endl;
+                    exit(1);
+                }
+            }
+        }
+        if (p->currentTokenKind() == lexer::SEMICOLON) p->advance();  // Optional semicolon after import statement
+        return new ast::ImportStmt(moduleName, namespaceName);
+    }
 }

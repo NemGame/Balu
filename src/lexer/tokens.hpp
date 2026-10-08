@@ -147,6 +147,7 @@ namespace lexer {
         // Modules and imports
         IMPORT,         // import
         FROM,           // from
+        AS,             // as
         EXPORT,         // export
 
         // Control flow
@@ -202,6 +203,7 @@ namespace lexer {
 
         {L"import", IMPORT},
         {L"from", FROM},
+        {L"as", AS},
         {L"export", EXPORT},
 
         {L"if", IF},

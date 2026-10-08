@@ -105,6 +105,8 @@ namespace parser {
 
         stmt(lexer::TYPEOF, parse_type_change_stmt);
 
+        stmt(lexer::IMPORT, parse_import_stmt);
+
         // Types
         stmt(lexer::NUMBER_KW, parse_var_decl_stmt);
         stmt(lexer::BYTE_KW, parse_var_decl_stmt);

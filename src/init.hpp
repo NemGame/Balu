@@ -51,7 +51,6 @@ struct CommandLineArgs {
 struct _CompilerOptions {
 private:
     struct _IR {
-        bool allowRedeclaration = true;  // Whether to allow redeclaration of variables in the same scope [true]
         bool allowIRWarnings = true;  // Whether to allow warnings in the IR [true]
     };
     struct _User {
@@ -61,6 +60,9 @@ private:
         bool mayLogWarnings = true;  // Whether to allow logging of warnings [true]
         bool undeletableVariableRemains = true;  // Whether to warn if an undeletable variable remains [true]
         bool unmatchedCharacter = true;  // Whether to warn if an unmatched character is encountered [true]
+    };
+    struct _Language {
+        bool allowRedeclaration = true;  // Whether to allow redeclaration of variables [true]
     };
 public:
     bool verbose = false;  // Whether to print verbose output [false]
@@ -72,6 +74,7 @@ public:
     _IR IR;  // IR compiler options
     _User User;  // User-provided options
     _Warnings Warnings;  // Warning options
+    _Language Language;  // Language options
 };
 _CompilerOptions CompilerOptions;
 struct _OptimizationOptions {
